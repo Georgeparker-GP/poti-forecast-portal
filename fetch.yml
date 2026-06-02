@@ -1,0 +1,58 @@
+# ფოთის პორტი — ავტომატური ამინდის განახლება
+# GitHub Actions ყოველ საათში გაუშვებს fetch.py-ს
+# შედეგი (data.json) ავტომატურად გამოქვეყნდება GitHub Pages-ზე
+
+name: Weather Fetch
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # ყოველ საათში (:00 წუთზე)
+  workflow_dispatch:        # ხელით გაშვების ღილაკი GitHub-ზე
+
+permissions:
+  contents: write           # საჭიროა data.json-ის commit-ისთვის
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+
+      # 1. კოდის ჩამოტვირთვა
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Python-ის დაყენება
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      # 3. ბიბლიოთეკების ინსტალაცია
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 4. fetch.py გაშვება — API-ების გამოძახება
+      - name: Run fetch.py
+        run: python fetch.py
+        env:
+          WINDY_API_KEY:        ${{ secrets.WINDY_API_KEY }}
+          STORMGLASS_API_KEY:   ${{ secrets.STORMGLASS_API_KEY }}
+          OWM_API_KEY:          ${{ secrets.OWM_API_KEY }}
+          TELEGRAM_BOT_TOKEN:   ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:     ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      # 5. data.json-ის შენახვა რეპოში (Pages ავტომატურად გამოაქვეყნებს)
+      - name: Commit & push data.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          # stormglass კეში და status კეში შევინახოთ runs-ს შორის
+          git add stormglass_cache.json status_cache.json 2>/dev/null || true
+          # commit მხოლოდ თუ რამე შეიცვალა
+          git diff --staged --quiet || git commit -m \
+            "weather: update $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
