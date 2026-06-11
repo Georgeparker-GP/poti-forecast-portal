@@ -39,20 +39,15 @@ def _session():
 
 requests_session = _session()
 
-# ── ლოკაცია: ფოთის პორტი (შავი ზღვა, რიონის შესართავი) ──
-LOCATION = {
-    "name":     "ფოთის პორტი",
-    "lat":      42.15,          # 42.15° N
-    "lon":      41.64,          # 41.64° E — სანაპიროზე/ოდნავ ზღვაში (marine მონაცემებისთვის)
-    "timezone": "Asia/Tbilisi",
-}
+# ─────────────────────────────────────────────
+LOCATION = {"name": "ფოთის პორტი", "lat": 42.15, "lon": 41.67, "timezone": "Asia/Tbilisi"}
 
 FORECAST_HOURS      = 48
 REQUEST_TIMEOUT     = 15
 OUTPUT_FILE         = "data.json"
+STATUS_CACHE        = "status_cache.json"
 STORMGLASS_CACHE    = "stormglass_cache.json"
 YR_NO_CACHE         = "yr_cache.json"
-STATUS_CACHE        = "status_cache.json"
 STORMGLASS_INTERVAL = 3
 YR_NO_INTERVAL      = 1   # yr.no ყოველ საათში განახლდება
 
@@ -97,8 +92,8 @@ def fetch_open_meteo_atmosphere(model: str):
     if model != "best_match":
         params["models"] = model
     try:
-        r = requests.get("https://api.open-meteo.com/v1/forecast",
-                         params=params, timeout=REQUEST_TIMEOUT)
+        r = requests_session.get("https://api.open-meteo.com/v1/forecast",
+                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
         r.raise_for_status()
         log.info(f"Open-Meteo [{model}] ✓")
         return r.json()
@@ -116,8 +111,8 @@ def fetch_open_meteo_marine():
         "timezone": LOCATION["timezone"],
     }
     try:
-        r = requests.get("https://marine-api.open-meteo.com/v1/marine",
-                         params=params, timeout=REQUEST_TIMEOUT)
+        r = requests_session.get("https://marine-api.open-meteo.com/v1/marine",
+                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
         r.raise_for_status()
         log.info("Open-Meteo Marine ✓")
         return r.json()
