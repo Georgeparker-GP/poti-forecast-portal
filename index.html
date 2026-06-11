@@ -32,29 +32,29 @@
             <div class="label">კმ</div>
         </div>
     </div>
-
-    <script>
-        async function loadData() {
-            try {
-                // ?t=... არის კეშის გასასუფთავებელი
-                const response = await fetch('data.json?t=' + new Date().getTime());
-                const data = await response.json();
-                
-                const c = data.current;
-                
-                // მონაცემების შევსება
-                document.getElementById('c-temp').textContent = c.temperature_2m ? c.temperature_2m.toFixed(1) : '--';
-                document.getElementById('c-wind').textContent = c.wind_speed ? c.wind_speed.toFixed(1) : '--';
-                document.getElementById('c-vis').textContent = c.visibility_km ? c.visibility_km.toFixed(1) : '--';
-                
-            } catch (error) {
-                console.error("მონაცემების ჩატვირთვის შეცდომა:", error);
+<script>
+    async function loadData() {
+        try {
+            const response = await fetch('data.json?t=' + new Date().getTime());
+            const data = await response.json();
+            
+            // დავბეჭდოთ კონსოლში, რომ ვნახოთ ზუსტად რა მოვიდა
+            console.log("მთლიანი მონაცემები:", data);
+            
+            const c = data.current;
+            
+            // შევამოწმოთ ცვლადები
+            if (c) {
+                document.getElementById('c-temp').textContent = c.temperature_2m ? c.temperature_2m.toFixed(1) : 'Err';
+                document.getElementById('c-wind').textContent = c.wind_speed ? c.wind_speed.toFixed(1) : 'Err';
+                document.getElementById('c-vis').textContent = c.visibility_km ? c.visibility_km.toFixed(1) : 'Err';
             }
+        } catch (error) {
+            console.error("შეცდომა:", error);
+            document.getElementById('c-temp').textContent = 'Fail';
         }
-
-        // ავტომატური განახლება ყოველ 60 წამში
-        loadData();
-        setInterval(loadData, 60000);
-    </script>
+    }
+    loadData();
+</script>
 </body>
 </html>
