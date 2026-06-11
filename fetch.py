@@ -38,7 +38,9 @@ def _session():
     return s
 
 requests_session = _session()
-STATUS_CACHE        = "status_cache.json"
+FORECAST_HOURS      = 48
+REQUEST_TIMEOUT     = 15
+OUTPUT_FILE         = "data.json"
 STORMGLASS_CACHE    = "stormglass_cache.json"
 YR_NO_CACHE         = "yr_cache.json"
 STORMGLASS_INTERVAL = 3
