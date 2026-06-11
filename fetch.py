@@ -9,9 +9,10 @@
   2. Open-Meteo / GFS         (უფასო)
   3. Open-Meteo / ICON-EU     (უფასო)
   4. Open-Meteo Marine        (უფასო)
-  5. Stormglass.io            (უფასო გასაღებით, 10req/დღე)
-  6. Windy.com / ECMWF        (უფასო გასაღებით)
-  7. OpenWeatherMap           (უფასო გასაღებით)
+  5. yr.no / MET Norway       (უფასო, გასაღები არ სჭირდება — ECMWF გლობალური)
+  6. Stormglass.io            (უფასო გასაღებით, 10req/დღე)
+  7. Windy.com / ECMWF        (უფასო გასაღებით)
+  8. OpenWeatherMap           (უფასო გასაღებით)
 
 გასაღებები (Windows: set, Mac/Linux: export):
   STORMGLASS_API_KEY   ← stormglass.io
@@ -29,12 +30,14 @@ import requests
 # ─────────────────────────────────────────────
 LOCATION = {"name": "ფოთის პორტი", "lat": 42.15, "lon": 41.67, "timezone": "Asia/Tbilisi"}
 
-FORECAST_HOURS      = 48          # ← 24-დან 48-ზე
+FORECAST_HOURS      = 48
 REQUEST_TIMEOUT     = 15
 OUTPUT_FILE         = "data.json"
 STATUS_CACHE        = "status_cache.json"
 STORMGLASS_CACHE    = "stormglass_cache.json"
+YR_NO_CACHE         = "yr_cache.json"
 STORMGLASS_INTERVAL = 3
+YR_NO_INTERVAL      = 1   # yr.no ყოველ საათში განახლდება
 
 THRESHOLDS = {
     "wind_speed":  15.0,
@@ -44,8 +47,8 @@ THRESHOLDS = {
 }
 
 BASE_WEIGHTS = {
-    "best_match": 0.25, "gfs": 0.15, "icon_eu": 0.10,
-    "windy": 0.20, "stormglass": 0.20, "owm": 0.10,
+    "best_match": 0.22, "gfs": 0.13, "icon_eu": 0.09,
+    "yr_no": 0.13, "windy": 0.18, "stormglass": 0.17, "owm": 0.08,
 }
 WAVE_WEIGHTS = {"marine": 0.45, "windy": 0.25, "stormglass": 0.30}
 
@@ -178,6 +181,44 @@ def fetch_openweathermap():
         return None
 
 
+def fetch_yr_no():
+    """
+    yr.no / MET Norway Locationforecast API — სრულიად უფასო, გასაღები არ სჭირდება.
+    Norwegian Meteorological Institute — ECMWF გლობალური მოდელი.
+    წესი: User-Agent სავალდებულოა, კეში — ყოველ 1 საათში.
+    """
+    cached = _load_yr_cache()
+    if cached:
+        log.info("yr.no ✓ (კეშიდან)")
+        return cached
+
+    headers = {
+        "User-Agent": (
+            "PotiPortalForecast/1.0 "
+            "github.com/Georgeparker-GP/poti-forecast-portal"
+        )
+    }
+    params = {
+        "lat": round(LOCATION["lat"], 4),
+        "lon": round(LOCATION["lon"], 4),
+    }
+    try:
+        r = requests.get(
+            "https://api.met.no/weatherapi/locationforecast/2.0/compact",
+            params=params,
+            headers=headers,
+            timeout=REQUEST_TIMEOUT,
+        )
+        r.raise_for_status()
+        data = r.json()
+        _save_yr_cache(data)
+        log.info("yr.no ✓ (API-დან)")
+        return data
+    except Exception as e:
+        log.warning(f"yr.no ✗ — {e}")
+        return None
+
+
 # ═══════════════════════════════════════════════════════════════
 #  2.  Stormglass კეში
 # ═══════════════════════════════════════════════════════════════
@@ -202,6 +243,28 @@ def _save_stormglass_cache(data):
                       f, ensure_ascii=False)
     except Exception as e:
         log.warning(f"კეშის შენახვა ✗ — {e}")
+
+
+def _load_yr_cache():
+    try:
+        with open(YR_NO_CACHE, encoding="utf-8") as f:
+            c = json.load(f)
+        age = (datetime.now() - datetime.fromisoformat(c["_cached_at"])).total_seconds() / 3600
+        if age < YR_NO_INTERVAL:
+            log.info(f"yr.no კეში: {age:.1f}სთ ძველი")
+            return c["data"]
+    except (FileNotFoundError, KeyError, ValueError):
+        pass
+    return None
+
+
+def _save_yr_cache(data):
+    try:
+        with open(YR_NO_CACHE, "w", encoding="utf-8") as f:
+            json.dump({"_cached_at": datetime.now().isoformat(), "data": data},
+                      f, ensure_ascii=False)
+    except Exception as e:
+        log.warning(f"yr.no კეშის შენახვა ✗ — {e}")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -318,16 +381,59 @@ def parse_openweathermap(raw, hours=FORECAST_HOURS):
     return result[:hours]
 
 
+def parse_yr_no(raw, hours=FORECAST_HOURS):
+    """
+    yr.no compact პასუხი:
+      properties.timeseries[]:
+        time                                    — UTC timestamp
+        data.instant.details.wind_speed         — მ/წმ
+        data.instant.details.wind_from_direction — გრადუსი
+        data.instant.details.fog_area_fraction  — % (ხილვადობის proxy)
+        data.next_1_hours.details.precipitation_amount — მმ
+    
+    შენიშვნა: yr.no-ს compact-ში wind gusts არ არის →
+    ქარის კონსენსუსში მხოლოდ wind_speed და wind_direction მონაწილეობს.
+    """
+    result = []
+    timeseries = raw.get("properties", {}).get("timeseries", [])
+
+    for entry in timeseries[:hours]:
+        time_str = entry.get("time", "")[:16]   # "2026-06-11T10:00"
+        instant  = entry.get("data", {}).get("instant", {}).get("details", {})
+        next1h   = entry.get("data", {}).get("next_1_hours", {}).get("details", {})
+
+        wind_speed = round(float(instant.get("wind_speed", 0) or 0), 2)
+        wind_dir   = round(float(instant.get("wind_from_direction", 0) or 0), 1)
+        precip     = round(float(next1h.get("precipitation_amount", 0) or 0), 2)
+
+        # ნისლი → ხილვადობა: fog_area_fraction 0-100%
+        fog = float(instant.get("fog_area_fraction", 0) or 0)
+        # 0% ნისლი → 10კმ, 100% ნისლი → 0.1კმ (ლოგარითმული)
+        vis_km = round(max(0.1, 10.0 * (1.0 - fog / 100.0)), 2)
+
+        result.append({
+            "time":           time_str,
+            "wind_speed":     wind_speed,
+            "wind_gusts":     round(wind_speed * 1.25, 2),  # კონსერვ. შეფასება
+            "wind_direction": wind_dir,
+            "precipitation":  precip,
+            "visibility_km":  vis_km,
+        })
+
+    return result[:hours]
+
+
 # ═══════════════════════════════════════════════════════════════
 #  4.  კონსენსუსი
 # ═══════════════════════════════════════════════════════════════
 
-def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy, owm):
+def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy, yr_no, owm):
     atmo_pool = []
     for src, key in [
         (atmo_best,  "best_match"), (atmo_gfs,    "gfs"),
-        (atmo_icon,  "icon_eu"),    (windy,        "windy"),
-        (stormglass, "stormglass"), (owm,          "owm"),
+        (atmo_icon,  "icon_eu"),    (yr_no,        "yr_no"),
+        (windy,      "windy"),      (stormglass,   "stormglass"),
+        (owm,        "owm"),
     ]:
         if src:
             atmo_pool.append((src, BASE_WEIGHTS[key]))
@@ -341,7 +447,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy,
         wind_gusts  = _wavg(atmo_pool, i, "wind_gusts",    total_w)
         precip      = _wavg(atmo_pool, i, "precipitation", total_w)
 
-        # ხილვადობა — Windy-ს გამოკლებით
+        # ხილვადობა — Windy-ს გამოკლებით (yr.no ნისლ-ბაზირებული)
         vis_pool = [(s, w) for s, w in atmo_pool if s is not windy]
         vis_w    = sum(w for _, w in vis_pool) or total_w
         visibility = _wavg(vis_pool or atmo_pool, i, "visibility_km", vis_w)
@@ -604,6 +710,10 @@ def main():
     if marine:    sources_used.append("Open-Meteo/Marine")
     else:         log.warning("Marine ✗ — ტალღა ქარიდან გამოანგარიშდება")
 
+    raw_yr    = fetch_yr_no()
+    yr_no     = parse_yr_no(raw_yr) if raw_yr else None
+    if yr_no:     sources_used.append("yr.no/MET Norway")
+
     raw_sg     = fetch_stormglass()
     stormglass = parse_stormglass(raw_sg) if raw_sg else None
     if stormglass: sources_used.append("Stormglass.io")
@@ -618,7 +728,7 @@ def main():
 
     log.info(f"კონსენსუსი: {len(sources_used)} წყარო — {sources_used}")
     consensus = compute_consensus(atmo_best, atmo_gfs, atmo_icon,
-                                  marine, stormglass, windy, owm)
+                                  marine, stormglass, windy, yr_no, owm)
 
     output = build_output(consensus, sources_used)
 
