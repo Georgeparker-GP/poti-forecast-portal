@@ -95,4 +95,80 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <div class="cards-grid">
     <div class="card neutral" id="card-wind">
       <div class="card-label">ქარის სიჩქარე</div>
-      <div class="card
+      <div class="card-value" id="c-wind">--</div>
+      <div class="card-unit">მ/წმ</div>
+      <div class="card-sub" style="display:flex;justify-content:space-between">
+        <span>გუსტი: <span id="c-gusts" class="mono">--</span> მ/წმ</span>
+        <span>მიმართ: <span id="c-wdir-deg" class="mono">--</span>° <span id="c-wdir-sym" style="font-weight:700;color:var(--tl)">--</span></span>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-wind" style="width:0%"></div></div>
+    </div>
+    
+    <div class="card neutral" id="card-wave">
+      <div class="card-label">ტალღის სიმაღლე</div>
+      <div class="card-value" id="c-wave">--</div>
+      <div class="card-unit">მეტრი</div>
+      <div class="card-sub">პერიოდი: <span id="c-period" class="mono">--</span>წმ | ჭანჭ: <span id="c-swell" class="mono">--</span>მ</div>
+      <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-wave" style="width:0%"></div></div>
+    </div>
+    
+    <div class="card neutral" id="card-vis">
+      <div class="card-label">ხილვადობა</div>
+      <div class="card-value" id="c-vis">--</div>
+      <div class="card-unit">კმ</div>
+      <div class="card-sub">ნისლის ზღვარი: 1.0 კმ</div>
+      <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-vis" style="width:0%"></div></div>
+    </div>
+    
+    <div class="card neutral" id="card-rain">
+      <div class="card-label">ნალექი</div>
+      <div class="card-value" id="c-rain">--</div>
+      <div class="card-unit">მმ/სთ</div>
+      <div class="card-sub">მდგომარეობა მიმდინარე საათში</div>
+      <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-rain" style="width:0%"></div></div>
+    </div>
+
+    <div class="card neutral" id="card-temp">
+      <div class="card-label">ჰაერის ტემპერატურა</div>
+      <div class="card-value" id="c-temp">--</div>
+      <div class="card-unit">°C</div>
+      <div class="card-sub">წყლის ტემპ: <span id="c-wtemp" class="mono">--</span>°C</div>
+      <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-temp" style="width:0%"></div></div>
+    </div>
+
+    <div class="card neutral" style="grid-column:span 1">
+      <div class="card-label">48h სარეზერვო</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span style="color:var(--sb)">შეჩერება</span>
+          <span id="s-stop" class="mono" style="color:#fca5a5;font-weight:700">--h</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span style="color:var(--sb)">სიფრთხილე</span>
+          <span id="s-warn" class="mono" style="color:#fcd34d;font-weight:700">--h</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span style="color:var(--sb)">ოპერაციული</span>
+          <span id="s-op" class="mono" style="color:#6ee7b7;font-weight:700">--h</span>
+        </div>
+        <div style="border-top:1px solid var(--br);padding-top:8px;display:flex;justify-content:space-between;font-size:11px;">
+          <span style="color:var(--sb)">ტალღა მაქს</span>
+          <span id="s-mw" class="mono" style="color:var(--tl)">--მ</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;">
+          <span style="color:var(--sb)">გუსტი მაქს</span>
+          <span id="s-mg" class="mono" style="color:var(--tl)">-- მ/წმ</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>48-საათიანი ტრენდი</h3>
+      <p>ქარი (ლურჯი) · ტალღა ×5 (ბირთვისფერი) · კრიტ.ზღვარი (წითელი)</p>
+    </div>
+    <div style="padding:16px">
+      <svg class="chart" id="trend-chart" viewBox="0 0 1000 140" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="gW" x1="0" y1="0" x2
