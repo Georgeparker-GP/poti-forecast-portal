@@ -91,7 +91,6 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 </div>
 
 <main>
-
   <div class="cards-grid">
     <div class="card neutral" id="card-wind">
       <div class="card-label">ქარის სიჩქარე</div>
@@ -171,4 +170,276 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     <div style="padding:16px">
       <svg class="chart" id="trend-chart" viewBox="0 0 1000 140" preserveAspectRatio="none">
         <defs>
-          <linearGradient id="gW" x1="0" y1="0" x2
+          <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3b82f6" stop-opacity=".3"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="gV" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#14b8a6" stop-opacity=".25"/><stop offset="100%" stop-color="#14b8a6" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="35"  x2="1000" y2="35"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <line x1="0" y1="70"  x2="1000" y2="70"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <line x1="0" y1="105" x2="1000" y2="105" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <line id="day2-line" x1="500" y1="0" x2="500" y2="120" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text id="day2-label" x="504" y="12" font-size="9" fill="rgba(156,163,175,0.5)" font-family="JetBrains Mono"></text>
+        <line id="thresh-line" x1="0" y1="0" x2="1000" y2="0" stroke="rgba(239,68,68,0.4)" stroke-width="1" stroke-dasharray="4,3"/>
+        <path id="area-wind" fill="url(#gW)" d=""/>
+        <path id="area-wave" fill="url(#gV)" d=""/>
+        <path id="line-wind" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round" d=""/>
+        <path id="line-wave" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linejoin="round" d=""/>
+        <line id="now-line" x1="0" y1="0" x2="0" y2="120" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,3"/>
+        <g id="chart-labels" font-family="'JetBrains Mono',monospace" font-size="9" fill="rgba(156,163,175,0.7)"></g>
+      </svg>
+      <div style="display:flex;gap:16px;margin-top:6px;font-size:11px;color:var(--sb)">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:#3b82f6;display:inline-block"></span>ქარი მ/წმ</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:#14b8a6;display:inline-block"></span>ტალღა ×5</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:1px;border-top:1px dashed rgba(239,68,68,0.6);display:inline-block;width:14px"></span>კრიტ. 21.5 მ/წმ</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h3>საათობრივი პროგნოზი</h3>
+      <p id="tbl-sources">წყაროები: იტვირთება...</p>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab(24,this)">24 საათი</div>
+      <div class="tab"        onclick="switchTab(48,this)">48 საათი</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>დრო</th>
+            <th>ქარი მ/წმ</th>
+            <th>გუსტი</th>
+            <th>მიმართ.</th>
+            <th>ტალღა მ</th>
+            <th>წვიმა</th>
+            <th>ხილვადობა</th>
+            <th>სტატუსი</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body">
+          <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--sb)">იტვირთება...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="meta-strip">
+    <span style="color:var(--mu)">წყაროები:</span>
+    <div id="source-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    <span style="margin-left:auto;font-size:10px;color:var(--mu)" id="coords-lbl"></span>
+  </div>
+
+</main>
+
+<footer>ფოთის პორტის შიდა საოპერაციო მონიტორინგის სისტემა © 2026 &nbsp;·&nbsp; 48h კონსენსუს-პროგნოზი</footer>
+
+<script>
+const THR = {wind_gusts:21.5, wind_speed:15, wave_height:1.5, visibility:1.0};
+const PILL = {
+  operational:'<span class="pill pill-ok">საოპერ.</span>',
+  warning:    '<span class="pill pill-warn">სიფრთხ.</span>',
+  suspended:  '<span class="pill pill-danger">შეჩერება</span>',
+};
+const STATUS_LBL = {
+  operational:'პორტი — სტანდარტულ რეჟიმში',
+  warning:    'სიფრთხილე — ყვითელი ზონა',
+  suspended:  'საოპერაციო შეჩერება — კრიტიკული პარამეტრები',
+};
+const COMPASS = ['N','NE','E','SE','S','SW','W','NW'];
+function toCompass(d){ return COMPASS[Math.round(((d%360)+360)%360/45)%8]; }
+function fmt(v,n=2){ return v!=null ? Number(v).toFixed(n) : '--'; }
+
+let allForecast = [];
+let showHours   = 24;
+
+// ═══ LOAD ═══
+async function loadData(){
+  try{
+    const r = await fetch('data.json?t='+Date.now());
+    if(!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    allForecast = d.forecast || [];
+    render(d);
+  } catch(e){
+    document.getElementById('status-text').textContent =
+      'data.json ვერ ჩაიტვირთა — შეამოწმეთ Actions';
+    document.getElementById('status-text').style.color='#fcd34d';
+  }
+}
+
+// ═══ RENDER ═══
+function render(d){
+  const c=d.current, s=d.summary_24h, m=d.meta;
+
+  document.getElementById('update-time').textContent  = m.last_update;
+  document.getElementById('next-time').textContent    = 'შემდეგი: '+m.next_update;
+  document.getElementById('sources-line').textContent = m.sources_used.join(' · ');
+  document.getElementById('tbl-sources').textContent  = 'წყაროები: '+m.sources_used.join(', ');
+  document.getElementById('coords-lbl').textContent   = m.lat+'°N '+m.lon+'°E · '+m.forecast_hours+'h';
+
+  const chips = document.getElementById('source-chips');
+  chips.innerHTML = m.sources_used.map(s=>`<div class="chip"><div class="dot"></div>${s}</div>`).join('');
+
+  const sb = document.getElementById('status-bar');
+  sb.className = 'status-bar '+c.status;
+  document.getElementById('status-text').textContent = STATUS_LBL[c.status];
+  document.getElementById('alert-items').innerHTML =
+    c.alerts.map(a=>`<span style="font-size:11px;opacity:.8">▲ ${a}</span>`).join('');
+
+  // ქარი
+  setCard('card-wind','c-wind',c.wind_speed,
+    c.wind_gusts>=THR.wind_gusts||c.wind_speed>=THR.wind_gusts?'danger':
+    c.wind_speed>=THR.wind_speed||c.wind_gusts>=THR.wind_speed?'warn':'ok');
+  document.getElementById('c-gusts').textContent = fmt(c.wind_gusts);
+  setBar('bar-wind', c.wind_gusts/30,
+    c.wind_gusts>=THR.wind_gusts?'red':c.wind_gusts>=15?'yellow':'green');
+
+  // ტალღა
+  setCard('card-wave','c-wave',c.wave_height,
+    c.wave_height>=THR.wave_height?'danger':c.wave_height>=1.2?'warn':'ok');
+  document.getElementById('c-period').textContent = fmt(c.wave_period,1);
+  document.getElementById('c-swell').textContent  = fmt(c.swell_height);
+  setBar('bar-wave', c.wave_height/3,
+    c.wave_height>=THR.wave_height?'red':c.wave_height>=1.2?'yellow':'green');
+
+  // ხილვადობა
+  setCard('card-vis','c-vis',c.visibility_km,
+    c.visibility_km<=THR.visibility?'danger':c.visibility_km<=3?'warn':'ok');
+  setBar('bar-vis', Math.min(c.visibility_km/15,1),
+    c.visibility_km<=1?'red':c.visibility_km<=3?'yellow':'green');
+
+  // ნალექი
+  setCard('card-rain','c-rain',c.precipitation,
+    c.precipitation>=5?'danger':c.precipitation>=2?'warn':'ok');
+  setBar('bar-rain', Math.min(c.precipitation/10,1),
+    c.precipitation>=5?'red':c.precipitation>=2?'yellow':'green');
+
+  // ჰაერის ტემპერატურა
+  const t = c.temperature_2m;
+  setCard('card-temp','c-temp', t, 'ok'); 
+  document.getElementById('c-temp').textContent = t != null ? fmt(t, 1) : '--';
+  document.getElementById('c-wtemp').textContent = c.water_temp ? fmt(c.water_temp,1) : '--';
+  const tRatio = t != null ? Math.max(0, Math.min((t + 10) / 50, 1)) : 0.5;
+  setBar('bar-temp', tRatio, t >= 30 ? 'red' : t >= 25 ? 'yellow' : 'green');
+
+  // ქარის მიმართულება (გადატანილი ქარის ბარათში)
+  const deg = c.wind_direction || 0;
+  document.getElementById('c-wdir-deg').textContent = Math.round(deg);
+  document.getElementById('c-wdir-sym').textContent = toCompass(deg);
+
+  // summary
+  const fc = d.forecast || [];
+  const susp = fc.filter(h=>h.status==='suspended').length;
+  const warn = fc.filter(h=>h.status==='warning').length;
+  document.getElementById('s-stop').textContent = susp+'h';
+  document.getElementById('s-warn').textContent = warn+'h';
+  document.getElementById('s-op').textContent   = (fc.length-susp-warn)+'h';
+  document.getElementById('s-mw').textContent   = fmt(s.max_wave_height)+'მ';
+  document.getElementById('s-mg').textContent   = fmt(s.max_wind_gusts)+' მ/წმ';
+
+  buildChart(fc);
+  buildTable(fc.slice(0, showHours));
+}
+
+// ═══ CHART ═══
+function buildChart(fc){
+  const W=1000, H=120, PT=10, PB=22, ch=H-PT-PB;
+  const n=fc.length;
+  const maxW = Math.max(...fc.map(h=>h.wind_gusts||0), 30);
+  const xOf  = i => (i/(n-1))*W;
+  const yW   = v => PT+ch-(v/maxW)*ch;
+  const yWv  = v => PT+ch-((v*5)/maxW)*ch;
+
+  const ty = yW(THR.wind_gusts);
+  document.getElementById('thresh-line').setAttribute('y1',ty);
+  document.getElementById('thresh-line').setAttribute('y2',ty);
+  document.getElementById('now-line').setAttribute('x1',xOf(0));
+  document.getElementById('now-line').setAttribute('x2',xOf(0));
+
+  const d2x = xOf(24);
+  document.getElementById('day2-line').setAttribute('x1',d2x);
+  document.getElementById('day2-line').setAttribute('x2',d2x);
+  if(fc[24]) document.getElementById('day2-label').textContent = fc[24].time.slice(5,10);
+
+  const pts  = (fn) => fc.map((h,i)=>[xOf(i), fn(h)]);
+  const toP  = pts => 'M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L');
+  const toA  = (pts,bot) => toP(pts)+`L${pts[pts.length-1][0]},${bot} L${pts[0][0]},${bot} Z`;
+  const bot  = PT+ch;
+  const wp   = pts(h=>yW(h.wind_speed||0));
+  const wvp  = pts(h=>yWv(h.wave_height||0));
+
+  document.getElementById('line-wind').setAttribute('d', toP(wp));
+  document.getElementById('line-wave').setAttribute('d', toP(wvp));
+  document.getElementById('area-wind').setAttribute('d', toA(wp,bot));
+  document.getElementById('area-wave').setAttribute('d', toA(wvp,bot));
+
+  const lbl = document.getElementById('chart-labels');
+  lbl.innerHTML='';
+  fc.forEach((h,i)=>{
+    if(i%6!==0) return;
+    const el=document.createElementNS('http://www.w3.org/2000/svg','text');
+    el.setAttribute('x',xOf(i));
+    el.setAttribute('y',H-2);
+    el.setAttribute('text-anchor','middle');
+    el.textContent = h.time.slice(8,13).replace('T',' ');
+    lbl.appendChild(el);
+  });
+}
+
+// ═══ TABLE ═══
+function buildTable(fc){
+  const body = document.getElementById('tbl-body');
+  body.innerHTML = fc.map((h,i)=>{
+    const rc = h.status==='suspended'?'row-danger':h.status==='warning'?'row-warn':'';
+    const nc = i===0?'row-now':'';
+    const wc = h.wind_speed>=THR.wind_gusts?'t-rd':h.wind_speed>=THR.wind_speed?'t-yw':'t-gn';
+    const gc = h.wind_gusts>=THR.wind_gusts?'t-rd':h.wind_gusts>=15?'t-yw':'';
+    const vc = h.wave_height>=THR.wave_height?'t-rd':h.wave_height>=1.2?'t-yw':'t-gn';
+    const vis= h.visibility_km<=THR.visibility?'t-rd':h.visibility_km<=3?'t-yw':'t-mu';
+    const dir= h.wind_direction!=null ? `${Math.round(h.wind_direction)}° ${toCompass(h.wind_direction)}` : '--';
+    return `<tr class="${rc} ${nc}">
+      <td class="t-time">${h.time.slice(0,16).replace('T',' ')}${i===0?' ▶':''}</td>
+      <td class="t-num ${wc}">${fmt(h.wind_speed)}</td>
+      <td class="t-num ${gc}">${fmt(h.wind_gusts)}</td>
+      <td class="t-num t-mu">${dir}</td>
+      <td class="t-num ${vc}">${fmt(h.wave_height)}</td>
+      <td class="t-num ${h.precipitation>=5?'t-rd':h.precipitation>=2?'t-yw':'t-mu'}">${fmt(h.precipitation)}</td>
+      <td class="t-num ${vis}">${fmt(h.visibility_km)}</td>
+      <td>${PILL[h.status]||''}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══ TABS ═══
+function switchTab(h, el){
+  showHours = h;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if(allForecast.length) buildTable(allForecast.slice(0,h));
+}
+
+// ═══ CARD HELPER ═══
+function setCard(cardId, valId, val, level){
+  document.getElementById(valId).textContent = fmt(val);
+  const card = document.getElementById(cardId);
+  card.className = 'card '+level;
+  card.querySelectorAll('.card-badge').forEach(b=>b.remove());
+  if(level!=='ok'){
+    const b = document.createElement('div');
+    b.className = 'card-badge '+(level==='danger'?'badge-danger':'badge-warn');
+    b.textContent = level==='danger'?'კრიტიკული':'ყურადღება';
+    card.appendChild(b);
+  }
+}
+function setBar(id,ratio,color){
+  const el=document.getElementById(id);
+  el.style.width=Math.min(ratio*100,100).toFixed(1)+'%';
+  el.className='bar-fill bar-'+color;
+}
+
+// ═══ AUTO-REFRESH ══
