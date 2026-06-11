@@ -2,59 +2,48 @@
 <html lang="ka">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ფოთის პორტი — კონსენსუს-პორტალი</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-    body { background: #0a0e17; color: #e5e7eb; font-family: sans-serif; padding: 20px; }
-    .card { background: #111827; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 16px; margin: 10px; display: inline-block; min-width: 200px; }
-    .label { font-size: 11px; color: #9ca3af; text-transform: uppercase; }
-    .value { font-size: 24px; font-weight: bold; margin: 5px 0; }
+    body { background: #0a0e17; color: #e5e7eb; font-family: sans-serif; }
+    .card { background: #111827; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 20px; }
+    .card-label { font-size: 11px; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.05em; }
+    .card-value { font-size: 28px; font-weight: 700; margin-top: 5px; color: #fff; }
 </style>
 </head>
-<body>
-    <h1 class="text-xl mb-5">ფოთის პორტი — ამინდის მონიტორინგი</h1>
+<body class="p-8">
+    <h1 class="text-xl font-bold mb-6">⚓ ფოთის პორტი — ამინდის მონიტორინგი</h1>
     
-    <div id="dashboard">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl">
         <div class="card">
-            <div class="label">ტემპერატურა</div>
-            <div class="value" id="c-temp">--</div>
-            <div class="label">°C</div>
+            <div class="card-label">ტემპერატურა</div>
+            <div class="card-value" id="c-temp">--</div>
+            <div class="text-sm text-gray-500">°C</div>
         </div>
         <div class="card">
-            <div class="label">ქარის სიჩქარე</div>
-            <div class="value" id="c-wind">--</div>
-            <div class="label">მ/წმ</div>
+            <div class="card-label">ქარის სიჩქარე</div>
+            <div class="card-value" id="c-wind">--</div>
+            <div class="text-sm text-gray-500">მ/წმ</div>
         </div>
         <div class="card">
-            <div class="label">ხილვადობა</div>
-            <div class="value" id="c-vis">--</div>
-            <div class="label">კმ</div>
+            <div class="label" style="font-size: 11px; color: #9ca3af; text-transform: uppercase;">ხილვადობა</div>
+            <div class="card-value" id="c-vis">--</div>
+            <div class="text-sm text-gray-500">კმ</div>
         </div>
     </div>
-<script>
-    async function loadData() {
-        try {
-            const response = await fetch('data.json?t=' + new Date().getTime());
-            const data = await response.json();
-            
-            // დავბეჭდოთ კონსოლში, რომ ვნახოთ ზუსტად რა მოვიდა
-            console.log("მთლიანი მონაცემები:", data);
-            
-            const c = data.current;
-            
-            // შევამოწმოთ ცვლადები
-            if (c) {
-                document.getElementById('c-temp').textContent = c.temperature_2m ? c.temperature_2m.toFixed(1) : 'Err';
-                document.getElementById('c-wind').textContent = c.wind_speed ? c.wind_speed.toFixed(1) : 'Err';
-                document.getElementById('c-vis').textContent = c.visibility_km ? c.visibility_km.toFixed(1) : 'Err';
-            }
-        } catch (error) {
-            console.error("შეცდომა:", error);
-            document.getElementById('c-temp').textContent = 'Fail';
+
+    <script>
+        async function loadData() {
+            try {
+                const res = await fetch('data.json?t=' + Date.now());
+                const data = await res.json();
+                const c = data.current;
+                document.getElementById('c-temp').textContent = c.temperature_2m.toFixed(1);
+                document.getElementById('c-wind').textContent = c.wind_speed.toFixed(1);
+                document.getElementById('c-vis').textContent = c.visibility_km.toFixed(1);
+            } catch (e) { console.error(e); }
         }
-    }
-    loadData();
-</script>
+        loadData();
+    </script>
 </body>
 </html>
