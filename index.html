@@ -443,7 +443,7 @@ function buildTable(fc){
     const vis= h.visibility_km<=THR.visibility?'t-rd':h.visibility_km<=3?'t-yw':'t-mu';
     const dir= h.wind_direction!=null ? `${Math.round(h.wind_direction)}° ${toCompass(h.wind_direction)}` : '--';
     return `<tr class="${rc} ${nc}">
-      <td class="t-time">${h.time.slice(5,16).replace('T',' ')}${i===0?' ▶':''}</td>
+      <td class="t-time">${h.time.slice(0,16).replace('T',' ')}${i===0?' ▶':''}</td>
       <td class="t-num ${wc}">${fmt(h.wind_speed)}</td>
       <td class="t-num ${gc}">${fmt(h.wind_gusts)}</td>
       <td class="t-num t-mu">${dir}</td>
