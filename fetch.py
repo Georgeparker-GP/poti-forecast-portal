@@ -38,11 +38,21 @@ def _session():
     return s
 
 requests_session = _session()
+
+# ── ლოკაცია: ფოთის პორტი (შავი ზღვა, რიონის შესართავი) ──
+LOCATION = {
+    "name":     "ფოთის პორტი",
+    "lat":      42.15,          # 42.15° N
+    "lon":      41.64,          # 41.64° E — სანაპიროზე/ოდნავ ზღვაში (marine მონაცემებისთვის)
+    "timezone": "Asia/Tbilisi",
+}
+
 FORECAST_HOURS      = 48
 REQUEST_TIMEOUT     = 15
 OUTPUT_FILE         = "data.json"
 STORMGLASS_CACHE    = "stormglass_cache.json"
 YR_NO_CACHE         = "yr_cache.json"
+STATUS_CACHE        = "status_cache.json"
 STORMGLASS_INTERVAL = 3
 YR_NO_INTERVAL      = 1   # yr.no ყოველ საათში განახლდება
 
