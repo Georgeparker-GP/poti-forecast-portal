@@ -25,14 +25,19 @@
 import json, math, os, logging
 from datetime import datetime, timedelta, timezone
 
-import requests from requests.adapters import HTTPAdapter from urllib3.util.retry import Retry  def _session():     s = requests.Session()     retry = Retry(total=3, backoff_factor=2,                   status_forcelist=[429, 500, 502, 503, 504])     s.mount("https://", HTTPAdapter(max_retries=retry))     return s requests_session = _session() from requests.adapters import HTTPAdapter from urllib3.util.retry import Retry  def _session():     s = requests.Session()     retry = Retry(total=3, backoff_factor=2,                   status_forcelist=[429, 500, 502, 503, 504])     s.mount("https://", HTTPAdapter(max_retries=retry))     return s requests_session = _session() from requests.adapters import HTTPAdapter from urllib3.util.retry import Retry  def _session():     s = requests.Session()     retry = Retry(total=3, backoff_factor=2,                   status_forcelist=[429, 500, 502, 503, 504])     s.mount("https://", HTTPAdapter(max_retries=retry))     return s requests_session = _session() from requests.adapters import HTTPAdapter from urllib3.util.retry import Retry  def _session():     s = requests.Session()     retry = Retry(total=3, backoff_factor=2,                   status_forcelist=[429, 500, 502, 503, 504])     s.mount("https://", HTTPAdapter(max_retries=retry))     return s requests_session = _session()
+import requests
+import urllib3
+urllib3.disable_warnings()
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-# ─────────────────────────────────────────────
-LOCATION = {"name": "ფოთის პორტი", "lat": 42.15, "lon": 41.67, "timezone": "Asia/Tbilisi"}
+def _session():
+    s = requests.Session()
+    r = Retry(total=3, backoff_factor=2)
+    s.mount("https://", HTTPAdapter(max_retries=r))
+    return s
 
-FORECAST_HOURS      = 48
-REQUEST_TIMEOUT     = 15
-OUTPUT_FILE         = "data.json"
+requests_session = _session()
 STATUS_CACHE        = "status_cache.json"
 STORMGLASS_CACHE    = "stormglass_cache.json"
 YR_NO_CACHE         = "yr_cache.json"
