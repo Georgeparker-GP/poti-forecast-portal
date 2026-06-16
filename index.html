@@ -305,7 +305,7 @@ async function loadData(){
     const r = await fetch('data.json?t='+Date.now());
     if(!r.ok) throw new Error(r.status);
     const d = await r.json();
-    allForecast = d.forecast || [];
+    allForecast = d.forecast || d.hourly || [];
     render(d);
   } catch(e){
     document.getElementById('status-text').textContent =
@@ -321,12 +321,12 @@ function render(d){
   // header
   document.getElementById('update-time').textContent  = m.last_update;
   document.getElementById('next-time').textContent    = 'შემდეგი: '+m.next_update;
-  document.getElementById('sources-line').textContent = m.sources_used.join(' · ');
-  document.getElementById('tbl-sources').textContent  = 'წყაროები: '+m.sources_used.join(', ');
+  document.getElementById('sources-line').textContent = (m.sources_used || m.sources || []).join(' · ');
+  document.getElementById('tbl-sources').textContent  = 'წყაროები: '+(m.sources_used || m.sources || []).join(', ');
   document.getElementById('coords-lbl').textContent   = m.lat+'°N '+m.lon+'°E · '+m.forecast_hours+'h';
 
   const chips = document.getElementById('source-chips');
-  chips.innerHTML = m.sources_used.map(s=>`<div class="chip"><div class="dot"></div>${s}</div>`).join('');
+  chips.innerHTML = (m.sources_used || m.sources || []).map(s=>`<div class="chip"><div class="dot"></div>${s}</div>`).join('');
 
   // status bar
   const sb = document.getElementById('status-bar');
@@ -368,7 +368,7 @@ function render(d){
   document.getElementById('c-wdir-sym').textContent = toCompass(deg);
 
   // summary
-  const fc = d.forecast || [];
+  const fc = d.forecast || d.hourly || [];
   const susp = fc.filter(h=>h.status==='suspended').length;
   const warn = fc.filter(h=>h.status==='warning').length;
   document.getElementById('s-stop').textContent = susp+'h';
