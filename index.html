@@ -253,7 +253,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="ops-dot" style="background:var(--gn);width:12px;height:12px;"></div>
       <div>
         <div class="ops-text" id="ops-vessel-text" style="font-size:13px;">გემების მანევრირება — ნებადართული</div>
-        <div class="ops-sub" id="ops-vessel-sub">შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ</div>
+        <div class="ops-sub" id="ops-vessel-sub">შეზღუდვები: ბორნი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ</div>
       </div>
     </div>
   </div>
@@ -265,7 +265,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="card-label">ქარის სიჩქარე</div>
       <div class="card-value" id="c-wind">--</div>
       <div class="card-unit">მ/წმ</div>
-      <div class="card-sub">დაქროლვა: <span id="c-gusts" class="mono">--</span> მ/წმ</div>
+      <div class="card-sub">გუსტი: <span id="c-gusts" class="mono">--</span> მ/წმ</div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wind" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-wave">
@@ -332,7 +332,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           <span id="s-vessel" class="mono" style="color:#fdb57a;font-weight:700">--h</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;">
-          <span style="color:var(--sb)">🟡 ბორანი</span>
+          <span style="color:var(--sb)">🟡 ბორნი</span>
           <span id="s-barge" class="mono" style="color:#fde880;font-weight:700">--h</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;">
@@ -344,7 +344,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           <span id="s-mw" class="mono" style="color:var(--tl)">--მ</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:11px;">
-          <span style="color:var(--sb)">დაქროლვა მაქს</span>
+          <span style="color:var(--sb)">გუსტი მაქს</span>
           <span id="s-mg" class="mono" style="color:var(--tl)">-- მ/წმ</span>
         </div>
       </div>
@@ -411,7 +411,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           <tr>
             <th>დრო</th>
             <th>ქარი მ/წმ</th>
-            <th>დაქროლვა</th>
+            <th>გუსტი</th>
             <th>მიმართ.</th>
             <th>ტალღა მ</th>
             <th>წვიმა</th>
@@ -439,7 +439,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 <script>
 // ═══ CONSTANTS ═══
 const THR = {
-  barge:     10.0,   // ბორანის შეზღუდვა
+  barge:     10.0,   // ბორნის შეზღუდვა
   vessel:    17.0,   // გემების მანევრირება
   suspended: 21.5,   // ამწე + გემების გასვლა
   wave:       2.0,   // ტალღა → გემების გასვლა
@@ -452,6 +452,28 @@ function fmt(v,n=2){ return v!=null ? Number(v).toFixed(n) : '--'; }
 
 let allForecast = [];
 let showHours   = 24;
+let nowIndex    = 0;
+
+// მონაცემები Asia/Tbilisi დროით (UTC+4) — ვპოულობთ "ახლა" საათს
+function findNowIndex(fc) {
+  if (!fc.length) return 0;
+  const nowUtcMs   = Date.now();
+  const tbilisiMs  = nowUtcMs + 4*60*60*1000;
+  const d          = new Date(tbilisiMs);
+  const y  = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth()+1).padStart(2,'0');
+  const da = String(d.getUTCDate()).padStart(2,'0');
+  const hh = String(d.getUTCHours()).padStart(2,'0');
+  const nowStr = `${y}-${mo}-${da}T${hh}:00`;
+
+  // ვპოულობთ ბოლო ჩანაწერს, რომლის დროც <= ახლანდელ საათს
+  let idx = 0;
+  for (let i=0; i<fc.length; i++) {
+    const t = fc[i].time.slice(0,16);
+    if (t <= nowStr) idx = i; else break;
+  }
+  return idx;
+}
 
 // ═══ COMPUTE STATUS ═══
 function computeStatus(h) {
@@ -473,13 +495,13 @@ function computeStatus(h) {
 // ═══ STATUS LABELS ═══
 const STATUS_LBL = {
   operational: 'პორტი — სრული საოპერაციო რეჟიმი',
-  barge:       'ბორანის მანევრირება შეზღუდულია',
+  barge:       'ბორნის მანევრირება შეზღუდულია',
   vessel:      'გემების მანევრირება შეზღუდულია',
   suspended:   'ამწე + გემების გასვლა შეჩერებულია',
 };
 const PILL = {
   operational: '<span class="pill pill-op">სრული ოპ.</span>',
-  barge:       '<span class="pill pill-bg">ბორანი ↓</span>',
+  barge:       '<span class="pill pill-bg">ბორნი ↓</span>',
   vessel:      '<span class="pill pill-vs">გემ. ↓</span>',
   suspended:   '<span class="pill pill-sus">შეჩერება</span>',
 };
@@ -547,11 +569,11 @@ function render(d) {
   } else if (w >= THR.barge) {
     vesselLevel = 'warn';
     vesselText  = 'გემების მანევრირება — ნებადართული';
-    vesselSub   = '⚠ ბორანის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
+    vesselSub   = '⚠ ბორნის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
   } else {
     vesselLevel = 'ok';
     vesselText  = 'გემების მანევრირება — ნებადართული';
-    vesselSub   = 'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ';
+    vesselSub   = 'შეზღუდვები: ბორნი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ';
   }
 
   setOps('ops-vessel', vesselLevel, vesselText);
@@ -599,8 +621,9 @@ function render(d) {
   document.getElementById('s-mg').textContent     = fmt(Math.max(...fc.map(h=>h.wind_gusts||0)))+' მ/წმ';
 
   allForecast = fc;
+  nowIndex = findNowIndex(fc);
   buildChart(fc);
-  buildTable(fc.slice(0,showHours));
+  buildTable(fc.slice(nowIndex, nowIndex+showHours));
 }
 
 // ═══ OPS PANEL HELPER ═══
@@ -633,8 +656,8 @@ function buildChart(fc) {
   document.getElementById('thresh-barge').setAttribute('y1', yW(THR.barge));
   document.getElementById('thresh-barge').setAttribute('y2', yW(THR.barge));
 
-  document.getElementById('now-line').setAttribute('x1', xOf(0));
-  document.getElementById('now-line').setAttribute('x2', xOf(0));
+  document.getElementById('now-line').setAttribute('x1', xOf(nowIndex));
+  document.getElementById('now-line').setAttribute('x2', xOf(nowIndex));
   if(fc[24]) {
     const d2x = xOf(24);
     document.getElementById('day2-line').setAttribute('x1', d2x);
@@ -695,7 +718,7 @@ function switchTab(h,el){
   showHours=h;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  if(allForecast.length) buildTable(allForecast.slice(0,h));
+  if(allForecast.length) buildTable(allForecast.slice(nowIndex, nowIndex+h));
 }
 function setCard(cardId,valId,val,level){
   document.getElementById(valId).textContent = fmt(val);
