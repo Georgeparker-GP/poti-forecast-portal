@@ -7,79 +7,214 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0e17;--sf:#111827;--br:rgba(255,255,255,0.07);--mu:#4b5563;--tx:#e5e7eb;--sb:#9ca3af;--gn:#10b981;--yw:#f59e0b;--rd:#ef4444;--bl:#3b82f6;--tl:#14b8a6;}
+:root {
+  --bg:       #0d1821;
+  --bg2:      #132032;
+  --sf:       rgba(255,255,255,0.06);
+  --sf2:      rgba(255,255,255,0.1);
+  --br:       rgba(255,255,255,0.1);
+  --tx:       #e8f0f8;
+  --sb:       #8da8c4;
+  --mu:       #4a6278;
+  --gn:       #2dd4a0;
+  --gn2:      #0d9e72;
+  --yw:       #f5c842;
+  --or:       #f5923a;
+  --rd:       #f55a5a;
+  --bl:       #5b9cf5;
+  --tl:       #38d9d9;
+  --ac:       #5b9cf5;
+}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Noto Sans Georgian',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;}
+body {
+  font-family:'Noto Sans Georgian',sans-serif;
+  background:var(--bg);
+  color:var(--tx);
+  min-height:100vh;
+  font-size:14px;
+  position:relative;
+  overflow-x:hidden;
+}
+
+/* ── ფონის ფოტო ── */
+.bg-photo {
+  position:fixed;
+  inset:0;
+  background-image: url('main-image-poti.webp');
+  background-size:cover;
+  background-position:center 40%;
+  opacity:0.07;
+  z-index:0;
+  pointer-events:none;
+}
+.bg-overlay {
+  position:fixed;
+  inset:0;
+  background: linear-gradient(180deg, var(--bg) 0%, transparent 30%, transparent 70%, var(--bg) 100%);
+  z-index:0;
+  pointer-events:none;
+}
+
 .mono{font-family:'JetBrains Mono',monospace;}
-header{background:var(--sf);border-bottom:1px solid var(--br);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.rel{position:relative;z-index:1;}
+
+/* ── HEADER ── */
+header{
+  position:relative;z-index:10;
+  background:rgba(13,24,33,0.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--br);
+  padding:12px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
 .logo{display:flex;align-items:center;gap:12px;}
-.logo-icon{width:36px;height:36px;border:1px solid rgba(59,130,246,0.4);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(59,130,246,0.08);}
-.logo h1{font-size:15px;font-weight:600;}
-.logo p{font-size:11px;color:var(--sb);margin-top:1px;}
-.status-bar{padding:10px 24px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;border-bottom:1px solid var(--br);transition:background .4s;flex-wrap:wrap;}
-.status-bar.operational{background:rgba(16,185,129,0.06);color:#6ee7b7;}
-.status-bar.warning{background:rgba(245,158,11,0.06);color:#fcd34d;}
-.status-bar.suspended{background:rgba(239,68,68,0.06);color:#fca5a5;}
-.pulse{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.operational .pulse{background:var(--gn);box-shadow:0 0 6px var(--gn);}
-.warning .pulse{background:var(--yw);box-shadow:0 0 6px var(--yw);animation:blink 1.2s infinite;}
-.suspended .pulse{background:var(--rd);box-shadow:0 0 6px var(--rd);animation:blink .8s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-main{max-width:1280px;margin:0 auto;padding:20px 24px;display:flex;flex-direction:column;gap:20px;}
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
-.card{background:var(--sf);border:1px solid var(--br);border-radius:10px;padding:16px;position:relative;overflow:hidden;}
-.card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:10px 0 0 10px;}
-.card.ok::before{background:var(--gn)}.card.warn::before{background:var(--yw)}.card.danger::before{background:var(--rd)}.card.neutral::before{background:var(--mu)}.card.teal::before{background:var(--tl)}
-.card-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--sb);}
-.card-value{font-size:28px;font-weight:700;margin:6px 0 2px;font-family:'JetBrains Mono',monospace;line-height:1;}
+.logo-icon{
+  width:40px;height:40px;
+  border:1px solid rgba(91,156,245,0.5);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  background:rgba(91,156,245,0.1);
+  box-shadow:0 0 16px rgba(91,156,245,0.15);
+}
+.logo h1{font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em;}
+.logo p{font-size:11px;color:var(--sb);margin-top:2px;}
+
+/* ── STATUS BAR ── */
+.status-bar{
+  position:relative;z-index:10;
+  padding:10px 24px;
+  display:flex;align-items:center;gap:12px;
+  font-size:13px;font-weight:600;
+  border-bottom:1px solid var(--br);
+  flex-wrap:wrap;
+  backdrop-filter:blur(8px);
+  transition:background .4s;
+}
+.status-bar.operational {background:rgba(45,212,160,0.08);color:#7ef5d0;}
+.status-bar.barge       {background:rgba(245,200,66,0.08);color:#fde880;}
+.status-bar.vessel      {background:rgba(245,146,58,0.08);color:#fdb57a;}
+.status-bar.suspended   {background:rgba(245,90,90,0.08);color:#ffaaaa;}
+
+.pulse{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.operational .pulse{background:var(--gn);box-shadow:0 0 8px var(--gn);}
+.barge .pulse  {background:var(--yw);box-shadow:0 0 8px var(--yw);animation:blink 1.4s infinite;}
+.vessel .pulse {background:var(--or);box-shadow:0 0 8px var(--or);animation:blink 1s infinite;}
+.suspended .pulse{background:var(--rd);box-shadow:0 0 8px var(--rd);animation:blink 0.7s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
+
+/* ── MAIN ── */
+main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24px;display:flex;flex-direction:column;gap:18px;}
+
+/* ── CARDS ── */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;}
+.card{
+  background:rgba(19,32,50,0.85);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--br);
+  border-radius:12px;
+  padding:16px;
+  position:relative;overflow:hidden;
+  transition:border-color .3s;
+}
+.card:hover{border-color:rgba(255,255,255,0.2);}
+.card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:12px 0 0 12px;}
+.card.ok::before    {background:var(--gn);}
+.card.warn::before  {background:var(--yw);}
+.card.alert::before {background:var(--or);}
+.card.danger::before{background:var(--rd);}
+.card.neutral::before{background:var(--mu);}
+.card.teal::before  {background:var(--tl);}
+
+.card-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--sb);font-weight:500;}
+.card-value{font-size:30px;font-weight:700;margin:6px 0 2px;font-family:'JetBrains Mono',monospace;line-height:1;color:#fff;}
 .card-unit{font-size:12px;color:var(--sb);}
-.card-sub{font-size:11px;color:var(--sb);margin-top:4px;}
-.card-badge{position:absolute;top:12px;right:12px;font-size:10px;font-weight:600;padding:3px 7px;border-radius:4px;letter-spacing:.05em;}
-.badge-ok{background:rgba(16,185,129,.12);color:#6ee7b7}.badge-warn{background:rgba(245,158,11,.12);color:#fcd34d}.badge-danger{background:rgba(239,68,68,.12);color:#fca5a5}
-.bar-wrap{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:10px;}
+.card-sub{font-size:11px;color:var(--sb);margin-top:5px;}
+.card-badge{
+  position:absolute;top:12px;right:12px;
+  font-size:9px;font-weight:700;padding:3px 7px;
+  border-radius:5px;letter-spacing:.05em;text-transform:uppercase;
+}
+.badge-ok    {background:rgba(45,212,160,.15);color:#7ef5d0;}
+.badge-warn  {background:rgba(245,200,66,.15);color:#fde880;}
+.badge-alert {background:rgba(245,146,58,.15);color:#fdb57a;}
+.badge-danger{background:rgba(245,90,90,.15);color:#ffaaaa;}
+
+.bar-wrap{height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:10px;}
 .bar-fill{height:3px;border-radius:2px;transition:width .8s ease;}
-.bar-green{background:var(--gn)}.bar-yellow{background:var(--yw)}.bar-red{background:var(--rd)}
-.strip{background:var(--sf);border:1px solid var(--br);border-radius:10px;padding:14px 20px;display:flex;gap:0;flex-wrap:wrap;}
-.strip-item{flex:1;min-width:100px;padding:0 16px;border-right:1px solid var(--br);text-align:center;}
-.strip-item:first-child{padding-left:0}.strip-item:last-child{border-right:none;padding-right:0}
-.strip-num{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;}
-.strip-lbl{font-size:10px;color:var(--sb);margin-top:2px;}
-.panel{background:var(--sf);border:1px solid var(--br);border-radius:10px;overflow:hidden;}
+.bar-gn{background:var(--gn)}.bar-yw{background:var(--yw)}.bar-or{background:var(--or)}.bar-rd{background:var(--rd)}
+
+/* ── STATUS PANEL ── */
+.ops-panel{
+  background:rgba(19,32,50,0.85);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--br);
+  border-radius:12px;
+  padding:16px 20px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:12px;
+}
+.ops-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.03);
+}
+.ops-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.ops-text{font-size:12px;font-weight:500;}
+.ops-sub{font-size:10px;color:var(--sb);margin-top:2px;}
+
+/* ── CHART ── */
+.panel{
+  background:rgba(19,32,50,0.85);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--br);
+  border-radius:12px;overflow:hidden;
+}
 .panel-head{padding:14px 20px;border-bottom:1px solid var(--br);display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-.panel-head h3{font-size:14px;font-weight:600;}
+.panel-head h3{font-size:14px;font-weight:600;color:#fff;}
 .panel-head p{font-size:11px;color:var(--sb);}
 svg.chart{width:100%;overflow:visible;}
+
+/* ── TABLE ── */
+.tabs{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--br);}
+.tab{padding:9px 16px;font-size:12px;font-weight:500;color:var(--sb);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--bl);border-bottom-color:var(--bl);}
 .tbl{width:100%;border-collapse:collapse;}
 .tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--sb);font-weight:500;padding:10px 12px;text-align:left;border-bottom:1px solid var(--br);background:rgba(255,255,255,.02);}
-.tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.03);}
+.tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);}
 .tbl tr:last-child td{border-bottom:none}
-.tbl tr.row-danger{background:rgba(239,68,68,.04)}.tbl tr.row-warn{background:rgba(245,158,11,.03)}
+.tbl tr.row-suspended{background:rgba(245,90,90,.05);}
+.tbl tr.row-vessel   {background:rgba(245,146,58,.04);}
+.tbl tr.row-barge    {background:rgba(245,200,66,.03);}
 .tbl tr.row-now td:first-child{border-left:2px solid var(--tl);padding-left:10px;}
 .t-time{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sb);}
 .t-num{font-family:'JetBrains Mono',monospace;font-size:12px;}
-.t-rd{color:#fca5a5;font-weight:600}.t-yw{color:#fcd34d;font-weight:600}.t-gn{color:#6ee7b7}.t-mu{color:var(--sb)}
-.pill{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.05em;padding:3px 8px;border-radius:4px;}
-.pill-ok{background:rgba(16,185,129,.12);color:#6ee7b7}.pill-warn{background:rgba(245,158,11,.12);color:#fcd34d}.pill-danger{background:rgba(239,68,68,.15);color:#fca5a5}
-.meta-strip{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--sb);padding:8px 0 4px;}
-.chip{background:var(--sf);border:1px solid var(--br);border-radius:6px;padding:4px 10px;display:flex;align-items:center;gap:6px;}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--tl);}
-footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:1px solid var(--br);margin-top:8px;}
+.t-rd{color:#ffaaaa;font-weight:600}.t-or{color:#fdb57a;font-weight:600}.t-yw{color:#fde880;font-weight:600}.t-gn{color:#7ef5d0}.t-mu{color:var(--sb)}
+.pill{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:5px;text-transform:uppercase;}
+.pill-op  {background:rgba(45,212,160,.12);color:#7ef5d0;}
+.pill-bg  {background:rgba(245,200,66,.12);color:#fde880;}
+.pill-vs  {background:rgba(245,146,58,.15);color:#fdb57a;}
+.pill-sus {background:rgba(245,90,90,.15);color:#ffaaaa;}
 
-/* ──── ქარის ვარდი ──── */
-.wind-rose-wrap{display:flex;gap:16px;align-items:center;}
+.meta-strip{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--sb);padding:6px 0;}
+.chip{background:rgba(255,255,255,.05);border:1px solid var(--br);border-radius:6px;padding:4px 10px;display:flex;align-items:center;gap:6px;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--tl);}
+footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:1px solid var(--br);margin-top:8px;position:relative;z-index:1;}
+
+/* ── compass ── */
 .compass-wrap{flex-shrink:0;}
+.wind-rose-wrap{display:flex;gap:16px;align-items:center;margin-top:10px;}
 .compass-info{display:flex;flex-direction:column;gap:6px;}
 .compass-row{font-size:12px;color:var(--sb);}
-.compass-row span{color:var(--tx);font-weight:600;}
-
-/* ──── tab-ები ──── */
-.tabs{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--br);}
-.tab{padding:10px 16px;font-size:12px;font-weight:500;color:var(--sb);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
-.tab.active{color:var(--bl);border-bottom-color:var(--bl);}
-.tab-content{display:none;}.tab-content.active{display:block;}
+.compass-row span{color:#fff;font-weight:600;}
 </style>
 </head>
 <body>
+<div class="bg-photo"></div>
+<div class="bg-overlay"></div>
 
 <header>
   <div class="logo">
@@ -90,105 +225,134 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     </div>
   </div>
   <div style="text-align:right;flex-shrink:0">
-    <div style="font-size:11px;color:var(--sb)">ბოლო განახლება</div>
-    <div id="update-time" class="mono" style="font-size:13px;color:var(--bl);margin-top:2px">--:--</div>
+    <div style="font-size:10px;color:var(--sb)">ბოლო განახლება</div>
+    <div id="update-time" class="mono" style="font-size:14px;color:var(--bl);margin-top:2px;font-weight:600">--:--</div>
     <div id="next-time" style="font-size:10px;color:var(--mu);margin-top:1px">შემდეგი: ---</div>
+    <div style="font-size:10px;color:var(--mu);margin-top:2px">განახლება: <span id="cd" style="color:var(--tl)">60</span>წმ</div>
   </div>
 </header>
 
 <div id="status-bar" class="status-bar operational">
   <div class="pulse"></div>
   <span id="status-text">სტატუსი იტვირთება...</span>
-  <div id="alert-items" style="margin-left:12px;display:flex;gap:10px;flex-wrap:wrap;"></div>
-  <span style="margin-left:auto;font-size:11px;color:var(--mu)">განახლება: <span id="cd" style="color:var(--tl)">60</span>წმ</span>
+  <div id="alert-items" style="margin-left:8px;display:flex;gap:10px;flex-wrap:wrap;font-weight:400;font-size:12px;"></div>
 </div>
 
 <main>
 
-  <!-- ბარათები -->
-  <div class="cards-grid">
+  <!-- ოპერაციული სტატუს-პანელი -->
+  <div class="ops-panel rel">
+    <div class="ops-item" id="ops-cranes">
+      <div class="ops-dot" style="background:var(--gn)"></div>
+      <div>
+        <div class="ops-text" id="ops-cranes-text">ამწე — ოპერაციული</div>
+        <div class="ops-sub">შეზღუდვა: ≥ 21.5 მ/წმ</div>
+      </div>
+    </div>
+    <div class="ops-item" id="ops-barge">
+      <div class="ops-dot" style="background:var(--gn)"></div>
+      <div>
+        <div class="ops-text" id="ops-barge-text">ბორნი — ოპერაციული</div>
+        <div class="ops-sub">შეზღუდვა: ≥ 10 მ/წმ</div>
+      </div>
+    </div>
+    <div class="ops-item" id="ops-vessel">
+      <div class="ops-dot" style="background:var(--gn)"></div>
+      <div>
+        <div class="ops-text" id="ops-vessel-text">გემების მანევრირება — თავისუფალი</div>
+        <div class="ops-sub">შეზღუდვა: ≥ 17 მ/წმ</div>
+      </div>
+    </div>
+    <div class="ops-item" id="ops-departure">
+      <div class="ops-dot" style="background:var(--gn)"></div>
+      <div>
+        <div class="ops-text" id="ops-departure-text">გემების გასვლა — ნებადართული</div>
+        <div class="ops-sub">შეზღუდვა: ≥ 21.5 მ/წმ | ≥ 2.0მ | ≤ 0.1კმ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- მეტრიკის ბარათები -->
+  <div class="cards-grid rel">
     <div class="card neutral" id="card-wind">
       <div class="card-label">ქარის სიჩქარე</div>
       <div class="card-value" id="c-wind">--</div>
       <div class="card-unit">მ/წმ</div>
       <div class="card-sub">გუსტი: <span id="c-gusts" class="mono">--</span> მ/წმ</div>
-      <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-wind" style="width:0%"></div></div>
+      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wind" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-wave">
       <div class="card-label">ტალღის სიმაღლე</div>
       <div class="card-value" id="c-wave">--</div>
       <div class="card-unit">მეტრი</div>
       <div class="card-sub">პერიოდი: <span id="c-period" class="mono">--</span>წმ | ჭანჭ: <span id="c-swell" class="mono">--</span>მ</div>
-      <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-wave" style="width:0%"></div></div>
+      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wave" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-vis">
       <div class="card-label">ხილვადობა</div>
       <div class="card-value" id="c-vis">--</div>
       <div class="card-unit">კმ</div>
-      <div class="card-sub">ნისლის ზღვარი: 1.0 კმ</div>
-      <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-vis" style="width:0%"></div></div>
+      <div class="card-sub">ნისლის ზღვარი: 0.1 კმ</div>
+      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-rain">
       <div class="card-label">ნალექი</div>
       <div class="card-value" id="c-rain">--</div>
       <div class="card-unit">მმ/სთ</div>
       <div class="card-sub">წყლის ტემპ: <span id="c-wtemp" class="mono">--</span>°C</div>
-      <div class="bar-wrap"><div class="bar-fill bar-green" id="bar-rain" style="width:0%"></div></div>
+      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-rain" style="width:0%"></div></div>
     </div>
 
     <!-- ქარის ვარდი -->
     <div class="card teal" style="grid-column:span 2">
       <div class="card-label">ქარის მიმართულება</div>
-      <div class="wind-rose-wrap" style="margin-top:10px">
-        <div class="compass-wrap">
-          <svg id="compass-svg" width="110" height="110" viewBox="0 0 110 110">
-            <circle cx="55" cy="55" r="50" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
-            <circle cx="55" cy="55" r="38" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-            <!-- tick marks -->
-            <line x1="55" y1="5"  x2="55" y2="14" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-            <line x1="55" y1="96" x2="55" y2="105" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-            <line x1="5"  y1="55" x2="14"  y2="55" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-            <line x1="96" y1="55" x2="105" y2="55" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-            <!-- labels -->
-            <text x="55" y="19" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">N</text>
-            <text x="55" y="98" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">S</text>
-            <text x="98" y="58" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">E</text>
-            <text x="12" y="58" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">W</text>
-            <!-- arrow group — rotates -->
-            <g id="compass-arrow" transform="rotate(0,55,55)">
-              <!-- N (წითელი) -->
-              <polygon points="55,14 51,55 59,55" fill="#ef4444" opacity="0.9"/>
-              <!-- S (ბნელი) -->
-              <polygon points="55,96 51,55 59,55" fill="rgba(255,255,255,0.15)"/>
-              <circle cx="55" cy="55" r="4" fill="var(--bg)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-            </g>
-          </svg>
-        </div>
+      <div class="wind-rose-wrap">
+        <svg id="compass-svg" width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <circle cx="55" cy="55" r="35" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="55" y1="5"  x2="55" y2="15"  stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <line x1="55" y1="95" x2="55" y2="105" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <line x1="5"  y1="55" x2="15"  y2="55" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <line x1="95" y1="55" x2="105" y2="55" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <text x="55" y="20" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">N</text>
+          <text x="55" y="100" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">S</text>
+          <text x="100" y="58" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">E</text>
+          <text x="10" y="58" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">W</text>
+          <g id="compass-arrow" transform="rotate(0,55,55)">
+            <polygon points="55,14 51,55 59,55" fill="#f55a5a" opacity="0.9"/>
+            <polygon points="55,96 51,55 59,55" fill="rgba(255,255,255,0.15)"/>
+            <circle cx="55" cy="55" r="4" fill="var(--bg)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          </g>
+        </svg>
         <div class="compass-info">
           <div class="compass-row">მიმართ: <span id="c-wdir-deg">--</span>°</div>
-          <div class="compass-row">სიმბოლო: <span id="c-wdir-sym" style="font-size:15px;color:var(--tl)">--</span></div>
-          <div class="compass-row" style="margin-top:4px;font-size:10px;color:var(--mu)">ვარდი მეტეოროლ. კონვ.<br>სადაც ქარი ქრის</div>
+          <div class="compass-row">სიმბოლო: <span id="c-wdir-sym" style="font-size:16px;color:var(--tl)">--</span></div>
+          <div class="compass-row" style="margin-top:6px;font-size:10px;color:var(--mu)">მეტეოროლ. კონვ.<br>საიდან ქრის ქარი</div>
         </div>
       </div>
     </div>
 
-    <!-- 48h სტატისტიკა -->
-    <div class="card neutral" style="grid-column:span 1">
-      <div class="card-label">48h სარეზერვო</div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+    <!-- 48h სტატ -->
+    <div class="card neutral">
+      <div class="card-label">48h შეჯამება</div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px;">
         <div style="display:flex;justify-content:space-between;font-size:12px;">
-          <span style="color:var(--sb)">შეჩერება</span>
-          <span id="s-stop" class="mono" style="color:#fca5a5;font-weight:700">--h</span>
+          <span style="color:var(--sb)">🚨 შეჩერება</span>
+          <span id="s-stop" class="mono" style="color:#ffaaaa;font-weight:700">--h</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;">
-          <span style="color:var(--sb)">სიფრთხილე</span>
-          <span id="s-warn" class="mono" style="color:#fcd34d;font-weight:700">--h</span>
+          <span style="color:var(--sb)">🟠 გემ. მანევრ.</span>
+          <span id="s-vessel" class="mono" style="color:#fdb57a;font-weight:700">--h</span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;">
-          <span style="color:var(--sb)">ოპერაციული</span>
-          <span id="s-op" class="mono" style="color:#6ee7b7;font-weight:700">--h</span>
+          <span style="color:var(--sb)">🟡 ბორნი</span>
+          <span id="s-barge" class="mono" style="color:#fde880;font-weight:700">--h</span>
         </div>
-        <div style="border-top:1px solid var(--br);padding-top:8px;display:flex;justify-content:space-between;font-size:11px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span style="color:var(--sb)">🟢 სრული ოპ.</span>
+          <span id="s-op" class="mono" style="color:#7ef5d0;font-weight:700">--h</span>
+        </div>
+        <div style="border-top:1px solid var(--br);padding-top:7px;display:flex;justify-content:space-between;font-size:11px;">
           <span style="color:var(--sb)">ტალღა მაქს</span>
           <span id="s-mw" class="mono" style="color:var(--tl)">--მ</span>
         </div>
@@ -201,45 +365,51 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   </div>
 
   <!-- ტრენდ-გრაფიკი -->
-  <div class="panel">
+  <div class="panel rel">
     <div class="panel-head">
       <h3>48-საათიანი ტრენდი</h3>
-      <p>ქარი (ლურჯი) · ტალღა ×5 (ბირთვისფერი) · კრიტ.ზღვარი (წითელი)</p>
+      <p>ქარი (ლურჯი) · ტალღა ×5 (ბირთვისფერი) · საოპერ. ზღვრები</p>
     </div>
     <div style="padding:16px">
       <svg class="chart" id="trend-chart" viewBox="0 0 1000 140" preserveAspectRatio="none">
         <defs>
           <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#3b82f6" stop-opacity=".3"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#5b9cf5" stop-opacity=".35"/>
+            <stop offset="100%" stop-color="#5b9cf5" stop-opacity="0"/>
           </linearGradient>
           <linearGradient id="gV" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#14b8a6" stop-opacity=".25"/><stop offset="100%" stop-color="#14b8a6" stop-opacity="0"/>
+            <stop offset="0%" stop-color="#38d9d9" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="#38d9d9" stop-opacity="0"/>
           </linearGradient>
         </defs>
         <line x1="0" y1="35"  x2="1000" y2="35"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
         <line x1="0" y1="70"  x2="1000" y2="70"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
         <line x1="0" y1="105" x2="1000" y2="105" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-        <!-- day separator (24h mark) -->
+        <!-- ოპერ. ზღვრები -->
+        <line id="thresh-suspended" x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,90,90,0.5)"   stroke-width="1" stroke-dasharray="5,3"/>
+        <line id="thresh-vessel"    x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,146,58,0.4)"  stroke-width="1" stroke-dasharray="3,4"/>
+        <line id="thresh-barge"     x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,200,66,0.35)" stroke-width="1" stroke-dasharray="2,5"/>
         <line id="day2-line" x1="500" y1="0" x2="500" y2="120" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="4,3"/>
-        <text id="day2-label" x="504" y="12" font-size="9" fill="rgba(156,163,175,0.5)" font-family="JetBrains Mono"></text>
-        <line id="thresh-line" x1="0" y1="0" x2="1000" y2="0" stroke="rgba(239,68,68,0.4)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text id="day2-label" x="504" y="12" font-size="9" fill="rgba(140,168,196,0.6)" font-family="JetBrains Mono"></text>
         <path id="area-wind" fill="url(#gW)" d=""/>
         <path id="area-wave" fill="url(#gV)" d=""/>
-        <path id="line-wind" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round" d=""/>
-        <path id="line-wave" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linejoin="round" d=""/>
-        <line id="now-line" x1="0" y1="0" x2="0" y2="120" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,3"/>
-        <g id="chart-labels" font-family="'JetBrains Mono',monospace" font-size="9" fill="rgba(156,163,175,0.7)"></g>
+        <path id="line-wind" fill="none" stroke="#5b9cf5" stroke-width="2" stroke-linejoin="round" d=""/>
+        <path id="line-wave" fill="none" stroke="#38d9d9" stroke-width="2" stroke-linejoin="round" d=""/>
+        <line id="now-line" x1="0" y1="0" x2="0" y2="120" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <g id="chart-labels" font-family="'JetBrains Mono',monospace" font-size="9" fill="rgba(140,168,196,0.7)"></g>
       </svg>
-      <div style="display:flex;gap:16px;margin-top:6px;font-size:11px;color:var(--sb)">
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:#3b82f6;display:inline-block"></span>ქარი მ/წმ</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:#14b8a6;display:inline-block"></span>ტალღა ×5</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:1px;border-top:1px dashed rgba(239,68,68,0.6);display:inline-block;width:14px"></span>კრიტ. 21.5 მ/წმ</span>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--sb);flex-wrap:wrap;">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:#5b9cf5;display:inline-block"></span>ქარი მ/წმ</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:#38d9d9;display:inline-block"></span>ტალღა ×5</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,90,90,0.7);display:inline-block;width:14px"></span>შეჩ. 21.5</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,146,58,0.6);display:inline-block;width:14px"></span>გემ. 17</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,200,66,0.5);display:inline-block;width:14px"></span>ბორ. 10</span>
       </div>
     </div>
   </div>
 
-  <!-- ცხრილი: 24h / 48h tabs -->
-  <div class="panel">
+  <!-- ცხრილი -->
+  <div class="panel rel">
     <div class="panel-head">
       <h3>საათობრივი პროგნოზი</h3>
       <p id="tbl-sources">წყაროები: იტვირთება...</p>
@@ -258,7 +428,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <th>მიმართ.</th>
             <th>ტალღა მ</th>
             <th>წვიმა</th>
-            <th>ხილვადობა</th>
+            <th>ხილვ. კმ</th>
             <th>სტატუსი</th>
           </tr>
         </thead>
@@ -270,28 +440,25 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   </div>
 
   <!-- meta -->
-  <div class="meta-strip">
+  <div class="meta-strip rel">
     <span style="color:var(--mu)">წყაროები:</span>
     <div id="source-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     <span style="margin-left:auto;font-size:10px;color:var(--mu)" id="coords-lbl"></span>
   </div>
-
 </main>
 
 <footer>ფოთის პორტის შიდა საოპერაციო მონიტორინგის სისტემა © 2026 &nbsp;·&nbsp; 48h კონსენსუს-პროგნოზი</footer>
 
 <script>
-const THR = {wind_gusts:21.5, wind_speed:15, wave_height:1.5, visibility:1.0};
-const PILL = {
-  operational:'<span class="pill pill-ok">საოპერ.</span>',
-  warning:    '<span class="pill pill-warn">სიფრთხ.</span>',
-  suspended:  '<span class="pill pill-danger">შეჩერება</span>',
+// ═══ CONSTANTS ═══
+const THR = {
+  barge:     10.0,   // ბორნის შეზღუდვა
+  vessel:    17.0,   // გემების მანევრირება
+  suspended: 21.5,   // ამწე + გემების გასვლა
+  wave:       2.0,   // ტალღა → გემების გასვლა
+  fog:        0.1,   // ხილვადობა → გასვლა
 };
-const STATUS_LBL = {
-  operational:'პორტი — სტანდარტულ რეჟიმში',
-  warning:    'სიფრთხილე — ყვითელი ზონა',
-  suspended:  'საოპერაციო შეჩერება — კრიტიკული პარამეტრები',
-};
+
 const COMPASS = ['N','NE','E','SE','S','SW','W','NW'];
 function toCompass(d){ return COMPASS[Math.round(((d%360)+360)%360/45)%8]; }
 function fmt(v,n=2){ return v!=null ? Number(v).toFixed(n) : '--'; }
@@ -299,93 +466,159 @@ function fmt(v,n=2){ return v!=null ? Number(v).toFixed(n) : '--'; }
 let allForecast = [];
 let showHours   = 24;
 
+// ═══ COMPUTE STATUS ═══
+function computeStatus(h) {
+  const w = h.wind_speed  || 0;
+  const g = h.wind_gusts  || 0;
+  const wv= h.wave_height || 0;
+  const v = h.visibility_km != null ? h.visibility_km : 99;
+  const maxWind = Math.max(w, g);
+
+  if (maxWind >= THR.suspended || wv >= THR.wave || v <= THR.fog)
+    return 'suspended';
+  if (maxWind >= THR.vessel)
+    return 'vessel';
+  if (maxWind >= THR.barge)
+    return 'barge';
+  return 'operational';
+}
+
+// ═══ STATUS LABELS ═══
+const STATUS_LBL = {
+  operational: 'პორტი — სრული საოპერაციო რეჟიმი',
+  barge:       'ბორნის მანევრირება შეზღუდულია',
+  vessel:      'გემების მანევრირება შეზღუდულია',
+  suspended:   'ამწე + გემების გასვლა შეჩერებულია',
+};
+const PILL = {
+  operational: '<span class="pill pill-op">სრული ოპ.</span>',
+  barge:       '<span class="pill pill-bg">ბორნი ↓</span>',
+  vessel:      '<span class="pill pill-vs">გემ. ↓</span>',
+  suspended:   '<span class="pill pill-sus">შეჩერება</span>',
+};
+
 // ═══ LOAD ═══
-async function loadData(){
-  try{
+async function loadData() {
+  try {
     const r = await fetch('data.json?t='+Date.now());
     if(!r.ok) throw new Error(r.status);
     const d = await r.json();
-    allForecast = d.forecast || d.hourly || [];
+    // recompute status with new thresholds
+    if(d.forecast) d.forecast.forEach(h => { h.status = computeStatus(h); });
+    if(d.current)  d.current.status = computeStatus(d.current);
     render(d);
-  } catch(e){
-    document.getElementById('status-text').textContent =
-      'data.json ვერ ჩაიტვირთა — გაუშვი: python run.py';
-    document.getElementById('status-text').style.color='#fcd34d';
+  } catch(e) {
+    document.getElementById('status-text').textContent = 'data.json ვერ ჩაიტვირთა';
+    document.getElementById('status-text').style.color = '#fde880';
   }
 }
 
 // ═══ RENDER ═══
-function render(d){
-  const c=d.current, s=d.summary_24h, m=d.meta;
+function render(d) {
+  const c=d.current||{}, m=d.meta||{}, fc=d.forecast||[];
+  const src = m.sources_used || m.sources || [];
 
-  // header
-  document.getElementById('update-time').textContent  = m.last_update;
-  document.getElementById('next-time').textContent    = 'შემდეგი: '+m.next_update;
-  document.getElementById('sources-line').textContent = (m.sources_used || m.sources || []).join(' · ');
-  document.getElementById('tbl-sources').textContent  = 'წყაროები: '+(m.sources_used || m.sources || []).join(', ');
-  document.getElementById('coords-lbl').textContent   = m.lat+'°N '+m.lon+'°E · '+m.forecast_hours+'h';
+  document.getElementById('update-time').textContent  = m.last_update||'--';
+  document.getElementById('next-time').textContent    = 'შემდეგი: '+(m.next_update||'--');
+  document.getElementById('sources-line').textContent = src.join(' · ');
+  document.getElementById('tbl-sources').textContent  = 'წყაროები: '+src.join(', ');
+  document.getElementById('coords-lbl').textContent   = (m.lat||'')+'°N '+(m.lon||'')+'°E · '+(m.forecast_hours||fc.length)+'h';
 
   const chips = document.getElementById('source-chips');
-  chips.innerHTML = (m.sources_used || m.sources || []).map(s=>`<div class="chip"><div class="dot"></div>${s}</div>`).join('');
+  chips.innerHTML = src.map(s=>`<div class="chip"><div class="dot"></div>${s}</div>`).join('');
 
   // status bar
+  const st = c.status || 'operational';
   const sb = document.getElementById('status-bar');
-  sb.className = 'status-bar '+c.status;
-  document.getElementById('status-text').textContent = STATUS_LBL[c.status];
-  document.getElementById('alert-items').innerHTML =
-    c.alerts.map(a=>`<span style="font-size:11px;opacity:.8">▲ ${a}</span>`).join('');
+  sb.className = 'status-bar '+st;
+  document.getElementById('status-text').textContent = STATUS_LBL[st]||st;
+  const ai = document.getElementById('alert-items');
+  ai.innerHTML = (c.alerts||[]).map(a=>`<span>▲ ${a}</span>`).join('');
+
+  // ops panel
+  const w = Math.max(c.wind_speed||0, c.wind_gusts||0);
+  const wv= c.wave_height||0;
+  const vis= c.visibility_km!=null ? c.visibility_km : 99;
+
+  setOps('ops-cranes',
+    w >= THR.suspended ? 'danger' : 'ok',
+    w >= THR.suspended ? 'ამწე — შეჩერებულია' : 'ამწე — ოპერაციული');
+
+  setOps('ops-barge',
+    w >= THR.barge ? (w >= THR.vessel ? 'alert' : 'warn') : 'ok',
+    w >= THR.vessel ? 'ბორნი — შეჩერებულია' :
+    w >= THR.barge  ? 'ბორნი — შეზღუდულია' : 'ბორნი — ოპერაციული');
+
+  setOps('ops-vessel',
+    w >= THR.vessel ? 'alert' : 'ok',
+    w >= THR.vessel ? 'გემების მანევრირება — შეზღუდულია' : 'გემების მანევრირება — თავისუფალი');
+
+  const depBlocked = w >= THR.suspended || wv >= THR.wave || vis <= THR.fog;
+  setOps('ops-departure',
+    depBlocked ? 'danger' : 'ok',
+    depBlocked ? 'გემების გასვლა — შეზღუდულია' : 'გემების გასვლა — ნებადართული');
 
   // metric cards
-  setCard('card-wind','c-wind',c.wind_speed,
-    c.wind_gusts>=THR.wind_gusts||c.wind_speed>=THR.wind_gusts?'danger':
-    c.wind_speed>=THR.wind_speed||c.wind_gusts>=THR.wind_speed?'warn':'ok');
+  setCard('card-wind','c-wind', c.wind_speed,
+    w>=THR.suspended?'danger': w>=THR.vessel?'alert': w>=THR.barge?'warn':'ok');
   document.getElementById('c-gusts').textContent = fmt(c.wind_gusts);
-  setBar('bar-wind', c.wind_gusts/30,
-    c.wind_gusts>=THR.wind_gusts?'red':c.wind_gusts>=15?'yellow':'green');
+  setBar('bar-wind', (c.wind_gusts||0)/30,
+    (c.wind_gusts||0)>=THR.suspended?'rd': (c.wind_gusts||0)>=THR.vessel?'or': (c.wind_gusts||0)>=THR.barge?'yw':'gn');
 
-  setCard('card-wave','c-wave',c.wave_height,
-    c.wave_height>=THR.wave_height?'danger':c.wave_height>=1.2?'warn':'ok');
+  setCard('card-wave','c-wave', c.wave_height,
+    wv>=THR.wave?'danger': wv>=1.2?'warn':'ok');
   document.getElementById('c-period').textContent = fmt(c.wave_period,1);
   document.getElementById('c-swell').textContent  = fmt(c.swell_height);
-  setBar('bar-wave', c.wave_height/3,
-    c.wave_height>=THR.wave_height?'red':c.wave_height>=1.2?'yellow':'green');
+  setBar('bar-wave', wv/3, wv>=THR.wave?'rd': wv>=1.2?'yw':'gn');
 
-  setCard('card-vis','c-vis',c.visibility_km,
-    c.visibility_km<=THR.visibility?'danger':c.visibility_km<=3?'warn':'ok');
-  setBar('bar-vis', Math.min(c.visibility_km/15,1),
-    c.visibility_km<=1?'red':c.visibility_km<=3?'yellow':'green');
+  setCard('card-vis','c-vis', c.visibility_km,
+    vis<=THR.fog?'danger': vis<=1?'warn':'ok');
+  setBar('bar-vis', Math.min(vis/15,1), vis<=THR.fog?'rd': vis<=1?'yw':'gn');
 
-  setCard('card-rain','c-rain',c.precipitation,
-    c.precipitation>=5?'danger':c.precipitation>=2?'warn':'ok');
+  setCard('card-rain','c-rain', c.precipitation,
+    (c.precipitation||0)>=5?'danger': (c.precipitation||0)>=2?'warn':'ok');
   document.getElementById('c-wtemp').textContent = c.water_temp ? fmt(c.water_temp,1) : '--';
-  setBar('bar-rain', Math.min(c.precipitation/10,1),
-    c.precipitation>=5?'red':c.precipitation>=2?'yellow':'green');
+  setBar('bar-rain', Math.min((c.precipitation||0)/10,1),
+    (c.precipitation||0)>=5?'rd': (c.precipitation||0)>=2?'yw':'gn');
 
-  // ქარის ვარდი
-  const deg = c.wind_direction || 0;
+  // compass
+  const deg = c.wind_direction||0;
   document.getElementById('compass-arrow').setAttribute('transform',`rotate(${deg},55,55)`);
   document.getElementById('c-wdir-deg').textContent = Math.round(deg);
   document.getElementById('c-wdir-sym').textContent = toCompass(deg);
 
-  // summary
-  const fc = d.forecast || d.hourly || [];
-  const susp = fc.filter(h=>h.status==='suspended').length;
-  const warn = fc.filter(h=>h.status==='warning').length;
-  document.getElementById('s-stop').textContent = susp+'h';
-  document.getElementById('s-warn').textContent = warn+'h';
-  document.getElementById('s-op').textContent   = (fc.length-susp-warn)+'h';
-  document.getElementById('s-mw').textContent   = fmt(s.max_wave_height)+'მ';
-  document.getElementById('s-mg').textContent   = fmt(s.max_wind_gusts)+' მ/წმ';
+  // 48h summary
+  const susp  = fc.filter(h=>h.status==='suspended').length;
+  const vessel = fc.filter(h=>h.status==='vessel').length;
+  const barge  = fc.filter(h=>h.status==='barge').length;
+  const op     = fc.filter(h=>h.status==='operational').length;
+  document.getElementById('s-stop').textContent   = susp+'h';
+  document.getElementById('s-vessel').textContent = vessel+'h';
+  document.getElementById('s-barge').textContent  = barge+'h';
+  document.getElementById('s-op').textContent     = op+'h';
+  document.getElementById('s-mw').textContent     = fmt(Math.max(...fc.map(h=>h.wave_height||0)))+'მ';
+  document.getElementById('s-mg').textContent     = fmt(Math.max(...fc.map(h=>h.wind_gusts||0)))+' მ/წმ';
 
-  // chart
+  allForecast = fc;
   buildChart(fc);
+  buildTable(fc.slice(0,showHours));
+}
 
-  // table
-  buildTable(fc.slice(0, showHours));
+// ═══ OPS PANEL HELPER ═══
+function setOps(id, level, text) {
+  const el  = document.getElementById(id);
+  const dot = el.querySelector('.ops-dot');
+  const txt = el.querySelector('.ops-text');
+  txt.textContent = text;
+  const colors = {ok:'#2dd4a0', warn:'#f5c842', alert:'#f5923a', danger:'#f55a5a'};
+  dot.style.background    = colors[level]||colors.ok;
+  dot.style.boxShadow     = `0 0 8px ${colors[level]||colors.ok}`;
+  el.style.borderColor    = level==='ok' ? 'rgba(255,255,255,0.06)' : colors[level]+'44';
+  el.style.background     = level==='ok' ? 'rgba(255,255,255,.03)' : colors[level]+'11';
 }
 
 // ═══ CHART ═══
-function buildChart(fc){
+function buildChart(fc) {
   const W=1000, H=120, PT=10, PB=22, ch=H-PT-PB;
   const n=fc.length;
   const maxW = Math.max(...fc.map(h=>h.wind_gusts||0), 30);
@@ -393,25 +626,28 @@ function buildChart(fc){
   const yW   = v => PT+ch-(v/maxW)*ch;
   const yWv  = v => PT+ch-((v*5)/maxW)*ch;
 
-  // threshold line
-  const ty = yW(THR.wind_gusts);
-  document.getElementById('thresh-line').setAttribute('y1',ty);
-  document.getElementById('thresh-line').setAttribute('y2',ty);
-  document.getElementById('now-line').setAttribute('x1',xOf(0));
-  document.getElementById('now-line').setAttribute('x2',xOf(0));
+  // threshold lines
+  document.getElementById('thresh-suspended').setAttribute('y1', yW(THR.suspended));
+  document.getElementById('thresh-suspended').setAttribute('y2', yW(THR.suspended));
+  document.getElementById('thresh-vessel').setAttribute('y1', yW(THR.vessel));
+  document.getElementById('thresh-vessel').setAttribute('y2', yW(THR.vessel));
+  document.getElementById('thresh-barge').setAttribute('y1', yW(THR.barge));
+  document.getElementById('thresh-barge').setAttribute('y2', yW(THR.barge));
 
-  // day 2 separator
-  const d2x = xOf(24);
-  document.getElementById('day2-line').setAttribute('x1',d2x);
-  document.getElementById('day2-line').setAttribute('x2',d2x);
-  if(fc[24]) document.getElementById('day2-label').textContent = fc[24].time.slice(5,10);
+  document.getElementById('now-line').setAttribute('x1', xOf(0));
+  document.getElementById('now-line').setAttribute('x2', xOf(0));
+  if(fc[24]) {
+    const d2x = xOf(24);
+    document.getElementById('day2-line').setAttribute('x1', d2x);
+    document.getElementById('day2-line').setAttribute('x2', d2x);
+    document.getElementById('day2-label').textContent = fc[24].time.slice(5,10);
+  }
 
-  const pts  = (fn) => fc.map((h,i)=>[xOf(i), fn(h)]);
-  const toP  = pts => 'M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L');
-  const toA  = (pts,bot) => toP(pts)+`L${pts[pts.length-1][0]},${bot} L${pts[0][0]},${bot} Z`;
-  const bot  = PT+ch;
-  const wp   = pts(h=>yW(h.wind_speed||0));
-  const wvp  = pts(h=>yWv(h.wave_height||0));
+  const toP = pts => 'M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L');
+  const toA = (pts,bot) => toP(pts)+`L${pts[pts.length-1][0]},${bot} L${pts[0][0]},${bot} Z`;
+  const bot = PT+ch;
+  const wp  = fc.map((h,i)=>[xOf(i), yW(h.wind_speed||0)]);
+  const wvp = fc.map((h,i)=>[xOf(i), yWv(h.wave_height||0)]);
 
   document.getElementById('line-wind').setAttribute('d', toP(wp));
   document.getElementById('line-wave').setAttribute('d', toP(wvp));
@@ -423,56 +659,54 @@ function buildChart(fc){
   fc.forEach((h,i)=>{
     if(i%6!==0) return;
     const el=document.createElementNS('http://www.w3.org/2000/svg','text');
-    el.setAttribute('x',xOf(i));
-    el.setAttribute('y',H-2);
-    el.setAttribute('text-anchor','middle');
-    el.textContent = h.time.slice(8,13).replace('T',' ');
+    el.setAttribute('x',xOf(i));el.setAttribute('y',H-2);el.setAttribute('text-anchor','middle');
+    el.textContent = h.time.slice(5,16).replace('T',' ');
     lbl.appendChild(el);
   });
 }
 
 // ═══ TABLE ═══
-function buildTable(fc){
+function buildTable(fc) {
   const body = document.getElementById('tbl-body');
   body.innerHTML = fc.map((h,i)=>{
-    const rc = h.status==='suspended'?'row-danger':h.status==='warning'?'row-warn':'';
-    const nc = i===0?'row-now':'';
-    const wc = h.wind_speed>=THR.wind_gusts?'t-rd':h.wind_speed>=THR.wind_speed?'t-yw':'t-gn';
-    const gc = h.wind_gusts>=THR.wind_gusts?'t-rd':h.wind_gusts>=15?'t-yw':'';
-    const vc = h.wave_height>=THR.wave_height?'t-rd':h.wave_height>=1.2?'t-yw':'t-gn';
-    const vis= h.visibility_km<=THR.visibility?'t-rd':h.visibility_km<=3?'t-yw':'t-mu';
-    const dir= h.wind_direction!=null ? `${Math.round(h.wind_direction)}° ${toCompass(h.wind_direction)}` : '--';
+    const st  = h.status || computeStatus(h);
+    const rc  = st==='suspended'?'row-suspended': st==='vessel'?'row-vessel': st==='barge'?'row-barge':'';
+    const nc  = i===0?'row-now':'';
+    const w   = h.wind_speed||0, g=h.wind_gusts||0;
+    const mw  = Math.max(w,g);
+    const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':'t-gn';
+    const vc  = (h.wave_height||0)>=THR.wave?'t-rd': (h.wave_height||0)>=1.2?'t-yw':'t-gn';
+    const visc= (h.visibility_km||99)<=THR.fog?'t-rd': (h.visibility_km||99)<=1?'t-yw':'t-mu';
+    const dir = h.wind_direction!=null ? `${Math.round(h.wind_direction)}° ${toCompass(h.wind_direction)}` : '--';
     return `<tr class="${rc} ${nc}">
-      <td class="t-time">${h.time.slice(5,16).replace('T',' ')}${i===0?' ▶':''}</td>
+      <td class="t-time">${h.time.slice(0,16).replace('T',' ')}${i===0?' ▶':''}</td>
       <td class="t-num ${wc}">${fmt(h.wind_speed)}</td>
-      <td class="t-num ${gc}">${fmt(h.wind_gusts)}</td>
+      <td class="t-num ${mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':''}">${fmt(h.wind_gusts)}</td>
       <td class="t-num t-mu">${dir}</td>
       <td class="t-num ${vc}">${fmt(h.wave_height)}</td>
-      <td class="t-num ${h.precipitation>=5?'t-rd':h.precipitation>=2?'t-yw':'t-mu'}">${fmt(h.precipitation)}</td>
-      <td class="t-num ${vis}">${fmt(h.visibility_km)}</td>
-      <td>${PILL[h.status]||''}</td>
+      <td class="t-num ${(h.precipitation||0)>=2?'t-yw':'t-mu'}">${fmt(h.precipitation)}</td>
+      <td class="t-num ${visc}">${fmt(h.visibility_km)}</td>
+      <td>${PILL[st]||''}</td>
     </tr>`;
   }).join('');
 }
 
-// ═══ TABS ═══
-function switchTab(h, el){
-  showHours = h;
+// ═══ HELPERS ═══
+function switchTab(h,el){
+  showHours=h;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   if(allForecast.length) buildTable(allForecast.slice(0,h));
 }
-
-// ═══ CARD HELPER ═══
-function setCard(cardId, valId, val, level){
+function setCard(cardId,valId,val,level){
   document.getElementById(valId).textContent = fmt(val);
-  const card = document.getElementById(cardId);
-  card.className = 'card '+level;
+  const card=document.getElementById(cardId);
+  card.className='card '+level;
   card.querySelectorAll('.card-badge').forEach(b=>b.remove());
   if(level!=='ok'){
-    const b = document.createElement('div');
-    b.className = 'card-badge '+(level==='danger'?'badge-danger':'badge-warn');
-    b.textContent = level==='danger'?'კრიტიკული':'ყურადღება';
+    const b=document.createElement('div');
+    b.className='card-badge badge-'+level;
+    b.textContent=level==='danger'?'კრიტ.': level==='alert'?'შეზღ.':'ყურ.';
     card.appendChild(b);
   }
 }
@@ -482,7 +716,7 @@ function setBar(id,ratio,color){
   el.className='bar-fill bar-'+color;
 }
 
-// ═══ AUTO-REFRESH ═══
+// ═══ AUTO REFRESH ═══
 let cd=60;
 setInterval(()=>{
   document.getElementById('cd').textContent=cd;
