@@ -241,36 +241,23 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 <main>
 
   <!-- ოპერაციული სტატუს-პანელი -->
-  <div class="ops-panel rel">
-    <div class="ops-item" id="ops-cranes">
-      <div class="ops-dot" style="background:var(--gn)"></div>
+  <div class="ops-panel rel" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
+    <div class="ops-item" id="ops-cranes" style="padding:14px 16px;">
+      <div class="ops-dot" style="background:var(--gn);width:12px;height:12px;"></div>
       <div>
-        <div class="ops-text" id="ops-cranes-text">ამწე — ოპერაციული</div>
-        <div class="ops-sub">შეზღუდვა: ≥ 21.5 მ/წმ</div>
+        <div class="ops-text" id="ops-cranes-text" style="font-size:13px;">ამწეები — ოპერაციული</div>
+        <div class="ops-sub">შეჩერება: ≥ 21.5 მ/წმ</div>
       </div>
     </div>
-    <div class="ops-item" id="ops-barge">
-      <div class="ops-dot" style="background:var(--gn)"></div>
+    <div class="ops-item" id="ops-vessel" style="padding:14px 16px;">
+      <div class="ops-dot" style="background:var(--gn);width:12px;height:12px;"></div>
       <div>
-        <div class="ops-text" id="ops-barge-text">ბორნი — ოპერაციული</div>
-        <div class="ops-sub">შეზღუდვა: ≥ 10 მ/წმ</div>
-      </div>
-    </div>
-    <div class="ops-item" id="ops-vessel">
-      <div class="ops-dot" style="background:var(--gn)"></div>
-      <div>
-        <div class="ops-text" id="ops-vessel-text">გემების მანევრირება — თავისუფალი</div>
-        <div class="ops-sub">შეზღუდვა: ≥ 17 მ/წმ</div>
-      </div>
-    </div>
-    <div class="ops-item" id="ops-departure">
-      <div class="ops-dot" style="background:var(--gn)"></div>
-      <div>
-        <div class="ops-text" id="ops-departure-text">გემების გასვლა — ნებადართული</div>
-        <div class="ops-sub">შეზღუდვა: ≥ 21.5 მ/წმ | ≥ 2.0მ | ≤ 0.1კმ</div>
+        <div class="ops-text" id="ops-vessel-text" style="font-size:13px;">გემების მანევრირება — ნებადართული</div>
+        <div class="ops-sub" id="ops-vessel-sub">შეზღუდვები: ბორნი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ</div>
       </div>
     </div>
   </div>
+
 
   <!-- მეტრიკის ბარათები -->
   <div class="cards-grid rel">
@@ -535,28 +522,40 @@ function render(d) {
   const ai = document.getElementById('alert-items');
   ai.innerHTML = (c.alerts||[]).map(a=>`<span>▲ ${a}</span>`).join('');
 
-  // ops panel
+  // ops panel — 2 panels: cranes & vessel maneuvering (with barge sub-state)
   const w = Math.max(c.wind_speed||0, c.wind_gusts||0);
   const wv= c.wave_height||0;
   const vis= c.visibility_km!=null ? c.visibility_km : 99;
 
+  // ამწეები — მხოლოდ suspended ზღვარზე იცვლება
   setOps('ops-cranes',
     w >= THR.suspended ? 'danger' : 'ok',
-    w >= THR.suspended ? 'ამწე — შეჩერებულია' : 'ამწე — ოპერაციული');
+    w >= THR.suspended ? 'ამწეები — შეჩერებულია' : 'ამწეები — ოპერაციული');
 
-  setOps('ops-barge',
-    w >= THR.barge ? (w >= THR.vessel ? 'alert' : 'warn') : 'ok',
-    w >= THR.vessel ? 'ბორნი — შეჩერებულია' :
-    w >= THR.barge  ? 'ბორნი — შეზღუდულია' : 'ბორნი — ოპერაციული');
-
-  setOps('ops-vessel',
-    w >= THR.vessel ? 'alert' : 'ok',
-    w >= THR.vessel ? 'გემების მანევრირება — შეზღუდულია' : 'გემების მანევრირება — თავისუფალი');
-
+  // გემების მანევრირება — 4 დონის ერთიანი ლოგიკა
   const depBlocked = w >= THR.suspended || wv >= THR.wave || vis <= THR.fog;
-  setOps('ops-departure',
-    depBlocked ? 'danger' : 'ok',
-    depBlocked ? 'გემების გასვლა — შეზღუდულია' : 'გემების გასვლა — ნებადართული');
+  let vesselLevel, vesselText, vesselSub;
+
+  if (depBlocked) {
+    vesselLevel = 'danger';
+    vesselText  = 'გემების გასვლა — შეზღუდულია';
+    vesselSub   = 'კრიტიკული ზღვარი გადაცილებულია';
+  } else if (w >= THR.vessel) {
+    vesselLevel = 'danger';
+    vesselText  = 'გემების მანევრირება — შეზღუდულია';
+    vesselSub   = 'ქარი ≥ 17 მ/წმ';
+  } else if (w >= THR.barge) {
+    vesselLevel = 'warn';
+    vesselText  = 'გემების მანევრირება — ნებადართული';
+    vesselSub   = '⚠ ბორნის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
+  } else {
+    vesselLevel = 'ok';
+    vesselText  = 'გემების მანევრირება — ნებადართული';
+    vesselSub   = 'შეზღუდვები: ბორნი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ';
+  }
+
+  setOps('ops-vessel', vesselLevel, vesselText);
+  document.getElementById('ops-vessel-sub').textContent = vesselSub;
 
   // metric cards
   setCard('card-wind','c-wind', c.wind_speed,
