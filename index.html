@@ -275,12 +275,13 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="card-sub">პერიოდი: <span id="c-period" class="mono">--</span>წმ | ჭანჭ: <span id="c-swell" class="mono">--</span>მ</div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wave" style="width:0%"></div></div>
     </div>
-    <div class="card neutral" id="card-vis">
-      <div class="card-label">ხილვადობა</div>
-      <div class="card-value" id="c-vis">--</div>
-      <div class="card-unit">კმ</div>
-      <div class="card-sub">ნისლის ზღვარი: 0.1 კმ</div>
-      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
+    <!-- ჰაერის ტემპერატურა -->
+    <div class="card neutral" id="card-airtemp">
+      <div class="card-label">ჰაერის ტემპ.</div>
+      <div class="card-value" id="c-airtemp">--</div>
+      <div class="card-unit">°C</div>
+      <div class="card-sub">ECMWF best_match</div>
+      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-airtemp" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-rain">
       <div class="card-label">ნალექი</div>
@@ -290,13 +291,13 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-rain" style="width:0%"></div></div>
     </div>
 
-    <!-- ჰაერის ტემპერატურა (ახალი) -->
-    <div class="card neutral" id="card-airtemp">
-      <div class="card-label">ჰაერის ტემპ.</div>
-      <div class="card-value" id="c-airtemp">--</div>
-      <div class="card-unit">°C</div>
-      <div class="card-sub">ECMWF best_match</div>
-      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-airtemp" style="width:0%"></div></div>
+    <!-- ხილვადობა -->
+    <div class="card neutral" id="card-vis">
+      <div class="card-label">ხილვადობა</div>
+      <div class="card-value" id="c-vis">--</div>
+      <div class="card-unit">კმ</div>
+      <div class="card-sub">ნისლის ზღვარი: 0.1 კმ</div>
+      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
     </div>
 
     <!-- ქარის ვარდი + 48H შეჯამება (გვერდიგვერდ) -->
