@@ -84,7 +84,7 @@ def fetch_open_meteo_atmosphere(model: str):
     params = {
         "latitude": LOCATION["lat"], "longitude": LOCATION["lon"],
         "hourly": "wind_speed_10m,wind_gusts_10m,wind_direction_10m,"
-                  "precipitation,visibility,weather_code",
+                  "temperature_2m,precipitation,visibility,weather_code",
         "wind_speed_unit": "ms",
         "forecast_days": 3,           # 72h ქაჩავს, 48h გამოვიყენებთ
         "timezone": LOCATION["timezone"],
@@ -294,6 +294,7 @@ def parse_open_meteo_atmosphere(raw, hours=FORECAST_HOURS):
             "precipitation":  _safe(h["precipitation"], i),
             "visibility_km":  _safe(h["visibility"], i, scale=0.001),
             "weather_code":   _safe(h.get("weather_code", []), i, default=0),
+            "air_temp":       _safe(h.get("temperature_2m", []), i, default=None),
         }
         for i in range(min(hours, len(h["time"])))
     ]
@@ -491,6 +492,9 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy,
         water_temp    = stormglass[i].get("water_temp",    0.0) if stormglass and i < len(stormglass) else 0.0
         current_speed = stormglass[i].get("current_speed", 0.0) if stormglass and i < len(stormglass) else 0.0
 
+        # ჰაერის ტემპერატურა — atmo_best-იდან (best_match ECMWF)
+        air_temp = atmo_best[i].get("air_temp")
+
         status, alerts = _compute_status(wind_speed, wind_gusts, wave_h, visibility)
 
         result.append({
@@ -506,6 +510,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy,
             "swell_height":    _r(swell),
             "water_temp":      _r(water_temp),
             "current_speed":   _r(current_speed),
+            "air_temp":        round(air_temp, 1) if air_temp is not None else None,
             "status":          status,
             "alerts":          alerts,
         })
@@ -679,7 +684,7 @@ def build_output(consensus, sources_used):
             "time": "", "wind_speed": 0, "wind_gusts": 0,
             "wind_direction": 0, "wave_height": 0, "precipitation": 0,
             "visibility_km": 10, "wave_period": 0, "wave_direction": 0,
-            "swell_height": 0, "water_temp": 0, "current_speed": 0,
+            "swell_height": 0, "water_temp": 0, "current_speed": 0, "air_temp": None,
             "status": "operational", "alerts": [],
         }.items()},
         "summary_24h": {
