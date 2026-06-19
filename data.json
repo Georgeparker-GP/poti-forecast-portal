@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-06-19 14:36",
-    "next_update": "2026-06-19 15:36",
+    "last_update": "2026-06-19 14:48",
+    "next_update": "2026-06-19 15:48",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
