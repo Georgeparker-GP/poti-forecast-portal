@@ -253,7 +253,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="ops-dot" style="background:var(--gn);width:12px;height:12px;"></div>
       <div>
         <div class="ops-text" id="ops-vessel-text" style="font-size:13px;">გემების მანევრირება — ნებადართული</div>
-        <div class="ops-sub" id="ops-vessel-sub">შეზღუდვები:ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ</div>
+        <div class="ops-sub" id="ops-vessel-sub">შეზღუდვები: ბორნი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ</div>
       </div>
     </div>
   </div>
@@ -265,7 +265,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="card-label">ქარის სიჩქარე</div>
       <div class="card-value" id="c-wind">--</div>
       <div class="card-unit">მ/წმ</div>
-      <div class="card-sub">დაქროლვა: <span id="c-gusts" class="mono">--</span> მ/წმ</div>
+      <div class="card-sub">გუსტი: <span id="c-gusts" class="mono">--</span> მ/წმ</div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wind" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-wave">
@@ -280,14 +280,14 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="card-label">ჰაერის ტემპ.</div>
       <div class="card-value" id="c-airtemp">--</div>
       <div class="card-unit">°C</div>
-      <div class="card-sub">-</div>
+      <div class="card-sub">ECMWF best_match</div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-airtemp" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-rain">
       <div class="card-label">ნალექი</div>
       <div class="card-value" id="c-rain">--</div>
       <div class="card-unit">მმ/სთ</div>
-      <div class="card-sub">-: <span id="c-wtemp" class="mono">--</span>°C</div>
+      <div class="card-sub">წყლის ტემპ: <span id="c-wtemp" class="mono">--</span>°C</div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-rain" style="width:0%"></div></div>
     </div>
 
@@ -344,7 +344,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <span id="s-vessel" class="mono" style="color:#fdb57a;font-weight:700">--h</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:var(--sb)">🟡ბორანი</span>
+            <span style="color:var(--sb)">🟡 ბორნი</span>
             <span id="s-barge" class="mono" style="color:#fde880;font-weight:700">--h</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;">
@@ -359,7 +359,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <span id="s-mw" class="mono" style="color:var(--tl)">--მ</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:var(--sb)">დაქროლვა მაქს</span>
+            <span style="color:var(--sb)">გუსტი მაქს</span>
             <span id="s-mg" class="mono" style="color:var(--tl)">-- მ/წმ</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px;">
@@ -434,8 +434,9 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <thead>
           <tr>
             <th>დრო</th>
+            <th>ტემპ. °C</th>
             <th>ქარი მ/წმ</th>
-            <th>დაქროლვა</th>
+            <th>გუსტი</th>
             <th>მიმართ.</th>
             <th>ტალღა მ</th>
             <th>წვიმა</th>
@@ -444,7 +445,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           </tr>
         </thead>
         <tbody id="tbl-body">
-          <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--sb)">იტვირთება...</td></tr>
+          <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)">იტვირთება...</td></tr>
         </tbody>
       </table>
     </div>
@@ -463,7 +464,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 <script>
 // ═══ CONSTANTS ═══
 const THR = {
-  barge:     10.0,   //ბორანის შეზღუდვა
+  barge:     10.0,   // ბორნის შეზღუდვა
   vessel:    17.0,   // გემების მანევრირება
   suspended: 21.5,   // ამწე + გემების გასვლა
   wave:       2.0,   // ტალღა → გემების გასვლა
@@ -593,11 +594,11 @@ function render(d) {
   } else if (w >= THR.barge) {
     vesselLevel = 'warn';
     vesselText  = 'გემების მანევრირება — ნებადართული';
-    vesselSub   = '⚠ბორანის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
+    vesselSub   = '⚠ ბორნის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
   } else {
     vesselLevel = 'ok';
     vesselText  = 'გემების მანევრირება — ნებადართული';
-    vesselSub   = 'შეზღუდვები:ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ';
+    vesselSub   = 'შეზღუდვები: ბორნი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ';
   }
 
   setOps('ops-vessel', vesselLevel, vesselText);
@@ -737,8 +738,11 @@ function buildTable(fc) {
     const vc  = (h.wave_height||0)>=THR.wave?'t-rd': (h.wave_height||0)>=1.2?'t-yw':'t-gn';
     const visc= (h.visibility_km||99)<=THR.fog?'t-rd': (h.visibility_km||99)<=1?'t-yw':'t-mu';
     const dir = h.wind_direction!=null ? `${Math.round(h.wind_direction)}° ${toCompass(h.wind_direction)}` : '--';
+    const temp = h.air_temp != null ? fmt(h.air_temp,1) : '--';
+    const tc   = h.air_temp == null ? 't-mu' : h.air_temp < 5 ? 't-yw' : h.air_temp > 30 ? 't-or' : 't-mu';
     return `<tr class="${rc} ${nc}">
       <td class="t-time">${h.time.slice(0,16).replace('T',' ')}${i===0?' ▶':''}</td>
+      <td class="t-num ${tc}">${temp}</td>
       <td class="t-num ${wc}">${fmt(h.wind_speed)}</td>
       <td class="t-num ${mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':''}">${fmt(h.wind_gusts)}</td>
       <td class="t-num t-mu">${dir}</td>
