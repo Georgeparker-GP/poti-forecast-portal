@@ -667,6 +667,10 @@ def _deg_to_compass(deg: float) -> str:
 # ═══════════════════════════════════════════════════════════════
 
 def build_output(consensus, sources_used):
+    # 1. განვსაზღვროთ საქართველოს დრო (UTC + 4 საათი)
+    geo_tz = timezone(timedelta(hours=4))
+    now_geo = datetime.now(geo_tz)
+
     now  = consensus[0] if consensus else {}
     susp = sum(1 for h in consensus if h["status"] == "suspended")
     warn = sum(1 for h in consensus if h["status"] == "warning")
@@ -675,8 +679,8 @@ def build_output(consensus, sources_used):
             "location":       LOCATION["name"],
             "lat":            LOCATION["lat"],
             "lon":            LOCATION["lon"],
-            "last_update":    datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "next_update":    (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M"),
+            "last_update":    now_geo.strftime("%Y-%m-%d %H:%M"), # ვიყენებთ საქართველოს დროს
+            "next_update":    (now_geo + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M"),
             "sources_used":   sources_used,
             "forecast_hours": len(consensus),
         },
@@ -696,6 +700,7 @@ def build_output(consensus, sources_used):
             "overall_status":    "suspended" if susp else "warning" if warn else "operational",
         },
         "forecast": consensus,
+    }
     }
 
 
