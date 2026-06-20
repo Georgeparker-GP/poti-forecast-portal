@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-06-20 18:15",
-    "next_update": "2026-06-20 19:15",
+    "last_update": "2026-06-20 18:22",
+    "next_update": "2026-06-20 19:22",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
@@ -27,7 +27,7 @@
     "swell_height": 0.36,
     "water_temp": 0.0,
     "current_speed": 0.0,
-    "temperature_2m": 21.8,
+    "air_temp": 21.8,
     "status": "operational",
     "alerts": []
   },
@@ -53,7 +53,7 @@
       "swell_height": 0.36,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.8,
+      "air_temp": 21.8,
       "status": "operational",
       "alerts": []
     },
@@ -70,7 +70,7 @@
       "swell_height": 0.38,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.9,
+      "air_temp": 21.9,
       "status": "operational",
       "alerts": []
     },
@@ -87,7 +87,7 @@
       "swell_height": 0.38,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.5,
+      "air_temp": 21.5,
       "status": "operational",
       "alerts": []
     },
@@ -104,7 +104,7 @@
       "swell_height": 0.36,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.4,
+      "air_temp": 21.4,
       "status": "operational",
       "alerts": []
     },
@@ -121,7 +121,7 @@
       "swell_height": 0.36,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 20.7,
+      "air_temp": 20.7,
       "status": "operational",
       "alerts": []
     },
@@ -138,7 +138,7 @@
       "swell_height": 0.36,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 20.7,
+      "air_temp": 20.7,
       "status": "operational",
       "alerts": []
     },
@@ -155,7 +155,7 @@
       "swell_height": 0.34,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.0,
+      "air_temp": 21.0,
       "status": "operational",
       "alerts": []
     },
@@ -172,7 +172,7 @@
       "swell_height": 0.34,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.5,
+      "air_temp": 21.5,
       "status": "operational",
       "alerts": []
     },
@@ -189,7 +189,7 @@
       "swell_height": 0.34,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.9,
+      "air_temp": 21.9,
       "status": "operational",
       "alerts": []
     },
@@ -206,7 +206,7 @@
       "swell_height": 0.36,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.5,
+      "air_temp": 22.5,
       "status": "operational",
       "alerts": []
     },
@@ -223,7 +223,7 @@
       "swell_height": 0.36,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.5,
+      "air_temp": 22.5,
       "status": "operational",
       "alerts": []
     },
@@ -240,7 +240,7 @@
       "swell_height": 0.38,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.3,
+      "air_temp": 22.3,
       "status": "operational",
       "alerts": []
     },
@@ -257,7 +257,7 @@
       "swell_height": 0.4,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.6,
+      "air_temp": 22.6,
       "status": "operational",
       "alerts": []
     },
@@ -274,7 +274,7 @@
       "swell_height": 0.42,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.7,
+      "air_temp": 22.7,
       "status": "operational",
       "alerts": []
     },
@@ -291,7 +291,7 @@
       "swell_height": 0.42,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 23.0,
+      "air_temp": 23.0,
       "status": "operational",
       "alerts": []
     },
@@ -308,7 +308,7 @@
       "swell_height": 0.4,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 23.2,
+      "air_temp": 23.2,
       "status": "operational",
       "alerts": []
     },
@@ -325,7 +325,7 @@
       "swell_height": 0.4,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 23.3,
+      "air_temp": 23.3,
       "status": "operational",
       "alerts": []
     },
@@ -342,7 +342,7 @@
       "swell_height": 0.44,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 23.1,
+      "air_temp": 23.1,
       "status": "operational",
       "alerts": []
     },
@@ -359,7 +359,7 @@
       "swell_height": 0.5,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.8,
+      "air_temp": 22.8,
       "status": "operational",
       "alerts": []
     },
@@ -376,7 +376,7 @@
       "swell_height": 0.54,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.3,
+      "air_temp": 22.3,
       "status": "operational",
       "alerts": []
     },
@@ -393,7 +393,7 @@
       "swell_height": 0.56,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.0,
+      "air_temp": 22.0,
       "status": "operational",
       "alerts": []
     },
@@ -410,7 +410,7 @@
       "swell_height": 0.56,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.6,
+      "air_temp": 21.6,
       "status": "operational",
       "alerts": []
     },
@@ -427,7 +427,7 @@
       "swell_height": 0.58,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.4,
+      "air_temp": 21.4,
       "status": "operational",
       "alerts": []
     },
@@ -444,7 +444,7 @@
       "swell_height": 0.58,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.3,
+      "air_temp": 21.3,
       "status": "operational",
       "alerts": []
     },
@@ -461,7 +461,7 @@
       "swell_height": 0.6,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.1,
+      "air_temp": 21.1,
       "status": "operational",
       "alerts": []
     },
@@ -478,7 +478,7 @@
       "swell_height": 0.6,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.0,
+      "air_temp": 21.0,
       "status": "operational",
       "alerts": []
     },
@@ -495,7 +495,7 @@
       "swell_height": 0.6,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.0,
+      "air_temp": 21.0,
       "status": "operational",
       "alerts": []
     },
@@ -512,7 +512,7 @@
       "swell_height": 0.62,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.4,
+      "air_temp": 21.4,
       "status": "operational",
       "alerts": []
     },
@@ -529,7 +529,7 @@
       "swell_height": 0.62,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.3,
+      "air_temp": 21.3,
       "status": "operational",
       "alerts": []
     },
@@ -546,7 +546,7 @@
       "swell_height": 0.6,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 20.8,
+      "air_temp": 20.8,
       "status": "operational",
       "alerts": []
     },
@@ -563,7 +563,7 @@
       "swell_height": 0.6,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 20.7,
+      "air_temp": 20.7,
       "status": "operational",
       "alerts": []
     },
@@ -580,7 +580,7 @@
       "swell_height": 0.58,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 20.8,
+      "air_temp": 20.8,
       "status": "operational",
       "alerts": []
     },
@@ -597,7 +597,7 @@
       "swell_height": 0.58,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 20.9,
+      "air_temp": 20.9,
       "status": "operational",
       "alerts": []
     },
@@ -614,7 +614,7 @@
       "swell_height": 0.58,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 20.9,
+      "air_temp": 20.9,
       "status": "operational",
       "alerts": []
     },
@@ -631,7 +631,7 @@
       "swell_height": 0.58,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.2,
+      "air_temp": 21.2,
       "status": "operational",
       "alerts": []
     },
@@ -648,7 +648,7 @@
       "swell_height": 0.52,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.9,
+      "air_temp": 21.9,
       "status": "operational",
       "alerts": []
     },
@@ -665,7 +665,7 @@
       "swell_height": 0.48,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.5,
+      "air_temp": 22.5,
       "status": "operational",
       "alerts": []
     },
@@ -682,7 +682,7 @@
       "swell_height": 0.42,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.5,
+      "air_temp": 22.5,
       "status": "operational",
       "alerts": []
     },
@@ -699,7 +699,7 @@
       "swell_height": 0.44,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.4,
+      "air_temp": 22.4,
       "status": "operational",
       "alerts": []
     },
@@ -716,7 +716,7 @@
       "swell_height": 0.46,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.5,
+      "air_temp": 22.5,
       "status": "operational",
       "alerts": []
     },
@@ -733,7 +733,7 @@
       "swell_height": 0.48,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.4,
+      "air_temp": 22.4,
       "status": "operational",
       "alerts": []
     },
@@ -750,7 +750,7 @@
       "swell_height": 0.44,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 22.0,
+      "air_temp": 22.0,
       "status": "operational",
       "alerts": []
     },
@@ -767,7 +767,7 @@
       "swell_height": 0.42,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.8,
+      "air_temp": 21.8,
       "status": "operational",
       "alerts": []
     },
@@ -784,7 +784,7 @@
       "swell_height": 0.38,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.5,
+      "air_temp": 21.5,
       "status": "operational",
       "alerts": []
     },
@@ -801,7 +801,7 @@
       "swell_height": 0.42,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.3,
+      "air_temp": 21.3,
       "status": "operational",
       "alerts": []
     },
@@ -818,7 +818,7 @@
       "swell_height": 0.44,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.1,
+      "air_temp": 21.1,
       "status": "operational",
       "alerts": []
     },
@@ -835,7 +835,7 @@
       "swell_height": 0.48,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.1,
+      "air_temp": 21.1,
       "status": "operational",
       "alerts": []
     },
@@ -852,7 +852,7 @@
       "swell_height": 0.48,
       "water_temp": 0.0,
       "current_speed": 0.0,
-      "temperature_2m": 21.0,
+      "air_temp": 21.0,
       "status": "operational",
       "alerts": []
     }
