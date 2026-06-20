@@ -2,11 +2,8 @@ name: Update Weather Data
 
 on:
   schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch:
-
-permissions:
-  contents: write
+    - cron: '0 * * * *'      # ყოველ საათში
+  workflow_dispatch:         # ხელით გაშვების ღილაკი
 
 jobs:
   update:
@@ -20,26 +17,33 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt python-dotenv requests
 
-      - name: Run fetch.py
-        run: python fetch.py
+      - name: Run fetch script
         env:
-          WINDY_API_KEY:       ${{ secrets.WINDY_API_KEY }}
-          STORMGLASS_API_KEY:  ${{ secrets.STORMGLASS_API_KEY }}
-          OWM_API_KEY:         ${{ secrets.OWM_API_KEY }}
-          TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
+          STORMGLASS_API_KEY: ${{ secrets.STORMGLASS_API_KEY }}
+          WINDY_API_KEY: ${{ secrets.WINDY_API_KEY }}
+          OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python fetch.py
 
       - name: Commit updated data.json
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json stormglass_cache.json status_cache.json yr_cache.json 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "weather: update $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git commit -m "Update weather data - $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
+          git pull --rebase --autostash || true
           git push
-          
+
+      - name: Notify on failure (backstop)
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="🚨 Poti Forecast Portal: hourly update workflow ჩავარდა (Actions). ლოგები: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          || true
