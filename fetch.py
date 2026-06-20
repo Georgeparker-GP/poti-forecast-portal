@@ -685,8 +685,24 @@ def _deg_to_compass(deg: float) -> str:
 #  6.  JSON გამოსვლა
 # ═══════════════════════════════════════════════════════════════
 
+def _current_hour_index(consensus):
+    """Open-Meteo-ს hourly მასივი იწყება today 00:00-დან (ლოკალური დროით), არა
+    გაშვების მომენტიდან — ამიტომ ვპოულობთ ჩანაწერს, რომლის დროც ყველაზე ახლოსაა
+    რეალურ 'ახლა'-სთან (იგივე ლოგიკა, რასაც frontend-ის findNowIndex იყენებს)."""
+    if not consensus:
+        return 0
+    now_str = datetime.now(TBILISI_TZ).strftime("%Y-%m-%dT%H:00")
+    idx = 0
+    for i, h in enumerate(consensus):
+        if h["time"] <= now_str:
+            idx = i
+        else:
+            break
+    return idx
+
+
 def build_output(consensus, sources_used):
-    now  = consensus[0] if consensus else {}
+    now  = consensus[_current_hour_index(consensus)] if consensus else {}
     susp = sum(1 for h in consensus if h["status"] == "suspended")
     warn = sum(1 for h in consensus if h["status"] == "warning")
     return {
