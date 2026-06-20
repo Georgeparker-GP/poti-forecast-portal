@@ -539,7 +539,6 @@ async function loadData() {
     const d = await r.json();
     // recompute status with new thresholds
     if(d.forecast) d.forecast.forEach(h => { h.status = computeStatus(h); });
-    if(d.current)  d.current.status = computeStatus(d.current);
     render(d);
   } catch(e) {
     document.getElementById('status-text').textContent = 'data.json ვერ ჩაიტვირთა';
@@ -549,7 +548,12 @@ async function loadData() {
 
 // ═══ RENDER ═══
 function render(d) {
-  const c=d.current||{}, m=d.meta||{}, fc=d.forecast||[];
+  const m=d.meta||{}, fc=d.forecast||[];
+  // შენიშვნა: d.current ბექენდში ყოველთვის ემთხვევა today 00:00-ს (Open-Meteo-ს
+  // hourly მასივის 0-ინდექსს), არა რეალურ "ახლა"-ს — ამიტომ მთავარი ბარათებისთვის
+  // ვიღებთ ნამდვილ "ახლა" საათს იმავე ლოგიკით, რასაც ცხრილი იყენებს.
+  nowIndex = findNowIndex(fc);
+  const c = fc[nowIndex] || d.current || {};
   const src = m.sources_used || m.sources || [];
 
   document.getElementById('update-time').textContent  = m.last_update||'--';
@@ -628,7 +632,7 @@ function render(d) {
     (c.precipitation||0)>=5?'rd': (c.precipitation||0)>=2?'yw':'gn');
 
   // ჰაერის ტემპ. ბარათი
-  const airT = c.temperature_2m != null ? c.temperature_2m : null;
+  const airT = c.air_temp != null ? c.air_temp : null;
   document.getElementById('c-airtemp').textContent = airT != null ? fmt(airT,1) : '--';
   // ფერი: ცივი=ლურჯი, ზომიერი=მწვანე, ცხელი=ნარინჯი
   const tLevel = airT == null ? 'neutral' : airT < 5 ? 'warn' : airT > 30 ? 'alert' : 'ok';
@@ -654,12 +658,11 @@ function render(d) {
   document.getElementById('s-op').textContent     = op+'h';
   document.getElementById('s-mw').textContent = fmt(Math.max(...fc.map(h=>h.wave_height||0)))+'მ';
   document.getElementById('s-mg').textContent = fmt(Math.max(...fc.map(h=>h.wind_gusts||0)))+' მ/წმ';
-  const temps = fc.map(h=>h.temperature_2m).filter(t=>t!=null);
+  const temps = fc.map(h=>h.air_temp).filter(t=>t!=null);
   document.getElementById('s-tmin').textContent = temps.length ? fmt(Math.min(...temps),1)+'°C' : '--';
   document.getElementById('s-tmax').textContent = temps.length ? fmt(Math.max(...temps),1)+'°C' : '--';
 
   allForecast = fc;
-  nowIndex = findNowIndex(fc);
   buildChart(fc);
   buildTable(fc.slice(nowIndex, nowIndex+showHours));
 }
@@ -738,8 +741,8 @@ function buildTable(fc) {
     const vc  = (h.wave_height||0)>=THR.wave?'t-rd': (h.wave_height||0)>=1.2?'t-yw':'t-gn';
     const visc= (h.visibility_km||99)<=THR.fog?'t-rd': (h.visibility_km||99)<=1?'t-yw':'t-mu';
     const dir = h.wind_direction!=null ? `${Math.round(h.wind_direction)}° ${toCompass(h.wind_direction)}` : '--';
-    const temp = h.temperature_2m != null ? fmt(h.temperature_2m,1) : '--';
-    const tc   = h.temperature_2m == null ? 't-mu' : h.temperature_2m < 5 ? 't-yw' : h.temperature_2m > 30 ? 't-or' : 't-mu';
+    const temp = h.air_temp != null ? fmt(h.air_temp,1) : '--';
+    const tc   = h.air_temp == null ? 't-mu' : h.air_temp < 5 ? 't-yw' : h.air_temp > 30 ? 't-or' : 't-mu';
     return `<tr class="${rc} ${nc}">
       <td class="t-time">${h.time.slice(0,16).replace('T',' ')}${i===0?' ▶':''}</td>
       <td class="t-num ${tc}">${temp}</td>
