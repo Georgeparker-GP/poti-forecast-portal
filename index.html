@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ფოთის პორტი —ამინდის კონსენსუს-პორტალი</title>
+<title>APMT Poti  — ამინდის კონსენსუს-პორტალი</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -128,7 +128,9 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 
 .card-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--sb);font-weight:500;}
 .card-value{font-size:30px;font-weight:700;margin:6px 0 2px;font-family:'JetBrains Mono',monospace;line-height:1;color:#fff;}
-.card-unit{font-size:12px;color:var(--sb);}
+.card-value-row{display:flex;align-items:baseline;gap:8px;margin:6px 0 2px;}
+.card-value-row .card-value{margin:0;}
+.card-unit{font-size:17px;color:var(--tl);font-weight:600;}
 .card-sub{font-size:11px;color:var(--sb);margin-top:5px;}
 .card-badge{
   position:absolute;top:12px;right:12px;
@@ -220,7 +222,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <div class="logo">
     <div class="logo-icon">⚓</div>
     <div>
-      <h1>ფოთის პორტი —ამინდის კონსენსუს-პორტალი</h1>
+      <h1>ფოთის პორტი — კონსენსუს-პორტალი</h1>
       <p id="sources-line">მონაცემები იტვირთება...</p>
     </div>
   </div>
@@ -263,39 +265,46 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <div class="cards-grid rel">
     <div class="card neutral" id="card-wind">
       <div class="card-label">ქარის სიჩქარე</div>
-      <div class="card-value" id="c-wind">--</div>
-      <div class="card-unit">მ/წმ</div>
+      <div class="card-value-row">
+        <div class="card-value" id="c-wind">--</div>
+        <div class="card-unit">მ/წმ</div>
+      </div>
       <div class="card-sub">დაქროლვა: <span id="c-gusts" class="mono">--</span> მ/წმ</div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wind" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-wave">
       <div class="card-label">ტალღის სიმაღლე</div>
-      <div class="card-value" id="c-wave">--</div>
-      <div class="card-unit">მეტრი</div>
-      <div class="card-sub">პერიოდი: <span id="c-period" class="mono">--</span>წმ | ჭანჭ: <span id="c-swell" class="mono">--</span>მ</div>
+      <div class="card-value-row">
+        <div class="card-value" id="c-wave">--</div>
+        <div class="card-unit">მეტრი</div>
+      </div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wave" style="width:0%"></div></div>
     </div>
     <!-- ჰაერის ტემპერატურა -->
     <div class="card neutral" id="card-airtemp">
       <div class="card-label">ჰაერის ტემპ.</div>
-      <div class="card-value" id="c-airtemp">--</div>
-      <div class="card-unit">°C</div>
-      <div class="card-sub">ECMWF best_match</div>
+      <div class="card-value-row">
+        <div class="card-value" id="c-airtemp">--</div>
+        <div class="card-unit">°C</div>
+      </div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-airtemp" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-rain">
       <div class="card-label">ნალექი</div>
-      <div class="card-value" id="c-rain">--</div>
-      <div class="card-unit">მმ/სთ</div>
-      <div class="card-sub">წყლის ტემპ: <span id="c-wtemp" class="mono">--</span>°C</div>
+      <div class="card-value-row">
+        <div class="card-value" id="c-rain">--</div>
+        <div class="card-unit">მმ/სთ</div>
+      </div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-rain" style="width:0%"></div></div>
     </div>
 
     <!-- ხილვადობა -->
     <div class="card neutral" id="card-vis">
       <div class="card-label">ხილვადობა</div>
-      <div class="card-value" id="c-vis">--</div>
-      <div class="card-unit">კმ</div>
+      <div class="card-value-row">
+        <div class="card-value" id="c-vis">--</div>
+        <div class="card-unit">კმ</div>
+      </div>
       <div class="card-sub">ნისლის ზღვარი: 0.1 კმ</div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
     </div>
@@ -617,8 +626,6 @@ function render(d) {
 
   setCard('card-wave','c-wave', c.wave_height,
     wv>=THR.wave?'danger': wv>=1.2?'warn':'ok');
-  document.getElementById('c-period').textContent = fmt(c.wave_period,1);
-  document.getElementById('c-swell').textContent  = fmt(c.swell_height);
   setBar('bar-wave', wv/3, wv>=THR.wave?'rd': wv>=1.2?'yw':'gn');
 
   setCard('card-vis','c-vis', c.visibility_km,
@@ -627,7 +634,6 @@ function render(d) {
 
   setCard('card-rain','c-rain', c.precipitation,
     (c.precipitation||0)>=5?'danger': (c.precipitation||0)>=2?'warn':'ok');
-  document.getElementById('c-wtemp').textContent = c.water_temp ? fmt(c.water_temp,1) : '--';
   setBar('bar-rain', Math.min((c.precipitation||0)/10,1),
     (c.precipitation||0)>=5?'rd': (c.precipitation||0)>=2?'yw':'gn');
 
