@@ -660,6 +660,66 @@ def send_telegram(output: dict):
     _save_status_cache(new_status)
 
 
+DIGEST_INTERVAL_HOURS = 3   # ყოველ 3 საათში: 00, 03, 06, 09, 12, 15, 18, 21
+
+
+def send_digest_telegram(output: dict):
+    """ყოველ 3 საათში ერთხელ — მიმდინარე ვითარება + მომდევნო 3 საათის პროგნოზი.
+    სტატუსის ცვლილებაზე დამოკიდებული არ არის — იგზავნება დროის გრაფიკით."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        log.info("Digest Telegram გამოტოვებულია (TOKEN/CHAT_ID არ არის)")
+        return
+
+    now_hour = datetime.now(TBILISI_TZ).hour
+    if now_hour % DIGEST_INTERVAL_HOURS != 0:
+        return
+
+    fc  = output.get("forecast", [])
+    idx = _current_hour_index(fc)
+    c   = output["current"]
+    em  = STATUS_EMOJI.get(c.get("status"), "ℹ️")
+    now_str = output["meta"]["last_update"]
+
+    text = (
+        f"{em} <b>ფოთის პორტი — ამინდის ვითარება</b>\n"
+        f"🕐 {now_str}\n"
+        f"─────────────────\n"
+        f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | გუსტი: <b>{c['wind_gusts']} მ/წმ</b> | "
+        f"მიმართ: <b>{_deg_to_compass(c['wind_direction'])}</b>\n"
+        f"🌊 ტალღა: <b>{c['wave_height']} მ</b>\n"
+        f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>\n"
+        f"🌧 ნალექი: <b>{c['precipitation']} მმ/სთ</b>\n"
+        f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
+        f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
+    )
+    if c.get("alerts"):
+        text += "⚡ " + " | ".join(c["alerts"]) + "\n"
+
+    next_hours = fc[idx + 1 : idx + 1 + DIGEST_INTERVAL_HOURS]
+    if next_hours:
+        text += "─────────────────\n<b>მოსალოდნელი მომდევნო 3 საათი:</b>\n"
+        for h in next_hours:
+            t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
+            hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
+            text += (
+                f"{hem} {t_label} — ქარი {h['wind_speed']} მ/წმ, "
+                f"ტალღა {h['wave_height']} მ, ნალექი {h['precipitation']} მმ/სთ\n"
+            )
+
+    try:
+        r = requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"},
+            timeout=10,
+        )
+        if r.ok:
+            log.info("Digest Telegram ✓ — გაიგზავნა")
+        else:
+            log.warning(f"Digest Telegram ✗ — {r.status_code}: {r.text[:100]}")
+    except Exception as e:
+        log.warning(f"Digest Telegram ✗ — {e}")
+
+
 def _load_status_cache() -> str:
     try:
         with open(STATUS_CACHE, encoding="utf-8") as f:
@@ -839,6 +899,7 @@ def main():
 
         # Telegram შეტყობინება (სტატუსის ცვლილებაზე)
         send_telegram(output)
+        send_digest_telegram(output)
 
         s = output["summary_24h"]
         log.info("══ შედეგი ══")
