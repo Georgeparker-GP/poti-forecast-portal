@@ -738,8 +738,33 @@ def build_output(consensus, sources_used):
 #  7.  მთავარი
 # ═══════════════════════════════════════════════════════════════
 
+def _minutes_since_last_update():
+    """data.json-ის meta.last_update-დან გასული წუთები. თუ ფაილი არ არსებობს/არასწორია — None."""
+    try:
+        with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
+            existing = json.load(f)
+        last_str = existing.get("meta", {}).get("last_update")
+        if not last_str:
+            return None
+        last_dt = datetime.strptime(last_str, "%Y-%m-%d %H:%M").replace(tzinfo=TBILISI_TZ)
+        delta = datetime.now(TBILISI_TZ) - last_dt
+        return delta.total_seconds() / 60
+    except Exception:
+        return None
+
+
 def main():
     log.info(f"══ {LOCATION['name']} — კონსენსუს ბექენდი (48h) ══")
+
+    # GitHub Actions-ის cron scheduler ხანდახან საათობით აგვიანებს/'ხტის' გაშვებებს —
+    # ამიტომ workflow ხშირად (15 წუთში ერთხელ) ეშვება, მაგრამ ნამდვილი fetch
+    # მხოლოდ მაშინ ხდება, თუ წინა წარმატებული განახლებიდან ნამდვილად ~საათი გავიდა.
+    # ეს რჩება დაცული Stormglass-ის daily quota-სა და Open-Meteo-ს ზედმეტი დატვირთვისგან.
+    minutes_since = _minutes_since_last_update()
+    if minutes_since is not None and minutes_since < 55:
+        log.info(f"ბოლო განახლება {minutes_since:.0f} წუთის წინ მოხდა — ნაადრევია, ამ ციკლს გამოვტოვებ.")
+        return
+
     sources_used = []
 
     try:
