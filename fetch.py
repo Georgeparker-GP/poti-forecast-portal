@@ -47,6 +47,7 @@ FORECAST_HOURS      = 48
 REQUEST_TIMEOUT     = 15
 OUTPUT_FILE         = "data.json"
 STATUS_CACHE        = "status_cache.json"
+SOS_CACHE           = "sos_cache.json"
 STORMGLASS_CACHE    = "stormglass_cache.json"
 YR_NO_CACHE         = "yr_cache.json"
 STORMGLASS_INTERVAL = 3
@@ -632,8 +633,8 @@ def send_telegram(output: dict):
         f"{old_em} {STATUS_KA.get(old_status,'?')} → {em} <b>{STATUS_KA[new_status]}</b>\n"
         f"─────────────────\n"
         f"🕐 {now}\n"
-        f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | გუსტი: <b>{c['wind_gusts']} მ/წმ</b> | "
-        f"მიმართ: <b>{_deg_to_compass(c['wind_direction'])}</b>\n"
+        f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
+        f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b> | პერიოდი: {c['wave_period']} წმ\n"
         f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
         f"─────────────────\n"
@@ -681,11 +682,11 @@ def send_digest_telegram(output: dict):
     now_str = output["meta"]["last_update"]
 
     text = (
-        f"{em} <b>ფოთის პორტი — ამინდის ვითარება</b>\n"
+        f"{em} <b>ფოთის პორტი — მიმდინარე მეტეო-მონაცემები</b>\n"
         f"🕐 {now_str}\n"
         f"─────────────────\n"
-        f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | გუსტი: <b>{c['wind_gusts']} მ/წმ</b> | "
-        f"მიმართ: <b>{_deg_to_compass(c['wind_direction'])}</b>\n"
+        f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
+        f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>\n"
         f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>\n"
         f"🌧 ნალექი: <b>{c['precipitation']} მმ/სთ</b>\n"
@@ -706,6 +707,93 @@ def send_digest_telegram(output: dict):
                 f"ტალღა {h['wave_height']} მ, ნალექი {h['precipitation']} მმ/სთ\n"
             )
 
+    _send_telegram_text(text, label="Digest")
+
+
+SHIFT_HANDOVER_HOURS = {8, 20}   # ცვლის გადაბარება: დილის 8 და საღამოს 8
+SHIFT_FORECAST_HOURS = 12        # ცვლის ხანგრძლივობა
+SHIFT_SEGMENT_HOURS  = 4         # დეტალური ჩაშლა 4-საათიან მონაკვეთებად (3 × 4 = 12სთ)
+PORTAL_URL = "https://georgeparker-gp.github.io/poti-forecast-portal/"
+
+STATUS_SEVERITY = {"operational": 0, "warning": 1, "suspended": 2}
+
+
+def send_shift_handover_telegram(output: dict):
+    """ცვლის გადაბარების რეპორტი — 08:00 და 20:00: ზოგადი სურათი მომდევნო 12 საათისთვის
+    (მაქს./მინ. მაჩვენებლები + 4-საათიანი მონაკვეთები) — არა დაწვრილებითი საათობრივი ჩაშლა."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+
+    now_hour = datetime.now(TBILISI_TZ).hour
+    if now_hour not in SHIFT_HANDOVER_HOURS:
+        return
+
+    fc  = output.get("forecast", [])
+    idx = _current_hour_index(fc)
+    now_str = output["meta"]["last_update"]
+    shift_label = "დილის ცვლა" if now_hour == 8 else "საღამოს ცვლა"
+
+    next_hours = fc[idx + 1 : idx + 1 + SHIFT_FORECAST_HOURS]
+    if not next_hours:
+        return
+
+    period_start = f"{now_hour:02d}:00"
+    period_end   = f"{(now_hour + SHIFT_FORECAST_HOURS) % 24:02d}:00"
+
+    max_gust   = max(h["wind_gusts"]    for h in next_hours)
+    max_wave   = max(h["wave_height"]   for h in next_hours)
+    max_temp   = max(h["air_temp"]      for h in next_hours)
+    min_vis    = min(h["visibility_km"] for h in next_hours)
+    total_rain = round(sum(h["precipitation"] for h in next_hours), 1)
+    rain_hours = sum(1 for h in next_hours if (h["precipitation"] or 0) > 0)
+    rain_line  = ("მოსალოდნელი არ არის" if rain_hours == 0
+                  else f"მოსალოდნელია — ცვლის განმავლობაში ~{total_rain} მმ")
+
+    worst       = max(next_hours, key=lambda h: STATUS_SEVERITY.get(h.get("status"), 0))
+    worst_status = worst.get("status")
+    status_summary = (
+        "სტანდარტული რეჟიმი — ცვლის განმავლობაში სრულად" if worst_status == "operational"
+        else STATUS_KA.get(worst_status, worst_status)
+    )
+
+    text = (
+        f"🔔 <b>ფოთის პორტი — ცვლის ამინდის პროგნოზი (12 საათი)</b>\n"
+        f"🕐 განახლებულია: {now_str}\n"
+        f"─────────────────\n"
+        f"📊 პერიოდი: {period_start} — {period_end} ({shift_label})\n"
+        f"{STATUS_EMOJI.get(worst_status,'⚠️')} სტატუსი: <b>{status_summary}</b>\n"
+        f"─────────────────\n"
+        f"💨 ქარის მაქს. დაქროლვა: <b>{max_gust} მ/წმ</b>\n"
+        f"🌊 ტალღის მაქს. სიმაღლე: <b>{max_wave} მ</b>\n"
+        f"🌡 ჰაერის მაქს. ტემპ: <b>{max_temp}°C</b>\n"
+        f"🌧 ნალექი: <b>{rain_line}</b>\n"
+        f"👁 ხილვადობის მინიმუმი: <b>{min_vis} კმ</b>\n"
+        f"─────────────────\n"
+        f"<b>ცვლის მსვლელობა:</b>\n"
+    )
+
+    for i in range(0, len(next_hours), SHIFT_SEGMENT_HOURS):
+        seg = next_hours[i : i + SHIFT_SEGMENT_HOURS]
+        if not seg:
+            continue
+        seg_start_h = int(seg[0]["time"][11:13])
+        seg_end_h   = (seg_start_h + len(seg)) % 24
+        seg_worst   = max(seg, key=lambda h: STATUS_SEVERITY.get(h.get("status"), 0))
+        sem         = STATUS_EMOJI.get(seg_worst.get("status"), "✅")
+        seg_gust    = max(h["wind_gusts"]  for h in seg)
+        seg_wave    = max(h["wave_height"] for h in seg)
+        seg_rain    = round(sum(h["precipitation"] for h in seg), 1)
+        text += (
+            f"{sem} {seg_start_h:02d}:00–{seg_end_h:02d}:00 — დაქროლვა ≤{seg_gust} მ/წმ, "
+            f"ტალღა ≤{seg_wave} მ, ნალექი {seg_rain} მმ\n"
+        )
+
+    text += f"─────────────────\nდეტალური მონაცემებისთვის გადადით პორტალზე:\n{PORTAL_URL}"
+
+    _send_telegram_text(text, label="Shift-handover")
+
+
+def _send_telegram_text(text: str, label: str = "Telegram"):
     try:
         r = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -713,11 +801,11 @@ def send_digest_telegram(output: dict):
             timeout=10,
         )
         if r.ok:
-            log.info("Digest Telegram ✓ — გაიგზავნა")
+            log.info(f"{label} Telegram ✓ — გაიგზავნა")
         else:
-            log.warning(f"Digest Telegram ✗ — {r.status_code}: {r.text[:100]}")
+            log.warning(f"{label} Telegram ✗ — {r.status_code}: {r.text[:100]}")
     except Exception as e:
-        log.warning(f"Digest Telegram ✗ — {e}")
+        log.warning(f"{label} Telegram ✗ — {e}")
 
 
 def _load_status_cache() -> str:
@@ -736,9 +824,86 @@ def _save_status_cache(status: str):
         log.warning(f"status_cache შენახვა ✗ — {e}")
 
 
+def _load_sos_cache() -> str:
+    """ბოლო საათი, რომლისთვისაც SOS უკვე გაგზავნილია — დუბლირებული ალერტის თავიდან აცილება."""
+    try:
+        with open(SOS_CACHE, encoding="utf-8") as f:
+            return json.load(f).get("warned_for", "")
+    except (FileNotFoundError, KeyError, ValueError):
+        return ""
+
+
+def _save_sos_cache(warned_for: str):
+    try:
+        with open(SOS_CACHE, "w", encoding="utf-8") as f:
+            json.dump({"warned_for": warned_for, "sent": datetime.now(TBILISI_TZ).isoformat()}, f)
+    except Exception as e:
+        log.warning(f"sos_cache შენახვა ✗ — {e}")
+
+
+def send_sos_alert(output: dict):
+    """SOS — თუ მომდევნო საათში (≈1 საათში) მოსალოდნელია წითელი ზონა (suspended),
+    და ეს ჯერ არ მომხდარა — დაუყოვნებლივ ალერტი, ცვლის/3სთ-გრაფიკისგან დამოუკიდებლად.
+    ერთხელ იგზავნება კონკრეტული საათისთვის (cache-ით დუბლირების თავიდან აცილებით)."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+
+    fc  = output.get("forecast", [])
+    idx = _current_hour_index(fc)
+    if idx + 1 >= len(fc):
+        return
+
+    current_h = fc[idx]
+    next_h    = fc[idx + 1]
+
+    if next_h.get("status") != "suspended":
+        return
+    if current_h.get("status") == "suspended":
+        return   # უკვე წითელ ზონაშია — ეს არ არის ახალი მოახლოება, ცალკე ლოგიკას ვუტოვებთ
+
+    target_time = next_h.get("time", "")
+    if _load_sos_cache() == target_time:
+        return   # ამ კონკრეტულ საათზე SOS უკვე გაგზავნილია
+
+    now_str = output["meta"]["last_update"]
+    t_label = target_time[11:16] if len(target_time) >= 16 else target_time
+
+    text = (
+        f"🆘 <b>SOS — მოსალოდნელია კრიტიკული გაუარესება!</b>\n"
+        f"🕐 ამჟამად: {now_str}\n"
+        f"⏰ მოახლოვდება: <b>{t_label}</b> (≈1 საათში)\n"
+        f"─────────────────\n"
+        f"🚨 მოსალოდნელი სტატუსი: <b>{STATUS_KA['suspended']}</b>\n"
+        f"💨 ქარი: <b>{next_h['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{next_h['wind_gusts']} მ/წმ</b> | "
+        f"მიმართ: <b>{_compass_full(next_h['wind_direction'])}</b>\n"
+        f"🌊 ტალღა: <b>{next_h['wave_height']} მ</b>\n"
+        f"👁 ხილვადობა: <b>{next_h['visibility_km']} კმ</b>\n"
+    )
+    if next_h.get("alerts"):
+        text += "⚡ " + " | ".join(next_h["alerts"]) + "\n"
+    text += "─────────────────\nსასურველია დროულად მოემზადოთ საოპერაციო შეჩერებისთვის."
+
+    _send_telegram_text(text, label="SOS")
+    _save_sos_cache(target_time)
+
+
 def _deg_to_compass(deg: float) -> str:
     dirs = ["N","NE","E","SE","S","SW","W","NW"]
     return dirs[int((deg + 22.5) / 45) % 8]
+
+
+GEO_COMPASS = {
+    "N":  "ჩრდ.",      "NE": "ჩრდ.-აღმ.",
+    "E":  "აღმ.",       "SE": "სამხ.-აღმ.",
+    "S":  "სამხ.",      "SW": "სამხ.-დას.",
+    "W":  "დას.",       "NW": "ჩრდ.-დას.",
+}
+
+
+def _compass_full(deg: float) -> str:
+    """ლათინური მიმართულება + ქართული შესაბამისობა, მაგ: 'SW (სამხ.-დას.)'"""
+    lat = _deg_to_compass(deg)
+    return f"{lat} ({GEO_COMPASS.get(lat, lat)})"
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -820,10 +985,13 @@ def main():
     # ამიტომ workflow ხშირად (15 წუთში ერთხელ) ეშვება, მაგრამ ნამდვილი fetch
     # მხოლოდ მაშინ ხდება, თუ წინა წარმატებული განახლებიდან ნამდვილად ~საათი გავიდა.
     # ეს რჩება დაცული Stormglass-ის daily quota-სა და Open-Meteo-ს ზედმეტი დატვირთვისგან.
+    force_refresh = os.environ.get("FORCE_REFRESH", "").lower() == "true"
     minutes_since = _minutes_since_last_update()
-    if minutes_since is not None and minutes_since < 55:
+    if not force_refresh and minutes_since is not None and minutes_since < 55:
         log.info(f"ბოლო განახლება {minutes_since:.0f} წუთის წინ მოხდა — ნაადრევია, ამ ციკლს გამოვტოვებ.")
         return
+    if force_refresh and minutes_since is not None and minutes_since < 55:
+        log.info(f"ხელით გაშვება (workflow_dispatch) — throttle-ს გამოვტოვებ ({minutes_since:.0f} წუთის წინ).")
 
     sources_used = []
 
@@ -899,13 +1067,15 @@ def main():
 
         # Telegram შეტყობინება (სტატუსის ცვლილებაზე)
         send_telegram(output)
+        send_sos_alert(output)
         send_digest_telegram(output)
+        send_shift_handover_telegram(output)
 
         s = output["summary_24h"]
         log.info("══ შედეგი ══")
         log.info(f"  წყაროები:    {', '.join(sources_used)}")
         log.info(f"  ტალღა მაქს:  {s['max_wave_height']} მ")
-        log.info(f"  გუსტი მაქს:  {s['max_wind_gusts']} მ/წმ")
+        log.info(f"  დაქროლვა მაქს: {s['max_wind_gusts']} მ/წმ")
         log.info(f"  შეჩერება:    {s['suspended_hours']}h / {len(consensus)}h")
         log.info(f"  სტატუსი:     {s['overall_status'].upper()}")
         log.info(f"  ✓ {OUTPUT_FILE}")
