@@ -68,8 +68,8 @@ header{
   display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
 }
 .logo{display:flex;align-items:center;gap:12px;}
-.local-time-line{font-size:11px;color:var(--sb);margin-top:5px;display:flex;align-items:center;justify-content:flex-end;gap:5px;white-space:nowrap;}
-.local-time-line .mono{color:var(--tx);font-weight:600;}
+.local-time-line{font-size:17px;color:var(--sb);margin-top:8px;display:flex;align-items:center;justify-content:flex-end;gap:7px;white-space:nowrap;}
+.local-time-line .mono{color:var(--tx);font-weight:700;font-size:18px;}
 .tg-share-btn{
   width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;
   background:linear-gradient(135deg,#2AABEE,#229ED9);
@@ -242,7 +242,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div style="font-size:10px;color:var(--sb)">ბოლო განახლება</div>
       <div id="update-time" class="mono" style="font-size:14px;color:var(--bl);margin-top:2px;font-weight:600">--:--</div>
       <div id="next-time" style="font-size:10px;color:var(--mu);margin-top:1px">შემდეგი: ---</div>
-      <div style="font-size:10px;color:var(--mu);margin-top:2px">განახლება: <span id="cd" style="color:var(--tl)">60</span>წმ</div>
+      <div style="display:none">განახლება: <span id="cd" style="color:var(--tl)">60</span>წმ</div>
       <div class="local-time-line">
         <span>📅</span><span id="local-date" class="mono">--</span>
         <span style="margin-left:2px">🕐</span><span id="local-clock" class="mono">--:--:--</span>
