@@ -787,8 +787,9 @@ def send_digest_telegram(output: dict):
         for h in next_hours:
             t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
             hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
+            temp_str = f"{h['air_temp']}°C, " if h.get("air_temp") is not None else ""
             text += (
-                f"{hem} {t_label} — ქარი {h['wind_speed']} მ/წმ, "
+                f"{hem} {t_label} — {temp_str}ქარი {h['wind_speed']} მ/წმ, "
                 f"ტალღა {h['wave_height']} მ, ნალექი {h['precipitation']} მმ/სთ\n"
             )
 
