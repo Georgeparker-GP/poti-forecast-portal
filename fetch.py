@@ -661,18 +661,19 @@ def send_telegram(output: dict):
     _save_status_cache(new_status)
 
 
-DIGEST_INTERVAL_HOURS = 3   # ყოველ 3 საათში: 00, 03, 06, 09, 12, 15, 18, 21
+DIGEST_HOURS          = {2, 5, 11, 14, 17, 23}   # 08:00/20:00 ცვლის რეპორტს ეთმობა
+DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პროგნოზის ფანჯარა
 
 
 def send_digest_telegram(output: dict):
-    """ყოველ 3 საათში ერთხელ — მიმდინარე ვითარება + მომდევნო 3 საათის პროგნოზი.
-    სტატუსის ცვლილებაზე დამოკიდებული არ არის — იგზავნება დროის გრაფიკით."""
+    """ცვლის გადაბარების (08:00/20:00) გარდა, დღე-ღამეში 6-ჯერ — მიმდინარე ვითარება
+    + მომდევნო 3 საათის პროგნოზი. სტატუსის ცვლილებაზე დამოკიდებული არ არის."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         log.info("Digest Telegram გამოტოვებულია (TOKEN/CHAT_ID არ არის)")
         return
 
     now_hour = datetime.now(TBILISI_TZ).hour
-    if now_hour % DIGEST_INTERVAL_HOURS != 0:
+    if now_hour not in DIGEST_HOURS:
         return
 
     fc  = output.get("forecast", [])
