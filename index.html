@@ -679,18 +679,19 @@ function render(d) {
   document.getElementById('c-wdir-deg').textContent = Math.round(deg);
   document.getElementById('c-wdir-sym').textContent = toCompass(deg);
 
-  // 48h summary
-  const susp  = fc.filter(h=>h.status==='suspended').length;
-  const vessel = fc.filter(h=>h.status==='vessel').length;
-  const barge  = fc.filter(h=>h.status==='barge').length;
-  const op     = fc.filter(h=>h.status==='operational').length;
+  // 48h summary — მხოლოდ "ახლა"-დან წინ (არა დღევანდელი გასული საათები)
+  const fcFuture = fc.slice(nowIndex);
+  const susp  = fcFuture.filter(h=>h.status==='suspended').length;
+  const vessel = fcFuture.filter(h=>h.status==='vessel').length;
+  const barge  = fcFuture.filter(h=>h.status==='barge').length;
+  const op     = fcFuture.filter(h=>h.status==='operational').length;
   document.getElementById('s-stop').textContent   = susp+'h';
   document.getElementById('s-vessel').textContent = vessel+'h';
   document.getElementById('s-barge').textContent  = barge+'h';
   document.getElementById('s-op').textContent     = op+'h';
-  document.getElementById('s-mw').textContent = fmt(Math.max(...fc.map(h=>h.wave_height||0)))+'მ';
-  document.getElementById('s-mg').textContent = fmt(Math.max(...fc.map(h=>h.wind_gusts||0)))+' მ/წმ';
-  const temps = fc.map(h=>h.air_temp).filter(t=>t!=null);
+  document.getElementById('s-mw').textContent = fmt(Math.max(...fcFuture.map(h=>h.wave_height||0)))+'მ';
+  document.getElementById('s-mg').textContent = fmt(Math.max(...fcFuture.map(h=>h.wind_gusts||0)))+' მ/წმ';
+  const temps = fcFuture.map(h=>h.air_temp).filter(t=>t!=null);
   document.getElementById('s-tmin').textContent = temps.length ? fmt(Math.min(...temps),1)+'°C' : '--';
   document.getElementById('s-tmax').textContent = temps.length ? fmt(Math.max(...temps),1)+'°C' : '--';
 
