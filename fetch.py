@@ -44,6 +44,7 @@ LOCATION   = {"name": "ფოთის პორტი", "lat": 42.15, "lon": 41
 TBILISI_TZ = timezone(timedelta(hours=4))   # საქართველოს დროის ზონა (UTC+4, DST არ აქვს)
 
 FORECAST_HOURS      = 48
+DAILY_FORECAST_DAYS = 7   # კვირის ხედი — დღიური აგრეგატები, საათობრივი ჩაშლის გარეშე
 REQUEST_TIMEOUT     = 15
 OUTPUT_FILE         = "data.json"
 STATUS_CACHE        = "status_cache.json"
@@ -81,6 +82,46 @@ log = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════
 #  1.  API მოთხოვნები
 # ═══════════════════════════════════════════════════════════════
+
+def fetch_open_meteo_daily():
+    """7-დღიანი დღიური აგრეგატები (არა საათობრივი) — კვირის ხედისთვის."""
+    params = {
+        "latitude": LOCATION["lat"], "longitude": LOCATION["lon"],
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,"
+                 "wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,weather_code",
+        "wind_speed_unit": "ms",
+        "forecast_days": DAILY_FORECAST_DAYS,
+        "timezone": LOCATION["timezone"],
+    }
+    try:
+        r = requests_session.get("https://api.open-meteo.com/v1/forecast",
+                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
+        r.raise_for_status()
+        log.info("Open-Meteo Daily ✓")
+        return r.json()
+    except Exception as e:
+        log.warning(f"Open-Meteo Daily ✗ — {e}")
+        return None
+
+
+def fetch_open_meteo_marine_daily():
+    """7-დღიანი ტალღის მაქს. სიმაღლე."""
+    params = {
+        "latitude": LOCATION["lat"], "longitude": LOCATION["lon"],
+        "daily": "wave_height_max,wave_period_max",
+        "forecast_days": DAILY_FORECAST_DAYS,
+        "timezone": LOCATION["timezone"],
+    }
+    try:
+        r = requests_session.get("https://marine-api.open-meteo.com/v1/marine",
+                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
+        r.raise_for_status()
+        log.info("Open-Meteo Marine Daily ✓")
+        return r.json()
+    except Exception as e:
+        log.warning(f"Open-Meteo Marine Daily ✗ — {e}")
+        return None
+
 
 def fetch_open_meteo_atmosphere(model: str):
     params = {
@@ -284,6 +325,49 @@ def _save_yr_cache(data):
 # ═══════════════════════════════════════════════════════════════
 #  3.  პარსინგი
 # ═══════════════════════════════════════════════════════════════
+
+def parse_open_meteo_daily(raw, days=DAILY_FORECAST_DAYS):
+    if not raw or "daily" not in raw:
+        return []
+    d = raw["daily"]
+    n = min(days, len(d.get("time", [])))
+    return [
+        {
+            "date":      d["time"][i],
+            "temp_max":  _safe(d.get("temperature_2m_max", []), i, default=None),
+            "temp_min":  _safe(d.get("temperature_2m_min", []), i, default=None),
+            "precip_sum": _safe(d.get("precipitation_sum", []), i),
+            "wind_max":  _safe(d.get("wind_speed_10m_max", []), i),
+            "gust_max":  _safe(d.get("wind_gusts_10m_max", []), i),
+            "wind_dir":  _safe(d.get("wind_direction_10m_dominant", []), i, default=None),
+        }
+        for i in range(n)
+    ]
+
+
+def parse_marine_daily(raw, days=DAILY_FORECAST_DAYS):
+    if not raw or "daily" not in raw:
+        return []
+    d = raw["daily"]
+    n = min(days, len(d.get("time", [])))
+    return [
+        {"date": d["time"][i], "wave_max": _safe(d.get("wave_height_max", []), i)}
+        for i in range(n)
+    ]
+
+
+def build_daily_summary(daily_atmo, daily_marine):
+    """ანაერთებს ატმოსფერულ + ტალღის დღიურ მონაცემებს, სტატუსს ანგარიშობს დღის
+    მაქსიმუმებზე დაყრდნობით (ხილვადობის აგრეგატი Open-Meteo-ს daily-ში არ არსებობს,
+    ამიტომ ეს განზომილება დღიურ სტატუსში არ ფასდება)."""
+    wave_by_date = {w["date"]: w["wave_max"] for w in daily_marine}
+    result = []
+    for a in daily_atmo:
+        wave_max = wave_by_date.get(a["date"], 0.0)
+        status, alerts = _compute_status(a["wind_max"], a["gust_max"], wave_max, 999)
+        result.append({**a, "wave_max": wave_max, "status": status, "alerts": alerts})
+    return result
+
 
 def parse_open_meteo_atmosphere(raw, hours=FORECAST_HOURS):
     h = raw["hourly"]
@@ -927,7 +1011,7 @@ def _current_hour_index(consensus):
     return idx
 
 
-def build_output(consensus, sources_used):
+def build_output(consensus, sources_used, daily=None):
     now  = consensus[_current_hour_index(consensus)] if consensus else {}
     susp = sum(1 for h in consensus if h["status"] == "suspended")
     warn = sum(1 for h in consensus if h["status"] == "warning")
@@ -957,6 +1041,7 @@ def build_output(consensus, sources_used):
             "overall_status":    "suspended" if susp else "warning" if warn else "operational",
         },
         "forecast": consensus,
+        "daily":    daily or [],
     }
 
 
@@ -1061,7 +1146,17 @@ def main():
         consensus = compute_consensus(atmo_best, atmo_gfs, atmo_icon,
                                       marine, stormglass, windy, yr_no, owm)
 
-        output = build_output(consensus, sources_used)
+        raw_daily        = fetch_open_meteo_daily()
+        daily_atmo       = parse_open_meteo_daily(raw_daily) if raw_daily else []
+        raw_marine_daily = fetch_open_meteo_marine_daily()
+        daily_marine     = parse_marine_daily(raw_marine_daily) if raw_marine_daily else []
+        daily            = build_daily_summary(daily_atmo, daily_marine) if daily_atmo else []
+        if daily:
+            log.info(f"კვირის ხედი: {len(daily)} დღე ✓")
+        else:
+            log.warning("კვირის ხედი ✗ — daily მონაცემები მიუწვდომელია (forecast/daily ველი ცარიელია)")
+
+        output = build_output(consensus, sources_used, daily)
 
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(output, f, ensure_ascii=False, indent=2)
