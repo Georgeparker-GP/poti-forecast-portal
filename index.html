@@ -453,16 +453,17 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <!-- ცხრილი -->
   <div class="panel rel">
     <div class="panel-head">
-      <h3>საათობრივი პროგნოზი</h3>
+      <h3 id="tbl-title">საათობრივი პროგნოზი</h3>
       <p id="tbl-sources">წყაროები: იტვირთება...</p>
     </div>
     <div class="tabs">
       <div class="tab active" onclick="switchTab(24,this)">24 საათი</div>
       <div class="tab"        onclick="switchTab(48,this)">48 საათი</div>
+      <div class="tab"        onclick="switchTab('week',this)">1 კვირა</div>
     </div>
     <div style="overflow-x:auto">
       <table class="tbl">
-        <thead>
+        <thead id="tbl-thead">
           <tr>
             <th>დრო</th>
             <th>ტემპ. °C</th>
@@ -510,6 +511,7 @@ let allForecast = [];
 let showHours   = 24;
 let nowIndex    = 0;
 let lastData    = null;   // ბოლო ჩატვირთული data.json — Telegram-გაზიარების ღილაკისთვის
+let activeTab   = 24;      // 24 | 48 | 'week' — auto-refresh-ისას სწორი ცხრილის განახლებისთვის
 
 // მონაცემები Asia/Tbilisi დროით (UTC+4) — ვპოულობთ "ახლა" საათს
 function findNowIndex(fc) {
@@ -694,7 +696,11 @@ function render(d) {
 
   allForecast = fc;
   buildChart(fc);
-  buildTable(fc.slice(nowIndex, nowIndex+showHours));
+  if (activeTab === 'week') {
+    buildWeekTable(d.daily);
+  } else {
+    buildTable(fc.slice(nowIndex, nowIndex+showHours));
+  }
 }
 
 // ═══ OPS PANEL HELPER ═══
@@ -787,11 +793,78 @@ function buildTable(fc) {
   }).join('');
 }
 
+function buildWeekTable(daily) {
+  const body = document.getElementById('tbl-body');
+  if (!daily || !daily.length) {
+    body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)">კვირის მონაცემები მიუწვდომელია</td></tr>`;
+    return;
+  }
+  const WD = ['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
+  body.innerHTML = daily.map((d,i)=>{
+    const st  = d.status || 'operational';
+    const rc  = st==='suspended'?'row-suspended':'';
+    const nc  = i===0?'row-now':'';
+    const mw  = Math.max(d.wind_max||0, d.gust_max||0);
+    const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':'t-gn';
+    const vc  = (d.wave_max||0)>=THR.wave?'t-rd': (d.wave_max||0)>=1.2?'t-yw':'t-gn';
+    const dir = d.wind_dir!=null ? `${Math.round(d.wind_dir)}° ${toCompass(d.wind_dir)}` : '--';
+    const tmax = d.temp_max!=null ? fmt(d.temp_max,1) : '--';
+    const tmin = d.temp_min!=null ? fmt(d.temp_min,1) : '--';
+    const dateObj = new Date(d.date+'T00:00');
+    const dateLabel = `${WD[dateObj.getDay()]} ${d.date.slice(5).replace('-','.')}${i===0?' ▶':''}`;
+    return `<tr class="${rc} ${nc}">
+      <td class="t-time">${dateLabel}</td>
+      <td class="t-num t-mu">${tmin}–${tmax}</td>
+      <td class="t-num ${wc}">${fmt(d.wind_max)}</td>
+      <td class="t-num ${mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':''}">${fmt(d.gust_max)}</td>
+      <td class="t-num t-mu">${dir}</td>
+      <td class="t-num ${vc}">${fmt(d.wave_max)}</td>
+      <td class="t-num ${(d.precip_sum||0)>=5?'t-yw':'t-mu'}">${fmt(d.precip_sum)}</td>
+      <td class="t-num t-mu">—</td>
+      <td>${PILL[st]||''}</td>
+    </tr>`;
+  }).join('');
+}
+
+const HOURLY_THEAD = `<tr>
+            <th>დრო</th>
+            <th>ტემპ. °C</th>
+            <th>ქარი მ/წმ</th>
+            <th>დაქროლვა</th>
+            <th>მიმართ.</th>
+            <th>ტალღა მ</th>
+            <th>წვიმა</th>
+            <th>ხილვ. კმ</th>
+            <th>სტატუსი</th>
+          </tr>`;
+const WEEK_THEAD = `<tr>
+            <th>თარიღი</th>
+            <th>ტემპ. °C (მინ–მაქს)</th>
+            <th>ქარი მაქს. მ/წმ</th>
+            <th>დაქროლვა მაქს.</th>
+            <th>დომინ. მიმართ.</th>
+            <th>ტალღა მაქს. მ</th>
+            <th>ნალექი ჯ. მმ</th>
+            <th>ხილვ. კმ</th>
+            <th>სტატუსი</th>
+          </tr>`;
+
 // ═══ HELPERS ═══
 function switchTab(h,el){
-  showHours=h;
+  activeTab = h;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
+  const titleEl = document.getElementById('tbl-title');
+  const theadEl = document.getElementById('tbl-thead');
+  if (h === 'week') {
+    theadEl.innerHTML = WEEK_THEAD;
+    if (titleEl) titleEl.textContent = '1 კვირის პროგნოზი (დღეების მიხედვით)';
+    buildWeekTable(lastData ? lastData.daily : []);
+    return;
+  }
+  showHours = h;
+  theadEl.innerHTML = HOURLY_THEAD;
+  if (titleEl) titleEl.textContent = 'საათობრივი პროგნოზი';
   if(allForecast.length) buildTable(allForecast.slice(nowIndex, nowIndex+h));
 }
 function setCard(cardId,valId,val,level){
