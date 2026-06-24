@@ -527,6 +527,7 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
 # ═══════════════════════════════════════════════════════════════
 
 def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy, yr_no, owm):
+    # 1. ძირითადი სრული აუზი (ნალექისთვის, ხილვადობისთვის და ფოლბექისთვის)
     atmo_pool = []
     for src, key in [
         (atmo_best,  "best_match"), (atmo_gfs,    "gfs"),
@@ -538,69 +539,95 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy,
             atmo_pool.append((src, BASE_WEIGHTS[key]))
 
     total_w = sum(w for _, w in atmo_pool)
+
+    # 2. ქარის "ელიტური სამეული" (Windy/ECMWF, yr.no/MET Norway, ICON-EU)
+    elite_wind_pool = []
+    for src, key in [
+        (windy, "windy"), (yr_no, "yr_no"), (atmo_icon, "icon_eu")
+    ]:
+        if src:
+            elite_wind_pool.append((src, BASE_WEIGHTS[key]))
+
+    elite_w = sum(w for _, w in elite_wind_pool)
+
+    # Fail-Safe: თუ ელიტური მოდელები მიუწვდომელია, ვბრუნდებით სრულ აუზზე
+    active_wind_pool = elite_wind_pool if elite_wind_pool else atmo_pool
+    active_wind_w    = elite_w if elite_wind_pool else total_w
+
     hours   = min(FORECAST_HOURS, len(atmo_best))
     result  = []
 
     for i in range(hours):
-        wind_speed  = _wavg(atmo_pool, i, "wind_speed",    total_w)
-        wind_gusts  = _wavg(atmo_pool, i, "wind_gusts",    total_w)
-        precip      = _wavg(atmo_pool, i, "precipitation", total_w)
+        # ─── ქარის 100%-ით ზუსტი ლოგიკა (მხოლოდ ელიტური აუზიდან) ───
 
-        # ხილვადობა — Windy-ს გამოკლებით (yr.no ნისლ-ბაზირებული)
+        # 1. საშუალო სიჩქარე (Weighted average მხოლოდ ელიტებიდან)
+        wind_speed = _wavg(active_wind_pool, i, "wind_speed", active_wind_w)
+
+        # 2. ქარის დაქროლვები (GUSTS) — Veto პრინციპი: ვიღებთ აბსოლუტურ მაქსიმუმს!
+        active_gusts = [
+            src[i].get("wind_gusts", 0) 
+            for src, _ in active_wind_pool 
+            if i < len(src) and src[i].get("wind_gusts") is not None
+        ]
+        wind_gusts = max(active_gusts) if active_gusts else wind_speed
+
+        # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
+        wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
+
+        # ─── დანარჩენი პარამეტრები (რჩება უცვლელი, შენი ორიგინალი ლოგიკით) ───
+        precip = _wavg(atmo_pool, i, "precipitation", total_w)
+
+        # ხილვადობა — Windy-ს გამოკლებით
         vis_pool = [(s, w) for s, w in atmo_pool if s is not windy]
         vis_w    = sum(w for _, w in vis_pool) or total_w
         visibility = _wavg(vis_pool or atmo_pool, i, "visibility_km", vis_w)
 
-        # ქარის მიმართულება — ვექტორული საშუალო (კუთხე!)
-        wind_direction = _vector_avg_direction(atmo_pool, i, "wind_direction", total_w)
-
-        # ტალღა
+        # ტალღა (Marine, Stormglass, Windy)
         wave_src = []
-        if marine     and i < len(marine)     and marine[i].get("wave_height", 0)     > 0:
-            wave_src.append((marine[i]["wave_height"],     WAVE_WEIGHTS["marine"]))
+        if marine and i < len(marine) and marine[i].get("wave_height", 0) > 0:
+            wave_src.append((marine[i]["wave_height"], WAVE_WEIGHTS["marine"]))
         if stormglass and i < len(stormglass) and stormglass[i].get("wave_height", 0) > 0:
             wave_src.append((stormglass[i]["wave_height"], WAVE_WEIGHTS["stormglass"]))
-        if windy      and i < len(windy)      and windy[i].get("wave_height", 0)      > 0:
-            wave_src.append((windy[i]["wave_height"],      WAVE_WEIGHTS["windy"]))
+        if windy and i < len(windy) and windy[i].get("wave_height", 0) > 0:
+            wave_src.append((windy[i]["wave_height"], WAVE_WEIGHTS["windy"]))
 
         if wave_src:
-            ww     = sum(w for _, w in wave_src)
+            ww = sum(w for _, w in wave_src)
             wave_h = sum(v * w for v, w in wave_src) / ww
         else:
             wave_h = _estimate_wave_from_wind(wind_speed)
 
-        wave_p = marine[i].get("wave_period",    0) if marine and i < len(marine) else 0
+        wave_p = marine[i].get("wave_period", 0) if marine and i < len(marine) else 0
         wave_d = marine[i].get("wave_direction", 0) if marine and i < len(marine) else 0
-        swell  = marine[i].get("swell_wave_height", 0) if marine and i < len(marine) else 0
+
+        swell = marine[i].get("swell_wave_height", 0) if marine and i < len(marine) else 0
         if stormglass and i < len(stormglass) and stormglass[i].get("swell_height", 0) > 0:
             swell = stormglass[i]["swell_height"]
 
-        water_temp    = stormglass[i].get("water_temp",    0.0) if stormglass and i < len(stormglass) else 0.0
+        water_temp = stormglass[i].get("water_temp", 0.0) if stormglass and i < len(stormglass) else 0.0
         current_speed = stormglass[i].get("current_speed", 0.0) if stormglass and i < len(stormglass) else 0.0
 
-        # ჰაერის ტემპერატურა — atmo_best-იდან (best_match ECMWF)
         air_temp = atmo_best[i].get("air_temp")
 
         status, alerts = _compute_status(wind_speed, wind_gusts, wave_h, visibility)
 
         result.append({
-            "time":            atmo_best[i]["time"],
-            "wind_speed":      _r(wind_speed),
-            "wind_gusts":      _r(wind_gusts),
-            "wind_direction":  _r(wind_direction, 0),
-            "precipitation":   _r(precip),
-            "visibility_km":   _r(visibility),
-            "wave_height":     _r(wave_h),
-            "wave_period":     _r(wave_p),
-            "wave_direction":  _r(wave_d),
-            "swell_height":    _r(swell),
-            "water_temp":      _r(water_temp),
-            "current_speed":   _r(current_speed),
-            "air_temp":        round(air_temp, 1) if air_temp is not None else None,
-            "status":          status,
-            "alerts":          alerts,
+            "time": atmo_best[i]["time"],
+            "wind_speed": _r(wind_speed),
+            "wind_gusts": _r(wind_gusts),
+            "wind_direction": _r(wind_direction, 0),
+            "precipitation": _r(precip),
+            "visibility_km": _r(visibility),
+            "wave_height": _r(wave_h),
+            "wave_period": _r(wave_p),
+            "wave_direction": _r(wave_d),
+            "swell_height": _r(swell),
+            "water_temp": _r(water_temp),
+            "current_speed": _r(current_speed),
+            "air_temp": round(air_temp, 1) if air_temp is not None else None,
+            "status": status,
+            "alerts": alerts,
         })
-
     return result
 
 
