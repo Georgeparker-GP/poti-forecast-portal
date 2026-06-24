@@ -8,15 +8,18 @@
   1. Open-Meteo / best_match  (უფასო)
   2. Open-Meteo / GFS         (უფასო)
   3. Open-Meteo / ICON-EU     (უფასო)
-  4. Open-Meteo Marine        (უფასო)
-  5. yr.no / MET Norway       (უფასო, გასაღები არ სჭირდება — ECMWF გლობალური)
-  6. Stormglass.io            (უფასო გასაღებით, 10req/დღე)
-  7. Windy.com / ECMWF        (უფასო გასაღებით)
+  4. Open-Meteo / ECMWF       (უფასო, ნამდვილი ECMWF IFS HRES 9კმ — open-data 2025 ოქტომბრიდან)
+  5. Open-Meteo Marine        (უფასო)
+  6. yr.no / MET Norway       (უფასო, გასაღები არ სჭირდება)
+  7. Stormglass.io            (უფასო გასაღებით, 10req/დღე)
   8. OpenWeatherMap           (უფასო გასაღებით)
+
+  [გათავისუფლებული] Windy.com — Point Forecast API ლიცენზირების მიზეზით
+  ECMWF-ს არასდროს გასცემს, და უფასო tier შეგნებულად "დანოისებულ" მონაცემს
+  აბრუნებს (production-ისთვის არ ვარგა). იხ. fetch_windy()-ის თავზე კომენტარი.
 
 გასაღებები (Windows: set, Mac/Linux: export):
   STORMGLASS_API_KEY   ← stormglass.io
-  WINDY_API_KEY        ← windy.com/en/api
   OWM_API_KEY          ← openweathermap.org
   TELEGRAM_BOT_TOKEN   ← @BotFather-დან
   TELEGRAM_CHAT_ID     ← შენი chat ID
@@ -62,10 +65,10 @@ THRESHOLDS = {
 }
 
 BASE_WEIGHTS = {
-    "best_match": 0.22, "gfs": 0.13, "icon_eu": 0.09,
-    "yr_no": 0.13, "windy": 0.18, "stormglass": 0.17, "owm": 0.08,
+    "best_match": 0.22, "gfs": 0.13, "icon_eu": 0.09, "ecmwf": 0.25,
+    "yr_no": 0.13, "stormglass": 0.17, "owm": 0.08,
 }
-WAVE_WEIGHTS = {"marine": 0.45, "windy": 0.25, "stormglass": 0.30}
+WAVE_WEIGHTS = {"marine": 0.55, "stormglass": 0.45}
 
 STORMGLASS_API_KEY = os.environ.get("STORMGLASS_API_KEY", "")
 WINDY_API_KEY      = os.environ.get("WINDY_API_KEY",      "")
@@ -197,6 +200,19 @@ def fetch_stormglass():
         return None
 
 
+# ⚠️ Windy მთავარი კონსენსუსიდან გათავისუფლებულია (main()-ში არ გამოიძახება) — ორი მიზეზით:
+# 1. Windy-ის Point Forecast API ლიცენზირების მიზეზით ECMWF-ს არასდროს გასცემს
+#    (დაფიქსირებულია Windy-ის საკუთარ pricing-გვერდზე — "ECMWF model is not
+#    included in point forecast due to licensing conditions", ფასიან გეგმაშიც).
+#    ანუ "model": "ecmwf" მოთხოვნა ყოველთვის 400 Bad Request-ით ჩავარდება.
+# 2. თუ WINDY_API_KEY უფასო "Testing" tier-ისაა — Windy-ის documentation პირდაპირ
+#    წერს: "Returns randomly shuffled and slightly modified data — Development
+#    purpose only, not intended for production". ანუ თუნდაც სწორი model-ით
+#    (gfs/iconEu/gfsWave) გაშვებულიყო, მონაცემი შეგნებულად "დანოისებული" იქნებოდა —
+#    არ ვარგა საოპერაციო გადაწყვეტილებისთვის.
+# რეალური ECMWF ახლა Open-Meteo-დან მოდის (fetch_open_meteo_atmosphere("ecmwf_ifs")) —
+# უფასო, ნამდვილი, 9კმ რეზოლუციით (ECMWF-მა open-data გახსნა 2025 ოქტომბრიდან).
+# ფუნქცია ქვემოთ შენარჩუნებულია მხოლოდ საინფორმაციოდ/მომავლისთვის.
 def fetch_windy():
     if not WINDY_API_KEY:
         log.info("Windy გამოტოვებულია (WINDY_API_KEY არ არის)")
@@ -526,13 +542,13 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
 #  4.  კონსენსუსი
 # ═══════════════════════════════════════════════════════════════
 
-def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy, yr_no, owm):
+def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormglass, yr_no, owm):
     # 1. ძირითადი სრული აუზი (ნალექისთვის, ხილვადობისთვის და ფოლბექისთვის)
     atmo_pool = []
     for src, key in [
         (atmo_best,  "best_match"), (atmo_gfs,    "gfs"),
         (atmo_icon,  "icon_eu"),    (yr_no,        "yr_no"),
-        (windy,      "windy"),      (stormglass,   "stormglass"),
+        (atmo_ecmwf, "ecmwf"),      (stormglass,   "stormglass"),
         (owm,        "owm"),
     ]:
         if src:
@@ -540,10 +556,10 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy,
 
     total_w = sum(w for _, w in atmo_pool)
 
-    # 2. ქარის "ელიტური სამეული" (Windy/ECMWF, yr.no/MET Norway, ICON-EU)
+    # 2. ქარის "ელიტური სამეული" (ნამდვილი ECMWF/Open-Meteo, yr.no/MET Norway, ICON-EU)
     elite_wind_pool = []
     for src, key in [
-        (windy, "windy"), (yr_no, "yr_no"), (atmo_icon, "icon_eu")
+        (atmo_ecmwf, "ecmwf"), (yr_no, "yr_no"), (atmo_icon, "icon_eu")
     ]:
         if src:
             elite_wind_pool.append((src, BASE_WEIGHTS[key]))
@@ -558,7 +574,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy,
     result  = []
 
     for i in range(hours):
-        # ─── ქარის 100%-ით ზუსტი ლოგიკა (მხოლოდ ელიტური აუზიდან) ───
+        # ─── ქარის ლოგიკა (მხოლოდ ელიტური აუზიდან) ───
 
         # 1. საშუალო სიჩქარე (Weighted average მხოლოდ ელიტებიდან)
         wind_speed = _wavg(active_wind_pool, i, "wind_speed", active_wind_w)
@@ -574,22 +590,16 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy,
         # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
         wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
 
-        # ─── დანარჩენი პარამეტრები (რჩება უცვლელი, შენი ორიგინალი ლოგიკით) ───
+        # ─── დანარჩენი პარამეტრები ───
         precip = _wavg(atmo_pool, i, "precipitation", total_w)
+        visibility = _wavg(atmo_pool, i, "visibility_km", total_w)
 
-        # ხილვადობა — Windy-ს გამოკლებით
-        vis_pool = [(s, w) for s, w in atmo_pool if s is not windy]
-        vis_w    = sum(w for _, w in vis_pool) or total_w
-        visibility = _wavg(vis_pool or atmo_pool, i, "visibility_km", vis_w)
-
-        # ტალღა (Marine, Stormglass, Windy)
+        # ტალღა (Marine, Stormglass — Windy აქ აღარ მონაწილეობს)
         wave_src = []
         if marine and i < len(marine) and marine[i].get("wave_height", 0) > 0:
             wave_src.append((marine[i]["wave_height"], WAVE_WEIGHTS["marine"]))
         if stormglass and i < len(stormglass) and stormglass[i].get("wave_height", 0) > 0:
             wave_src.append((stormglass[i]["wave_height"], WAVE_WEIGHTS["stormglass"]))
-        if windy and i < len(windy) and windy[i].get("wave_height", 0) > 0:
-            wave_src.append((windy[i]["wave_height"], WAVE_WEIGHTS["windy"]))
 
         if wave_src:
             ww = sum(w for _, w in wave_src)
@@ -1162,17 +1172,17 @@ def main():
         stormglass = parse_stormglass(raw_sg) if raw_sg else None
         if stormglass: sources_used.append("Stormglass.io")
 
-        raw_windy  = fetch_windy()
-        windy      = parse_windy(raw_windy) if raw_windy else None
-        if windy:     sources_used.append("Windy/ECMWF")
+        raw_ecmwf  = fetch_open_meteo_atmosphere("ecmwf_ifs")
+        atmo_ecmwf = parse_open_meteo_atmosphere(raw_ecmwf) if raw_ecmwf else None
+        if atmo_ecmwf: sources_used.append("Open-Meteo/ECMWF")
 
         raw_owm    = fetch_openweathermap()
         owm        = parse_openweathermap(raw_owm) if raw_owm else None
         if owm:       sources_used.append("OpenWeatherMap")
 
         log.info(f"კონსენსუსი: {len(sources_used)} წყარო — {sources_used}")
-        consensus = compute_consensus(atmo_best, atmo_gfs, atmo_icon,
-                                      marine, stormglass, windy, yr_no, owm)
+        consensus = compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf,
+                                      marine, stormglass, yr_no, owm)
 
         raw_daily        = fetch_open_meteo_daily()
         daily_atmo       = parse_open_meteo_daily(raw_daily) if raw_daily else []
