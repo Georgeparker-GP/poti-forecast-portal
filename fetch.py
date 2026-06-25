@@ -95,6 +95,7 @@ def fetch_open_meteo_daily():
         "wind_speed_unit": "ms",
         "forecast_days": DAILY_FORECAST_DAYS,
         "timezone": LOCATION["timezone"],
+        "cell_selection": "sea",
     }
     try:
         r = requests_session.get("https://api.open-meteo.com/v1/forecast",
@@ -134,6 +135,9 @@ def fetch_open_meteo_atmosphere(model: str):
         "wind_speed_unit": "ms",
         "forecast_days": 3,           # 72h ქაჩავს, 48h გამოვიყენებთ
         "timezone": LOCATION["timezone"],
+        "cell_selection": "sea",      # ნაგულისხმევი 'land' შინაგან/დაცულ წერტილს
+                                       # არჩევდა — სანაპირო პორტისთვის ღია წყლის
+                                       # grid-cell უფრო რეალურ ექსპოზიციას მისცემს
     }
     if model != "best_match":
         params["models"] = model
