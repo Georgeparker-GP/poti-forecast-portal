@@ -1,11 +1,10 @@
 name: Update Weather Data
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'   # ყოველ 15 წუთში ვცდით — GitHub ხშირად აგვიანებს/ხტის
-                              # scheduled run-ებს; fetch.py თავად აკონტროლებს, რომ
-                              # ნამდვილი მუშაობა მაინც ~საათში ერთხელ მოხდეს
-  workflow_dispatch:         # ხელით გაშვების ღილაკი
+  # GitHub-ის შიდა `schedule:` ტრიგერი მოშორებულია — საათების განმავლობაში
+  # არასტაბილური აღმოჩნდა. ახლა cron-job.org გარედან საიმედოდ "აჭერს" ამ
+  # ღილაკს საათში ერთხელ.
+  workflow_dispatch:         # ხელით გაშვების ღილაკი + cron-job.org-ის გარეშე ტრიგერი
 
 jobs:
   update:
@@ -31,6 +30,7 @@ jobs:
           OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FORCE_REFRESH: ${{ github.event_name == 'workflow_dispatch' }}
         run: python fetch.py
 
       - name: Commit updated data.json
@@ -38,7 +38,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data.json
-          for f in stormglass_cache.json yr_cache.json status_cache.json; do
+          for f in stormglass_cache.json yr_cache.json status_cache.json sos_cache.json shift_cache.json; do
             [ -f "$f" ] && git add "$f"
           done
           git commit -m "Update weather data - $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
