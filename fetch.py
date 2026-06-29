@@ -837,28 +837,69 @@ def send_digest_telegram(output: dict):
     _send_telegram_text(text, label="Digest")
 
 
-SHIFT_HANDOVER_HOURS = {8, 20}   # ცვლის გადაბარება: დილის 8 და საღამოს 8
+SHIFT_HANDOVER_HOURS = {8, 20}   # სასურველი დრო: დილის 8 და საღამოს 8
 SHIFT_FORECAST_HOURS = 12        # ცვლის ხანგრძლივობა
 SHIFT_SEGMENT_HOURS  = 4         # დეტალური ჩაშლა 4-საათიან მონაკვეთებად (3 × 4 = 12სთ)
+SHIFT_CATCHUP_HOURS  = 13        # თუ ამაზე მეტი გავიდა წინა რეპორტიდან — გავაგზავნოთ
+                                  # მიუხედავად საათისა (trigger-ის უზუსტობის წინააღმდეგ)
+SHIFT_CACHE = "shift_cache.json"
 PORTAL_URL = "https://georgeparker-gp.github.io/poti-forecast-portal/"
 
 STATUS_SEVERITY = {"operational": 0, "warning": 1, "suspended": 2}
 
 
+def _load_shift_cache():
+    try:
+        with open(SHIFT_CACHE, encoding="utf-8") as f:
+            return json.load(f).get("last_sent")
+    except (FileNotFoundError, KeyError, ValueError):
+        return None
+
+
+def _save_shift_cache(when_iso: str):
+    try:
+        with open(SHIFT_CACHE, "w", encoding="utf-8") as f:
+            json.dump({"last_sent": when_iso}, f)
+    except Exception as e:
+        log.warning(f"shift_cache შენახვა ✗ — {e}")
+
+
 def send_shift_handover_telegram(output: dict):
-    """ცვლის გადაბარების რეპორტი — 08:00 და 20:00: ზოგადი სურათი მომდევნო 12 საათისთვის
-    (მაქს./მინ. მაჩვენებლები + 4-საათიანი მონაკვეთები) — არა დაწვრილებითი საათობრივი ჩაშლა."""
+    """ცვლის გადაბარების რეპორტი — იდეალურად 08:00/20:00, მაგრამ trigger-ის
+    (GitHub Actions/cron-job.org) დროის უზუსტობის გამო მკაცრად ამ საათებზე არ
+    ვართ მიჯაჭვული: თუ ბოლო რეპორტიდან >= SHIFT_CATCHUP_HOURS გავიდა, მაინც
+    გავაგზავნით — ცვლას "საერთოდ არ მოსვლა" გაცილებით უარესია, ვიდრე
+    "ოდნავ არასწორ დროზე მოსვლა"."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return
 
-    now_hour = datetime.now(TBILISI_TZ).hour
-    if now_hour not in SHIFT_HANDOVER_HOURS:
+    now = datetime.now(TBILISI_TZ)
+    now_hour = now.hour
+
+    last_sent_str = _load_shift_cache()
+    hours_since = None
+    if last_sent_str:
+        try:
+            hours_since = (now - datetime.fromisoformat(last_sent_str)).total_seconds() / 3600
+        except Exception:
+            hours_since = None
+
+    on_schedule = now_hour in SHIFT_HANDOVER_HOURS
+    catch_up    = hours_since is not None and hours_since >= SHIFT_CATCHUP_HOURS
+    never_sent  = hours_since is None
+
+    if not (on_schedule or catch_up or never_sent):
         return
+    # არ გავაორმაგოთ, თუ წინა გაგზავნა 1 საათზე ნაკლები ხნის წინ მოხდა
+    # (მაგ. on_schedule ისევ true-ა იმავე საათში მეორე გაშვებაზე)
+    if hours_since is not None and hours_since < 1:
+        return
+
+    shift_label = "დილის ცვლა" if 2 <= now_hour < 14 else "საღამოს ცვლა"
 
     fc  = output.get("forecast", [])
     idx = _current_hour_index(fc)
     now_str = output["meta"]["last_update"]
-    shift_label = "დილის ცვლა" if now_hour == 8 else "საღამოს ცვლა"
 
     next_hours = fc[idx + 1 : idx + 1 + SHIFT_FORECAST_HOURS]
     if not next_hours:
@@ -918,6 +959,7 @@ def send_shift_handover_telegram(output: dict):
     text += f"─────────────────\nდეტალური მონაცემებისთვის გადადით პორტალზე:\n{PORTAL_URL}"
 
     _send_telegram_text(text, label="Shift-handover")
+    _save_shift_cache(now.isoformat())
 
 
 def _send_telegram_text(text: str, label: str = "Telegram"):
