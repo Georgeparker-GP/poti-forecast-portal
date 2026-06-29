@@ -20,10 +20,64 @@
   --gn2:      #0d9e72;
   --yw:       #f5c842;
   --or:       #f5923a;
+  --ov1: rgba(255,255,255,0.04);
+  --ov2: rgba(255,255,255,0.06);
+  --ov3: rgba(255,255,255,0.15);
+  --ov4: rgba(255,255,255,0.2);
+  --ov5: rgba(255,255,255,0.4);
+  --header-bg: rgba(13,24,33,0.92);
+  --panel-bg:  rgba(19,32,50,0.85);
+  --text-strong: #ffffff;
+  --txt-ok:     #7ef5d0;
+  --txt-warn:   #fde880;
+  --txt-alert:  #fdb57a;
+  --txt-danger: #ffaaaa;
+  --txt-cold:   #a5c8ff;
+  --txt-hot:    #ffb5a5;
+  --bg-photo-opacity: 0.16;
   --rd:       #f55a5a;
   --bl:       #5b9cf5;
   --tl:       #38d9d9;
   --ac:       #5b9cf5;
+}
+
+[data-theme="light"] {
+  --bg:       #eef2f7;
+  --bg2:      #ffffff;
+  --sf:       rgba(13,24,33,0.04);
+  --sf2:      rgba(13,24,33,0.07);
+  --br:       rgba(13,24,33,0.12);
+  --tx:       #1a2733;
+  --sb:       #5a7188;
+  --mu:       #8195a8;
+  --gn:       #1aab7e;
+  --gn2:      #0d8a64;
+  --yw:       #b8780c;
+  --or:       #c8631c;
+  --rd:       #d23a3a;
+  --bl:       #2f6fd4;
+  --tl:       #16969b;
+  --ac:       #2f6fd4;
+  --ov1: rgba(13,24,33,0.04);
+  --ov2: rgba(13,24,33,0.07);
+  --ov3: rgba(13,24,33,0.12);
+  --ov4: rgba(13,24,33,0.22);
+  --ov5: rgba(13,24,33,0.45);
+  --header-bg: rgba(255,255,255,0.92);
+  --panel-bg:  rgba(255,255,255,0.85);
+  --text-strong: #0d1821;
+  --txt-ok:     #0d8a5f;
+  --txt-warn:   #92660a;
+  --txt-alert:  #a8500f;
+  --txt-danger: #b3261e;
+  --txt-cold:   #1d5fb4;
+  --txt-hot:    #a8401f;
+  --bg-photo-opacity: 0.10;
+}
+
+body, .card, .panel, header, .ops-item, .chip, .tbl th, .tbl td,
+.bg-overlay, .bar-wrap, .badge-ok, .badge-warn, .badge-alert, .badge-danger {
+  transition: background-color .25s ease, color .25s ease, border-color .25s ease;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body {
@@ -43,7 +97,7 @@ body {
   background-image: url('main-image-poti.webp');
   background-size:cover;
   background-position:center 40%;
-  opacity:0.16;
+  opacity:var(--bg-photo-opacity);
   z-index:0;
   pointer-events:none;
 }
@@ -61,7 +115,7 @@ body {
 /* ── HEADER ── */
 header{
   position:relative;z-index:10;
-  background:rgba(13,24,33,0.92);
+  background:var(--header-bg);
   backdrop-filter:blur(12px);
   border-bottom:1px solid var(--br);
   padding:12px 24px;
@@ -79,6 +133,15 @@ header{
 }
 .tg-share-btn:hover{transform:scale(1.08);box-shadow:0 3px 14px rgba(42,171,238,0.65);}
 .tg-share-btn:active{transform:scale(0.96);}
+.theme-toggle-btn{
+  width:36px;height:36px;border-radius:50%;border:1px solid var(--br);cursor:pointer;flex-shrink:0;
+  background:var(--sf);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;line-height:1;
+  transition:transform .15s ease, background-color .25s ease;
+}
+.theme-toggle-btn:hover{transform:scale(1.08);background:var(--sf2);}
+.theme-toggle-btn:active{transform:scale(0.96);}
 .logo-icon{
   width:40px;height:40px;
   border:1px solid rgba(91,156,245,0.5);
@@ -88,7 +151,7 @@ header{
   background:rgba(91,156,245,0.1);
   box-shadow:0 0 16px rgba(91,156,245,0.15);
 }
-.logo h1{font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em;}
+.logo h1{font-size:15px;font-weight:700;color:var(--text-strong);letter-spacing:0.02em;}
 .logo p{font-size:11px;color:var(--sb);margin-top:2px;}
 
 /* ── STATUS BAR ── */
@@ -102,10 +165,10 @@ header{
   backdrop-filter:blur(8px);
   transition:background .4s;
 }
-.status-bar.operational {background:rgba(45,212,160,0.08);color:#7ef5d0;}
-.status-bar.barge       {background:rgba(245,200,66,0.08);color:#fde880;}
-.status-bar.vessel      {background:rgba(245,146,58,0.08);color:#fdb57a;}
-.status-bar.suspended   {background:rgba(245,90,90,0.08);color:#ffaaaa;}
+.status-bar.operational {background:rgba(45,212,160,0.08);color:var(--txt-ok);}
+.status-bar.barge       {background:rgba(245,200,66,0.08);color:var(--txt-warn);}
+.status-bar.vessel      {background:rgba(245,146,58,0.08);color:var(--txt-alert);}
+.status-bar.suspended   {background:rgba(245,90,90,0.08);color:var(--txt-danger);}
 
 .pulse{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .operational .pulse{background:var(--gn);box-shadow:0 0 8px var(--gn);}
@@ -120,7 +183,7 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 /* ── CARDS ── */
 .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;}
 .card{
-  background:rgba(19,32,50,0.85);
+  background:var(--panel-bg);
   backdrop-filter:blur(8px);
   border:1px solid var(--br);
   border-radius:12px;
@@ -128,7 +191,7 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
   position:relative;overflow:hidden;
   transition:border-color .3s;
 }
-.card:hover{border-color:rgba(255,255,255,0.2);}
+.card:hover{border-color:var(--ov4);}
 .card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:12px 0 0 12px;}
 .card.ok::before    {background:var(--gn);}
 .card.warn::before  {background:var(--yw);}
@@ -138,7 +201,7 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 .card.teal::before  {background:var(--tl);}
 
 .card-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--sb);font-weight:500;}
-.card-value{font-size:30px;font-weight:700;margin:6px 0 2px;font-family:'JetBrains Mono',monospace;line-height:1;color:#fff;}
+.card-value{font-size:30px;font-weight:700;margin:6px 0 2px;font-family:'JetBrains Mono',monospace;line-height:1;color:var(--text-strong);}
 .card-value-row{display:flex;align-items:baseline;gap:8px;margin:6px 0 2px;}
 .card-value-row .card-value{margin:0;}
 .card-unit{font-size:17px;color:var(--tl);font-weight:600;}
@@ -148,18 +211,18 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
   font-size:9px;font-weight:700;padding:3px 7px;
   border-radius:5px;letter-spacing:.05em;text-transform:uppercase;
 }
-.badge-ok    {background:rgba(45,212,160,.15);color:#7ef5d0;}
-.badge-warn  {background:rgba(245,200,66,.15);color:#fde880;}
-.badge-alert {background:rgba(245,146,58,.15);color:#fdb57a;}
-.badge-danger{background:rgba(245,90,90,.15);color:#ffaaaa;}
+.badge-ok    {background:rgba(45,212,160,.15);color:var(--txt-ok);}
+.badge-warn  {background:rgba(245,200,66,.15);color:var(--txt-warn);}
+.badge-alert {background:rgba(245,146,58,.15);color:var(--txt-alert);}
+.badge-danger{background:rgba(245,90,90,.15);color:var(--txt-danger);}
 
-.bar-wrap{height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:10px;}
+.bar-wrap{height:3px;background:var(--ov2);border-radius:2px;margin-top:10px;}
 .bar-fill{height:3px;border-radius:2px;transition:width .8s ease;}
 .bar-gn{background:var(--gn)}.bar-yw{background:var(--yw)}.bar-or{background:var(--or)}.bar-rd{background:var(--rd)}
 
 /* ── STATUS PANEL ── */
 .ops-panel{
-  background:rgba(19,32,50,0.85);
+  background:var(--panel-bg);
   backdrop-filter:blur(8px);
   border:1px solid var(--br);
   border-radius:12px;
@@ -172,8 +235,8 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
   display:flex;align-items:center;gap:10px;
   padding:10px 14px;
   border-radius:8px;
-  border:1px solid rgba(255,255,255,.06);
-  background:rgba(255,255,255,.03);
+  border:1px solid var(--ov1);
+  background:var(--sf);
 }
 .ops-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 .ops-text{font-size:12px;font-weight:500;}
@@ -181,13 +244,13 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 
 /* ── CHART ── */
 .panel{
-  background:rgba(19,32,50,0.85);
+  background:var(--panel-bg);
   backdrop-filter:blur(8px);
   border:1px solid var(--br);
   border-radius:12px;overflow:hidden;
 }
 .panel-head{padding:14px 20px;border-bottom:1px solid var(--br);display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-.panel-head h3{font-size:14px;font-weight:600;color:#fff;}
+.panel-head h3{font-size:14px;font-weight:600;color:var(--text-strong);}
 .panel-head p{font-size:11px;color:var(--sb);}
 svg.chart{width:100%;overflow:visible;}
 
@@ -196,8 +259,8 @@ svg.chart{width:100%;overflow:visible;}
 .tab{padding:9px 16px;font-size:12px;font-weight:500;color:var(--sb);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
 .tab.active{color:var(--bl);border-bottom-color:var(--bl);}
 .tbl{width:100%;border-collapse:collapse;}
-.tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--sb);font-weight:500;padding:10px 12px;text-align:left;border-bottom:1px solid var(--br);background:rgba(255,255,255,.02);}
-.tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);}
+.tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--sb);font-weight:500;padding:10px 12px;text-align:left;border-bottom:1px solid var(--br);background:var(--ov1);}
+.tbl td{padding:8px 12px;border-bottom:1px solid var(--ov1);}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr.row-suspended{background:rgba(245,90,90,.05);}
 .tbl tr.row-vessel   {background:rgba(245,146,58,.04);}
@@ -205,15 +268,15 @@ svg.chart{width:100%;overflow:visible;}
 .tbl tr.row-now td:first-child{border-left:2px solid var(--tl);padding-left:10px;}
 .t-time{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sb);}
 .t-num{font-family:'JetBrains Mono',monospace;font-size:12px;}
-.t-rd{color:#ffaaaa;font-weight:600}.t-or{color:#fdb57a;font-weight:600}.t-yw{color:#fde880;font-weight:600}.t-gn{color:#7ef5d0}.t-mu{color:var(--sb)}
+.t-rd{color:var(--txt-danger);font-weight:600}.t-or{color:var(--txt-alert);font-weight:600}.t-yw{color:var(--txt-warn);font-weight:600}.t-gn{color:var(--txt-ok)}.t-mu{color:var(--sb)}
 .pill{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:5px;text-transform:uppercase;}
-.pill-op  {background:rgba(45,212,160,.12);color:#7ef5d0;}
-.pill-bg  {background:rgba(245,200,66,.12);color:#fde880;}
-.pill-vs  {background:rgba(245,146,58,.15);color:#fdb57a;}
-.pill-sus {background:rgba(245,90,90,.15);color:#ffaaaa;}
+.pill-op  {background:rgba(45,212,160,.12);color:var(--txt-ok);}
+.pill-bg  {background:rgba(245,200,66,.12);color:var(--txt-warn);}
+.pill-vs  {background:rgba(245,146,58,.15);color:var(--txt-alert);}
+.pill-sus {background:rgba(245,90,90,.15);color:var(--txt-danger);}
 
 .meta-strip{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--sb);padding:6px 0;}
-.chip{background:rgba(255,255,255,.05);border:1px solid var(--br);border-radius:6px;padding:4px 10px;display:flex;align-items:center;gap:6px;}
+.chip{background:var(--ov2);border:1px solid var(--br);border-radius:6px;padding:4px 10px;display:flex;align-items:center;gap:6px;}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--tl);}
 footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:1px solid var(--br);margin-top:8px;position:relative;z-index:1;}
 
@@ -222,7 +285,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 .wind-rose-wrap{display:flex;gap:16px;align-items:center;margin-top:10px;}
 .compass-info{display:flex;flex-direction:column;gap:6px;}
 .compass-row{font-size:12px;color:var(--sb);}
-.compass-row span{color:#fff;font-weight:600;}
+.compass-row span{color:var(--text-strong);font-weight:600;}
 </style>
 </head>
 <body>
@@ -252,6 +315,9 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <svg viewBox="0 0 240 240" width="20" height="20">
         <path fill="#fff" d="M180.7 62.3 156 178.4c-1.9 8.6-6.9 10.7-14 6.7l-38.7-28.6-18.7 18c-2.1 2.1-3.8 3.8-7.8 3.8l2.8-39.7 72.3-65.3c3.1-2.8-.7-4.4-4.8-1.6l-89.4 56.3-38.5-12c-8.4-2.6-8.5-8.4 1.8-12.4l150.7-58.1c7-2.6 13.1 1.7 10.7 12.8z"/>
       </svg>
+    </button>
+    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="თემის შეცვლა">
+      <span id="theme-toggle-icon">🌙</span>
     </button>
   </div>
 </header>
@@ -336,20 +402,20 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="card-label">ქარის მიმართულება</div>
       <div class="wind-rose-wrap">
         <svg id="compass-svg" width="110" height="110" viewBox="0 0 110 110">
-          <circle cx="55" cy="55" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-          <circle cx="55" cy="55" r="35" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-          <line x1="55" y1="5"  x2="55" y2="15"  stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-          <line x1="55" y1="95" x2="55" y2="105" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-          <line x1="5"  y1="55" x2="15"  y2="55" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-          <line x1="95" y1="55" x2="105" y2="55" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-          <text x="55" y="20" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">N</text>
-          <text x="55" y="100" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">S</text>
-          <text x="100" y="58" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">E</text>
-          <text x="10" y="58" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.5)" font-family="JetBrains Mono">W</text>
+          <circle cx="55" cy="55" r="50" fill="none" stroke="var(--ov2)" stroke-width="1"/>
+          <circle cx="55" cy="55" r="35" fill="none" stroke="var(--ov1)" stroke-width="1"/>
+          <line x1="55" y1="5"  x2="55" y2="15"  stroke="var(--ov4)" stroke-width="1"/>
+          <line x1="55" y1="95" x2="55" y2="105" stroke="var(--ov4)" stroke-width="1"/>
+          <line x1="5"  y1="55" x2="15"  y2="55" stroke="var(--ov4)" stroke-width="1"/>
+          <line x1="95" y1="55" x2="105" y2="55" stroke="var(--ov4)" stroke-width="1"/>
+          <text x="55" y="20" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">N</text>
+          <text x="55" y="100" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">S</text>
+          <text x="100" y="58" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">E</text>
+          <text x="10" y="58" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">W</text>
           <g id="compass-arrow" transform="rotate(0,55,55)">
             <polygon points="55,14 51,55 59,55" fill="#f55a5a" opacity="0.9"/>
-            <polygon points="55,96 51,55 59,55" fill="rgba(255,255,255,0.15)"/>
-            <circle cx="55" cy="55" r="4" fill="var(--bg)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            <polygon points="55,96 51,55 59,55" fill="var(--ov3)"/>
+            <circle cx="55" cy="55" r="4" fill="var(--bg)" stroke="var(--ov5)" stroke-width="1"/>
           </g>
         </svg>
         <div class="compass-info">
@@ -368,19 +434,19 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div style="display:flex;flex-direction:column;gap:7px;flex:1;">
           <div style="display:flex;justify-content:space-between;font-size:12px;">
             <span style="color:var(--sb)">🚨 შეჩერება</span>
-            <span id="s-stop" class="mono" style="color:#ffaaaa;font-weight:700">--h</span>
+            <span id="s-stop" class="mono" style="color:var(--txt-danger);font-weight:700">--h</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;">
             <span style="color:var(--sb)">🟠 გემ. მანევრ.</span>
-            <span id="s-vessel" class="mono" style="color:#fdb57a;font-weight:700">--h</span>
+            <span id="s-vessel" class="mono" style="color:var(--txt-alert);font-weight:700">--h</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;">
             <span style="color:var(--sb)">🟡 ბორანი</span>
-            <span id="s-barge" class="mono" style="color:#fde880;font-weight:700">--h</span>
+            <span id="s-barge" class="mono" style="color:var(--txt-warn);font-weight:700">--h</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;">
             <span style="color:var(--sb)">🟢 სრული ოპ.</span>
-            <span id="s-op" class="mono" style="color:#7ef5d0;font-weight:700">--h</span>
+            <span id="s-op" class="mono" style="color:var(--txt-ok);font-weight:700">--h</span>
           </div>
         </div>
         <!-- სვეტი 2: მაქსიმალური მნიშვნელობები -->
@@ -395,11 +461,11 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px;">
             <span style="color:var(--sb)">ტემპ. მინ</span>
-            <span id="s-tmin" class="mono" style="color:#a5c8ff">--°C</span>
+            <span id="s-tmin" class="mono" style="color:var(--txt-cold)">--°C</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;">
             <span style="color:var(--sb)">ტემპ. მაქს</span>
-            <span id="s-tmax" class="mono" style="color:#ffb5a5">--°C</span>
+            <span id="s-tmax" class="mono" style="color:var(--txt-hot)">--°C</span>
           </div>
         </div>
       </div>
@@ -424,25 +490,25 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <stop offset="100%" stop-color="#38d9d9" stop-opacity="0"/>
           </linearGradient>
         </defs>
-        <line x1="0" y1="35"  x2="1000" y2="35"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-        <line x1="0" y1="70"  x2="1000" y2="70"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-        <line x1="0" y1="105" x2="1000" y2="105" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <line x1="0" y1="35"  x2="1000" y2="35"  stroke="var(--ov1)" stroke-width="1"/>
+        <line x1="0" y1="70"  x2="1000" y2="70"  stroke="var(--ov1)" stroke-width="1"/>
+        <line x1="0" y1="105" x2="1000" y2="105" stroke="var(--ov1)" stroke-width="1"/>
         <!-- ოპერ. ზღვრები -->
         <line id="thresh-suspended" x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,90,90,0.5)"   stroke-width="1" stroke-dasharray="5,3"/>
         <line id="thresh-vessel"    x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,146,58,0.4)"  stroke-width="1" stroke-dasharray="3,4"/>
         <line id="thresh-barge"     x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,200,66,0.35)" stroke-width="1" stroke-dasharray="2,5"/>
-        <line id="day2-line" x1="500" y1="0" x2="500" y2="120" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="4,3"/>
-        <text id="day2-label" x="504" y="12" font-size="9" fill="rgba(140,168,196,0.6)" font-family="JetBrains Mono"></text>
+        <line id="day2-line" x1="500" y1="0" x2="500" y2="120" stroke="var(--ov2)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text id="day2-label" x="504" y="12" font-size="9" fill="var(--sb)" font-family="JetBrains Mono"></text>
         <path id="area-wind" fill="url(#gW)" d=""/>
         <path id="area-wave" fill="url(#gV)" d=""/>
         <path id="line-wind" fill="none" stroke="#5b9cf5" stroke-width="2" stroke-linejoin="round" d=""/>
         <path id="line-wave" fill="none" stroke="#38d9d9" stroke-width="2" stroke-linejoin="round" d=""/>
-        <line id="now-line" x1="0" y1="0" x2="0" y2="120" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3"/>
-        <g id="chart-labels" font-family="'JetBrains Mono',monospace" font-size="9" fill="rgba(140,168,196,0.7)"></g>
+        <line id="now-line" x1="0" y1="0" x2="0" y2="120" stroke="var(--ov4)" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <g id="chart-labels" font-family="'JetBrains Mono',monospace" font-size="9" fill="var(--sb)"></g>
       </svg>
       <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--sb);flex-wrap:wrap;">
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:#5b9cf5;display:inline-block"></span>ქარი მ/წმ</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:#38d9d9;display:inline-block"></span>ტალღა ×5</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--bl);display:inline-block"></span>ქარი მ/წმ</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--tl);display:inline-block"></span>ტალღა ×5</span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,90,90,0.7);display:inline-block;width:14px"></span>შეჩ. 21.5</span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,146,58,0.6);display:inline-block;width:14px"></span>გემ. 17</span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,200,66,0.5);display:inline-block;width:14px"></span>ბორ. 10</span>
@@ -576,7 +642,7 @@ async function loadData() {
     render(d);
   } catch(e) {
     document.getElementById('status-text').textContent = 'data.json ვერ ჩაიტვირთა';
-    document.getElementById('status-text').style.color = '#fde880';
+    document.getElementById('status-text').style.color = 'var(--txt-warn)';
   }
 }
 
@@ -713,8 +779,11 @@ function setOps(id, level, text) {
   const colors = {ok:'#2dd4a0', warn:'#f5c842', alert:'#f5923a', danger:'#f55a5a'};
   dot.style.background    = colors[level]||colors.ok;
   dot.style.boxShadow     = `0 0 8px ${colors[level]||colors.ok}`;
-  el.style.borderColor    = level==='ok' ? 'rgba(255,255,255,0.06)' : colors[level]+'44';
-  el.style.background     = level==='ok' ? 'rgba(255,255,255,.03)' : colors[level]+'11';
+  const root = getComputedStyle(document.documentElement);
+  const neutralBorder = root.getPropertyValue('--ov1').trim();
+  const neutralBg      = root.getPropertyValue('--sf').trim();
+  el.style.borderColor    = level==='ok' ? neutralBorder : colors[level]+'44';
+  el.style.background     = level==='ok' ? neutralBg : colors[level]+'11';
 }
 
 // ═══ CHART ═══
@@ -916,6 +985,26 @@ function shareToTelegram(){
   const shareUrl = 'https://t.me/share/url?url=' + encodeURIComponent(pageUrl) + '&text=' + encodeURIComponent(text);
   window.open(shareUrl, '_blank');
 }
+
+// ═══ THEME (Dark / Light) ═══
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const icon = document.getElementById('theme-toggle-icon');
+  if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
+  try { localStorage.setItem('poti-theme', theme); } catch(e) {}
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+(function initTheme(){
+  let saved = null;
+  try { saved = localStorage.getItem('poti-theme'); } catch(e) {}
+  if (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+    saved = 'light';
+  }
+  applyTheme(saved === 'light' ? 'light' : 'dark');
+})();
 
 // ═══ AUTO REFRESH ═══
 let cd=60;
