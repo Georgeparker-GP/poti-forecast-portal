@@ -405,8 +405,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   </div>
 
   <!-- დეტალური ბარათები (ქვედა რიგი) -->
-  <div class="cards-grid rel">
-    <!-- მომდევნო 6 საათის კონსენსუს რეკაპი -->
+ <div class="cards-grid rel">
     <div class="card teal" style="grid-column:span 2">
       <div class="card-label">მომდევნო 6 საათის რეკაპი</div>
       <div id="recap-6h" style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
@@ -414,40 +413,9 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       </div>
     </div>
 
-    <!-- ქარის ვარდი -->
-    <div class="card teal" style="grid-column:span 2">
-      <div class="card-label">ქარის მიმართულება</div>
-      <div class="wind-rose-wrap" style="justify-content:center;gap:24px;">
-        <svg id="compass-svg" width="130" height="130" viewBox="0 0 110 110">
-          <circle cx="55" cy="55" r="50" fill="none" stroke="var(--ov2)" stroke-width="1"/>
-          <circle cx="55" cy="55" r="35" fill="none" stroke="var(--ov1)" stroke-width="1"/>
-          <line x1="55" y1="5"  x2="55" y2="15"  stroke="var(--ov4)" stroke-width="1"/>
-          <line x1="55" y1="95" x2="55" y2="105" stroke="var(--ov4)" stroke-width="1"/>
-          <line x1="5"  y1="55" x2="15"  y2="55" stroke="var(--ov4)" stroke-width="1"/>
-          <line x1="95" y1="55" x2="105" y2="55" stroke="var(--ov4)" stroke-width="1"/>
-          <text x="55" y="20" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">N</text>
-          <text x="55" y="100" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">S</text>
-          <text x="100" y="58" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">E</text>
-          <text x="10" y="58" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">W</text>
-          <g id="compass-arrow" transform="rotate(0,55,55)">
-            <polygon points="55,14 51,55 59,55" fill="#f55a5a" opacity="0.9"/>
-            <polygon points="55,96 51,55 59,55" fill="var(--ov3)"/>
-            <circle cx="55" cy="55" r="4" fill="var(--bg)" stroke="var(--ov5)" stroke-width="1"/>
-          </g>
-        </svg>
-        <div class="compass-info" style="gap:10px;">
-          <div class="compass-row" style="font-size:15px">მიმართ: <span id="c-wdir-deg">--</span>°</div>
-          <div class="compass-row" style="font-size:15px">სიმბოლო: <span id="c-wdir-sym" style="font-size:28px;color:var(--tl)">--</span></div>
-          <div class="compass-row" style="margin-top:6px;font-size:11px;color:var(--mu)">მეტეოროლ. კონვ.<br>საიდან ქრის ქარი</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 48H შეჯამება -->
     <div class="card teal" style="grid-column:span 2">
       <div class="card-label">48H შეჯამება</div>
       <div style="display:flex;gap:20px;margin-top:12px;">
-        <!-- სვეტი 1: სტატუს საათები -->
         <div style="display:flex;flex-direction:column;gap:10px;flex:1;">
           <div style="display:flex;justify-content:space-between;font-size:14px;">
             <span style="color:var(--sb)">🚨 შეჩერება</span>
@@ -466,7 +434,6 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <span id="s-op" class="mono" style="color:var(--txt-ok);font-weight:700;font-size:16px">--h</span>
           </div>
         </div>
-        <!-- სვეტი 2: მაქსიმალური მნიშვნელობები -->
         <div style="display:flex;flex-direction:column;gap:10px;flex:1;border-left:1px solid var(--br);padding-left:16px;">
           <div style="display:flex;justify-content:space-between;font-size:14px;">
             <span style="color:var(--sb)">ტალღა მაქს</span>
@@ -486,6 +453,15 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="card teal" style="grid-column:span 2; padding:0; display:flex; flex-direction:column; overflow:hidden; min-height:240px;">
+      <div class="card-label" style="padding: 16px 20px 8px 20px;">📡 Nowcasting: ცოცხალი რადარი</div>
+      <iframe 
+        style="flex:1; border:0; width:100%; height:100%; pointer-events:auto;" 
+        src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=m%2Fs&zoom=9&overlay=radar&product=radar&level=surface&lat=42.15&lon=41.67&detailLat=42.15&detailLon=41.67&marker=true" 
+        frameborder="0">
+      </iframe>
     </div>
   </div>
 
