@@ -402,34 +402,6 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
     </div>
 
-    <!-- ქარის ვარდი (შემცირებული) -->
-    <div class="card teal" style="grid-column:span 1">
-      <div class="card-label">ქარის მიმართულება</div>
-      <div class="wind-rose-wrap" style="gap:10px;">
-        <svg id="compass-svg" width="78" height="78" viewBox="0 0 110 110">
-          <circle cx="55" cy="55" r="50" fill="none" stroke="var(--ov2)" stroke-width="1"/>
-          <circle cx="55" cy="55" r="35" fill="none" stroke="var(--ov1)" stroke-width="1"/>
-          <line x1="55" y1="5"  x2="55" y2="15"  stroke="var(--ov4)" stroke-width="1"/>
-          <line x1="55" y1="95" x2="55" y2="105" stroke="var(--ov4)" stroke-width="1"/>
-          <line x1="5"  y1="55" x2="15"  y2="55" stroke="var(--ov4)" stroke-width="1"/>
-          <line x1="95" y1="55" x2="105" y2="55" stroke="var(--ov4)" stroke-width="1"/>
-          <text x="55" y="20" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">N</text>
-          <text x="55" y="100" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">S</text>
-          <text x="100" y="58" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">E</text>
-          <text x="10" y="58" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">W</text>
-          <g id="compass-arrow" transform="rotate(0,55,55)">
-            <polygon points="55,14 51,55 59,55" fill="#f55a5a" opacity="0.9"/>
-            <polygon points="55,96 51,55 59,55" fill="var(--ov3)"/>
-            <circle cx="55" cy="55" r="4" fill="var(--bg)" stroke="var(--ov5)" stroke-width="1"/>
-          </g>
-        </svg>
-        <div class="compass-info">
-          <div class="compass-row" style="font-size:11px">მიმართ: <span id="c-wdir-deg">--</span>°</div>
-          <div class="compass-row" style="font-size:11px">სიმბ: <span id="c-wdir-sym" style="font-size:14px;color:var(--tl)">--</span></div>
-        </div>
-      </div>
-    </div>
-
     <!-- მომდევნო 6 საათის კონსენსუს რეკაპი -->
     <div class="card teal" style="grid-column:span 2">
       <div class="card-label">მომდევნო 6 საათის რეკაპი</div>
@@ -480,6 +452,35 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <span style="color:var(--sb)">ტემპ. მაქს</span>
             <span id="s-tmax" class="mono" style="color:var(--txt-hot)">--°C</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ქარის ვარდი -->
+    <div class="card teal" style="grid-column:span 2">
+      <div class="card-label">ქარის მიმართულება</div>
+      <div class="wind-rose-wrap">
+        <svg id="compass-svg" width="100" height="100" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="50" fill="none" stroke="var(--ov2)" stroke-width="1"/>
+          <circle cx="55" cy="55" r="35" fill="none" stroke="var(--ov1)" stroke-width="1"/>
+          <line x1="55" y1="5"  x2="55" y2="15"  stroke="var(--ov4)" stroke-width="1"/>
+          <line x1="55" y1="95" x2="55" y2="105" stroke="var(--ov4)" stroke-width="1"/>
+          <line x1="5"  y1="55" x2="15"  y2="55" stroke="var(--ov4)" stroke-width="1"/>
+          <line x1="95" y1="55" x2="105" y2="55" stroke="var(--ov4)" stroke-width="1"/>
+          <text x="55" y="20" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">N</text>
+          <text x="55" y="100" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">S</text>
+          <text x="100" y="58" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">E</text>
+          <text x="10" y="58" text-anchor="middle" font-size="9" fill="var(--ov5)" font-family="JetBrains Mono">W</text>
+          <g id="compass-arrow" transform="rotate(0,55,55)">
+            <polygon points="55,14 51,55 59,55" fill="#f55a5a" opacity="0.9"/>
+            <polygon points="55,96 51,55 59,55" fill="var(--ov3)"/>
+            <circle cx="55" cy="55" r="4" fill="var(--bg)" stroke="var(--ov5)" stroke-width="1"/>
+          </g>
+        </svg>
+        <div class="compass-info">
+          <div class="compass-row">მიმართ: <span id="c-wdir-deg">--</span>°</div>
+          <div class="compass-row">სიმბოლო: <span id="c-wdir-sym" style="font-size:16px;color:var(--tl)">--</span></div>
+          <div class="compass-row" style="margin-top:6px;font-size:10px;color:var(--mu)">მეტეოროლ. კონვ.<br>საიდან ქრის ქარი</div>
         </div>
       </div>
     </div>
