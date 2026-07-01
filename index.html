@@ -411,56 +411,11 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     </div>
 
 
-    <!-- 48H შეჯამება (კომპასის გვერდით, იგივე სტილი) -->
-    <div class="card teal" style="grid-column:span 2">
-      <div class="card-label">48H შეჯამება</div>
-      <div style="display:flex;gap:20px;margin-top:10px;">
-        <!-- სვეტი 1: სტატუს საათები -->
-        <div style="display:flex;flex-direction:column;gap:7px;flex:1;">
-          <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:var(--sb)">🚨 შეჩერება</span>
-            <span id="s-stop" class="mono" style="color:var(--txt-danger);font-weight:700">--h</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:var(--sb)">🟠 გემ. მანევრ.</span>
-            <span id="s-vessel" class="mono" style="color:var(--txt-alert);font-weight:700">--h</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:var(--sb)">🟡 ბორანი</span>
-            <span id="s-barge" class="mono" style="color:var(--txt-warn);font-weight:700">--h</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:var(--sb)">🟢 სრული ოპ.</span>
-            <span id="s-op" class="mono" style="color:var(--txt-ok);font-weight:700">--h</span>
-          </div>
-        </div>
-        <!-- სვეტი 2: მაქსიმალური მნიშვნელობები -->
-        <div style="display:flex;flex-direction:column;gap:7px;flex:1;border-left:1px solid var(--br);padding-left:16px;">
-          <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:var(--sb)">ტალღა მაქს</span>
-            <span id="s-mw" class="mono" style="color:var(--tl)">--მ</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:var(--sb)">დაქროლვა მაქს</span>
-            <span id="s-mg" class="mono" style="color:var(--tl)">-- მ/წმ</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px;">
-            <span style="color:var(--sb)">ტემპ. მინ</span>
-            <span id="s-tmin" class="mono" style="color:var(--txt-cold)">--°C</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;">
-            <span style="color:var(--sb)">ტემპ. მაქს</span>
-            <span id="s-tmax" class="mono" style="color:var(--txt-hot)">--°C</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ქარის ვარდი -->
+    <!-- ქარის ვარდი (პირველი - შეცვლილი ადგილი) -->
     <div class="card teal" style="grid-column:span 2">
       <div class="card-label">ქარის მიმართულება</div>
-      <div class="wind-rose-wrap">
-        <svg id="compass-svg" width="100" height="100" viewBox="0 0 110 110">
+      <div class="wind-rose-wrap" style="justify-content:center;gap:24px;">
+        <svg id="compass-svg" width="130" height="130" viewBox="0 0 110 110">
           <circle cx="55" cy="55" r="50" fill="none" stroke="var(--ov2)" stroke-width="1"/>
           <circle cx="55" cy="55" r="35" fill="none" stroke="var(--ov1)" stroke-width="1"/>
           <line x1="55" y1="5"  x2="55" y2="15"  stroke="var(--ov4)" stroke-width="1"/>
@@ -477,10 +432,55 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <circle cx="55" cy="55" r="4" fill="var(--bg)" stroke="var(--ov5)" stroke-width="1"/>
           </g>
         </svg>
-        <div class="compass-info">
-          <div class="compass-row">მიმართ: <span id="c-wdir-deg">--</span>°</div>
-          <div class="compass-row">სიმბოლო: <span id="c-wdir-sym" style="font-size:16px;color:var(--tl)">--</span></div>
-          <div class="compass-row" style="margin-top:6px;font-size:10px;color:var(--mu)">მეტეოროლ. კონვ.<br>საიდან ქრის ქარი</div>
+        <div class="compass-info" style="gap:10px;">
+          <div class="compass-row" style="font-size:15px">მიმართ: <span id="c-wdir-deg">--</span>°</div>
+          <div class="compass-row" style="font-size:15px">სიმბოლო: <span id="c-wdir-sym" style="font-size:28px;color:var(--tl)">--</span></div>
+          <div class="compass-row" style="margin-top:6px;font-size:11px;color:var(--mu)">მეტეოროლ. კონვ.<br>საიდან ქრის ქარი</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 48H შეჯამება (მეორე - შეცვლილი ადგილი) -->
+    <div class="card teal" style="grid-column:span 2">
+      <div class="card-label">48H შეჯამება</div>
+      <div style="display:flex;gap:20px;margin-top:12px;">
+        <!-- სვეტი 1: სტატუს საათები -->
+        <div style="display:flex;flex-direction:column;gap:10px;flex:1;">
+          <div style="display:flex;justify-content:space-between;font-size:14px;">
+            <span style="color:var(--sb)">🚨 შეჩერება</span>
+            <span id="s-stop" class="mono" style="color:var(--txt-danger);font-weight:700;font-size:16px">--h</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;">
+            <span style="color:var(--sb)">🟠 გემ. მანევრ.</span>
+            <span id="s-vessel" class="mono" style="color:var(--txt-alert);font-weight:700;font-size:16px">--h</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;">
+            <span style="color:var(--sb)">🟡 ბორანი</span>
+            <span id="s-barge" class="mono" style="color:var(--txt-warn);font-weight:700;font-size:16px">--h</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;">
+            <span style="color:var(--sb)">🟢 სრული ოპ.</span>
+            <span id="s-op" class="mono" style="color:var(--txt-ok);font-weight:700;font-size:16px">--h</span>
+          </div>
+        </div>
+        <!-- სვეტი 2: მაქსიმალური მნიშვნელობები -->
+        <div style="display:flex;flex-direction:column;gap:10px;flex:1;border-left:1px solid var(--br);padding-left:16px;">
+          <div style="display:flex;justify-content:space-between;font-size:14px;">
+            <span style="color:var(--sb)">ტალღა მაქს</span>
+            <span id="s-mw" class="mono" style="color:var(--tl);font-size:16px">--მ</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;">
+            <span style="color:var(--sb)">დაქროლვა მაქს</span>
+            <span id="s-mg" class="mono" style="color:var(--tl);font-size:16px">-- მ/წმ</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;margin-top:4px;">
+            <span style="color:var(--sb)">ტემპ. მინ</span>
+            <span id="s-tmin" class="mono" style="color:var(--txt-cold);font-size:16px">--°C</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;">
+            <span style="color:var(--sb)">ტემპ. მაქს</span>
+            <span id="s-tmax" class="mono" style="color:var(--txt-hot);font-size:16px">--°C</span>
+          </div>
         </div>
       </div>
     </div>
