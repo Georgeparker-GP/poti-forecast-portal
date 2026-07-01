@@ -732,11 +732,14 @@ function render(d) {
   setBar('bar-airtemp', airT != null ? Math.min(Math.max(airT,0)/40,1) : 0,
     airT == null ? 'gn' : airT < 5 ? 'yw' : airT > 30 ? 'or' : 'gn');
 
-  // compass
+// compass (ვიზუალი წაშლილია, ერორის პრევენცია)
   const deg = c.wind_direction||0;
-  document.getElementById('compass-arrow').setAttribute('transform',`rotate(${deg},55,55)`);
-  document.getElementById('c-wdir-deg').textContent = Math.round(deg);
-  document.getElementById('c-wdir-sym').textContent = toCompass(deg);
+  const compArrow = document.getElementById('compass-arrow');
+  if (compArrow) {
+    compArrow.setAttribute('transform',`rotate(${deg},55,55)`);
+    document.getElementById('c-wdir-deg').textContent = Math.round(deg);
+    document.getElementById('c-wdir-sym').textContent = toCompass(deg);
+  }
 
   // 48h summary — მხოლოდ "ახლა"-დან წინ (არა დღევანდელი გასული საათები)
   const fcFuture = fc.slice(nowIndex);
