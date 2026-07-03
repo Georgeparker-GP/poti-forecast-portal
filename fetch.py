@@ -557,7 +557,7 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
 #  4.  კონსენსუსი
 # ═══════════════════════════════════════════════════════════════
 
-def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy, yr_no, owm, atmo_ecmwf=None):
+def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormglass, yr_no, owm):
     # 1. ძირითადი სრული აუზი (ნალექისთვის, ხილვადობისთვის და ფოლბექისთვის)
     atmo_pool = []
     for src, key in [
@@ -566,91 +566,95 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy,
         (atmo_ecmwf, "ecmwf"),      (stormglass,   "stormglass"),
         (owm,        "owm"),
     ]:
-        if src: atmo_pool.append((src, BASE_WEIGHTS.get(key, 0)))
+        if src:
+            atmo_pool.append((src, BASE_WEIGHTS[key]))
 
-    # ─── ახალი ლოგიკა: ვეძებთ ნებისმიერ მუშა წყაროს დროის ასაღებად ───
-    base_source = atmo_best or yr_no or atmo_ecmwf or atmo_gfs or atmo_icon or owm or stormglass
-    if not base_source:
-        return []
+    total_w = sum(w for _, w in atmo_pool)
 
-    # 2. ქარის "ელიტური სამეული"
+    # 2. ქარის "ელიტური სამეული" (ნამდვილი ECMWF/Open-Meteo, yr.no/MET Norway, ICON-EU)
     elite_wind_pool = []
     for src, key in [
         (atmo_ecmwf, "ecmwf"), (yr_no, "yr_no"), (atmo_icon, "icon_eu")
     ]:
-        if src: elite_wind_pool.append((src, BASE_WEIGHTS.get(key, 0)))
+        if src:
+            elite_wind_pool.append((src, BASE_WEIGHTS[key]))
 
-    total_w = sum(w for _, w in atmo_pool)
     elite_w = sum(w for _, w in elite_wind_pool)
 
     # Fail-Safe: თუ ელიტური მოდელები მიუწვდომელია, ვბრუნდებით სრულ აუზზე
     active_wind_pool = elite_wind_pool if elite_wind_pool else atmo_pool
-    active_wind_w = elite_w if elite_wind_pool else total_w
+    active_wind_w    = elite_w if elite_wind_pool else total_w
 
-    hours = min(FORECAST_HOURS, len(base_source))
-    result = []
+    hours   = min(FORECAST_HOURS, len(atmo_best))
+    result  = []
 
     for i in range(hours):
-        wind_speed  = _wavg(active_wind_pool, i, "wind_speed", active_wind_w)
-        wind_gusts  = _wavg(active_wind_pool, i, "wind_gusts", active_wind_w)
+        # ─── ქარის ლოგიკა (მხოლოდ ელიტური აუზიდან) ───
+
+        # 1. საშუალო სიჩქარე (Weighted average მხოლოდ ელიტებიდან)
+        wind_speed = _wavg(active_wind_pool, i, "wind_speed", active_wind_w)
+
+        # 2. ქარის დაქროლვები (GUSTS) — Veto პრინციპი: ვიღებთ აბსოლუტურ მაქსიმუმს!
+        active_gusts = [
+            src[i].get("wind_gusts", 0) 
+            for src, _ in active_wind_pool 
+            if i < len(src) and src[i].get("wind_gusts") is not None
+        ]
+        wind_gusts = max(active_gusts) if active_gusts else wind_speed
+
+        # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
         wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
 
-        precip      = _wavg(atmo_pool, i, "precipitation", total_w)
+        # ─── დანარჩენი პარამეტრები ───
+        precip = _wavg(atmo_pool, i, "precipitation", total_w)
+        visibility = _wavg(atmo_pool, i, "visibility_km", total_w)
 
-        vis_pool = [(s, w) for s, w in atmo_pool if s is not windy]
-        vis_w    = sum(w for _, w in vis_pool) or total_w
-        visibility = _wavg(vis_pool or atmo_pool, i, "visibility_km", vis_w)
-
+        # ტალღა (Marine, Stormglass — Windy აქ აღარ მონაწილეობს)
         wave_src = []
-        if marine      and i < len(marine)      and marine[i].get("wave_height", 0) > 0:
-            wave_src.append((marine[i]["wave_height"], WAVE_WEIGHTS.get("marine", 0.55)))
-        if stormglass  and i < len(stormglass)  and stormglass[i].get("wave_height", 0) > 0:
-            wave_src.append((stormglass[i]["wave_height"], WAVE_WEIGHTS.get("stormglass", 0.45)))
-        if windy       and i < len(windy)       and windy[i].get("wave_height", 0) > 0:
-            wave_src.append((windy[i]["wave_height"], 0.25))
+        if marine and i < len(marine) and marine[i].get("wave_height", 0) > 0:
+            wave_src.append((marine[i]["wave_height"], WAVE_WEIGHTS["marine"]))
+        if stormglass and i < len(stormglass) and stormglass[i].get("wave_height", 0) > 0:
+            wave_src.append((stormglass[i]["wave_height"], WAVE_WEIGHTS["stormglass"]))
 
         if wave_src:
-            ww     = sum(w for _, w in wave_src)
+            ww = sum(w for _, w in wave_src)
             wave_h = sum(v * w for v, w in wave_src) / ww
         else:
             wave_h = _estimate_wave_from_wind(wind_speed)
 
-        wave_p = marine[i].get("wave_period",    0) if marine and i < len(marine) else 0
+        wave_p = marine[i].get("wave_period", 0) if marine and i < len(marine) else 0
         wave_d = marine[i].get("wave_direction", 0) if marine and i < len(marine) else 0
-        swell  = marine[i].get("swell_wave_height", 0) if marine and i < len(marine) else 0
+
+        swell = marine[i].get("swell_wave_height", 0) if marine and i < len(marine) else 0
         if stormglass and i < len(stormglass) and stormglass[i].get("swell_height", 0) > 0:
             swell = stormglass[i]["swell_height"]
 
-        water_temp    = stormglass[i].get("water_temp",    0.0) if stormglass and i < len(stormglass) else 0.0
+        water_temp = stormglass[i].get("water_temp", 0.0) if stormglass and i < len(stormglass) else 0.0
         current_speed = stormglass[i].get("current_speed", 0.0) if stormglass and i < len(stormglass) else 0.0
 
-        # ჰაერის ტემპერატურის ფოლბექი: თუ Open-Meteo არ არის, ვიღებთ yr.no-დან ან OWM-დან
-        air_temp = None
-        if atmo_best and i < len(atmo_best): air_temp = atmo_best[i].get("air_temp")
-        elif yr_no and i < len(yr_no): air_temp = yr_no[i].get("air_temp")
-        elif owm and i < len(owm): air_temp = owm[i].get("air_temp")
+        air_temp = atmo_best[i].get("air_temp")
 
         status, alerts = _compute_status(wind_speed, wind_gusts, wave_h, visibility)
 
         result.append({
-            "time":            base_source[i]["time"],
-            "wind_speed":      _r(wind_speed),
-            "wind_gusts":      _r(wind_gusts),
-            "wind_direction":  _r(wind_direction, 0),
-            "precipitation":   _r(precip),
-            "visibility_km":   _r(visibility),
-            "wave_height":     _r(wave_h),
-            "wave_period":     _r(wave_p),
-            "wave_direction":  _r(wave_d),
-            "swell_height":    _r(swell),
-            "water_temp":      _r(water_temp),
-            "current_speed":   _r(current_speed),
-            "air_temp":        round(air_temp, 1) if air_temp is not None else None,
-            "status":          status,
-            "alerts":          alerts,
+            "time": atmo_best[i]["time"],
+            "wind_speed": _r(wind_speed),
+            "wind_gusts": _r(wind_gusts),
+            "wind_direction": _r(wind_direction, 0),
+            "precipitation": _r(precip),
+            "visibility_km": _r(visibility),
+            "wave_height": _r(wave_h),
+            "wave_period": _r(wave_p),
+            "wave_direction": _r(wave_d),
+            "swell_height": _r(swell),
+            "water_temp": _r(water_temp),
+            "current_speed": _r(current_speed),
+            "air_temp": round(air_temp, 1) if air_temp is not None else None,
+            "status": status,
+            "alerts": alerts,
         })
-
     return result
+
 
 def _vector_avg_direction(pool, i, field, total_w):
     """ქარის მიმართულების ვექტორული საშუალო — კუთხეების სწორი საშუალო."""
@@ -1171,98 +1175,140 @@ def _minutes_since_last_update():
 
 
 def main():
-    log.info(f"══ {LOCATION['name']} — კონსენსუს ბექენდი ══")
+    log.info(f"══ {LOCATION['name']} — კონსენსუს ბექენდი (48h) ══")
+
+    # GitHub Actions-ის cron scheduler ხანდახან საათობით აგვიანებს/'ხტის' გაშვებებს —
+    # ამიტომ workflow ხშირად (15 წუთში ერთხელ) ეშვება, მაგრამ ნამდვილი fetch
+    # მხოლოდ მაშინ ხდება, თუ წინა წარმატებული განახლებიდან ნამდვილად ~საათი გავიდა.
+    # ეს რჩება დაცული Stormglass-ის daily quota-სა და Open-Meteo-ს ზედმეტი დატვირთვისგან.
+    force_refresh = os.environ.get("FORCE_REFRESH", "").lower() == "true"
+    minutes_since = _minutes_since_last_update()
+    if not force_refresh and minutes_since is not None and minutes_since < 55:
+        log.info(f"ბოლო განახლება {minutes_since:.0f} წუთის წინ მოხდა — ნაადრევია, ამ ციკლს გამოვტოვებ.")
+        return
+    if force_refresh and minutes_since is not None and minutes_since < 55:
+        log.info(f"ხელით გაშვება (workflow_dispatch) — throttle-ს გამოვტოვებ ({minutes_since:.0f} წუთის წინ).")
+
     sources_used = []
 
-    # 1. Open-Meteo-ს აღება (Crash-ის გარეშე)
-    raw_best = fetch_open_meteo_atmosphere("best_match")
-    best_label = "Open-Meteo/best_match"
-    if not raw_best:
-        log.warning("best_match ✗ — ვცდილობთ ecmwf_ifs-ს...")
-        raw_best = fetch_open_meteo_atmosphere("ecmwf_ifs")
-        best_label = "Open-Meteo/ecmwf_ifs (fallback)"
-
-    atmo_best = parse_open_meteo_atmosphere(raw_best) if raw_best else None
-    if atmo_best:
-        sources_used.append(best_label)
-    else:
-        log.warning("Open-Meteo გათიშულია, ვაგრძელებთ სხვა წყაროებით...")
-
-    # დანარჩენი წყაროები
-    raw_gfs   = fetch_open_meteo_atmosphere("gfs_seamless")
-    atmo_gfs  = parse_open_meteo_atmosphere(raw_gfs)  if raw_gfs  else None
-    if atmo_gfs:  sources_used.append("Open-Meteo/GFS")
-
-    raw_icon  = fetch_open_meteo_atmosphere("icon_eu")
-    atmo_icon = parse_open_meteo_atmosphere(raw_icon) if raw_icon else None
-    if atmo_icon: sources_used.append("Open-Meteo/ICON-EU")
-    
-    raw_ecmwf = fetch_open_meteo_atmosphere("ecmwf_ifs")
-    atmo_ecmwf = parse_open_meteo_atmosphere(raw_ecmwf) if raw_ecmwf else None
-    if atmo_ecmwf: sources_used.append("Open-Meteo/ECMWF")
-
-    raw_marine = fetch_open_meteo_marine()
-    marine     = parse_open_meteo_marine(raw_marine) if raw_marine else None
-    if marine:    sources_used.append("Open-Meteo/Marine")
-
-    raw_yr    = fetch_yr_no()
-    yr_no     = parse_yr_no(raw_yr) if raw_yr else None
-    if yr_no:     sources_used.append("yr.no/MET Norway")
-
-    raw_sg     = fetch_stormglass()
-    stormglass = parse_stormglass(raw_sg) if raw_sg else None
-    if stormglass: sources_used.append("Stormglass.io")
-
-    raw_windy  = fetch_windy()
-    windy      = parse_windy(raw_windy) if raw_windy else None
-    if windy:     sources_used.append("Windy/ECMWF")
-
-    raw_owm    = fetch_openweathermap()
-    owm        = parse_openweathermap(raw_owm) if raw_owm else None
-    if owm:       sources_used.append("OpenWeatherMap")
-
-    # Daily მონაცემები
-    raw_daily_atmo = fetch_open_meteo_daily()
-    daily_atmo = parse_open_meteo_daily(raw_daily_atmo) if raw_daily_atmo else []
-    
-    raw_daily_marine = fetch_open_meteo_marine_daily()
-    daily_marine = parse_marine_daily(raw_daily_marine) if raw_daily_marine else []
-    
-    daily = build_daily_summary(daily_atmo, daily_marine) if (daily_atmo or daily_marine) else []
-
-    # კონსენსუსის გამოთვლა
-    consensus = compute_consensus(atmo_best, atmo_gfs, atmo_icon, marine, stormglass, windy, yr_no, owm, atmo_ecmwf)
-
-    # კრიტიკული შეჩერება მხოლოდ მაშინ, თუ აბსოლუტურად ყველა API გათიშულია
-    if not consensus:
-        msg = "🚨 <b>ფოთის პორტი — განახლება ჩავარდა</b>\nყველა მეტეო-წყარო მიუწვდომელია. კონსენსუსი ვერ დაითვალა."
-        log.error(msg)
-        send_failure_alert(msg)
-        import sys
-        sys.exit(1)
-
-    output = build_output(consensus, sources_used, daily)
-
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
-
-    # ტელეგრამის შეტყობინებები
     try:
+        raw_best = fetch_open_meteo_atmosphere("best_match")
+
+        if not raw_best:
+            log.warning("best_match ✗ — ვცდით ხელახლა 10 წმ-ში...")
+            time.sleep(10)
+            raw_best = fetch_open_meteo_atmosphere("best_match")
+
+        best_label = "Open-Meteo/best_match"
+        if not raw_best:
+            # best_match მუდმივად მიუწვდომელია — ვცადოთ სხვა Open-Meteo მოდელი მის ნაცვლად,
+            # რომ ერთი მოდელის დროებითი გაუმართაობა მთლიანად არ აჩეროს pipeline-ი
+            log.error("best_match კვლავ ✗ — ვცდით GFS/ICON-EU-ს, როგორც სარეზერვო მთავარ წყაროს")
+            raw_best = fetch_open_meteo_atmosphere("gfs_seamless")
+            best_label = "Open-Meteo/GFS (fallback)"
+            if not raw_best:
+                raw_best = fetch_open_meteo_atmosphere("icon_eu")
+                best_label = "Open-Meteo/ICON-EU (fallback)"
+
+        if not raw_best:
+            msg = (
+                "🚨 <b>ფოთის პორტი — განახლება ჩავარდა</b>\n"
+                "Open-Meteo-ს ყველა მოდელი (best_match, GFS, ICON-EU) მიუწვდომელია.\n"
+                "მონაცემები გაჩერებულია ბოლო წარმატებულ მნიშვნელობაზე — ხელით შემოწმება საჭიროა."
+            )
+            log.error("კრიტიკული: ატმოსფერული მონაცემები სრულად მიუწვდომელია — გასვლა შეცდომის კოდით")
+            send_failure_alert(msg)
+            sys.exit(1)
+
+        atmo_best = parse_open_meteo_atmosphere(raw_best)
+        sources_used.append(best_label)
+
+        raw_gfs   = fetch_open_meteo_atmosphere("gfs_seamless")
+        atmo_gfs  = parse_open_meteo_atmosphere(raw_gfs)  if raw_gfs  else None
+        if atmo_gfs:  sources_used.append("Open-Meteo/GFS")
+
+        raw_icon  = fetch_open_meteo_atmosphere("icon_eu")
+        atmo_icon = parse_open_meteo_atmosphere(raw_icon) if raw_icon else None
+        if atmo_icon: sources_used.append("Open-Meteo/ICON-EU")
+
+        raw_marine = fetch_open_meteo_marine()
+        marine     = parse_open_meteo_marine(raw_marine) if raw_marine else None
+        if marine:    sources_used.append("Open-Meteo/Marine")
+        else:         log.warning("Marine ✗ — ტალღა ქარიდან გამოანგარიშდება")
+
+        raw_yr    = fetch_yr_no()
+        yr_no     = parse_yr_no(raw_yr) if raw_yr else None
+        if yr_no:     sources_used.append("yr.no/MET Norway")
+
+        raw_sg     = fetch_stormglass()
+        stormglass = parse_stormglass(raw_sg) if raw_sg else None
+        if stormglass: sources_used.append("Stormglass.io")
+
+        raw_ecmwf  = fetch_open_meteo_atmosphere("ecmwf_ifs")
+        atmo_ecmwf = parse_open_meteo_atmosphere(raw_ecmwf) if raw_ecmwf else None
+        if atmo_ecmwf: sources_used.append("Open-Meteo/ECMWF")
+
+        raw_owm    = fetch_openweathermap()
+        owm        = parse_openweathermap(raw_owm) if raw_owm else None
+        if owm:       sources_used.append("OpenWeatherMap")
+
+        log.info(f"კონსენსუსი: {len(sources_used)} წყარო — {sources_used}")
+        consensus = compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf,
+                                      marine, stormglass, yr_no, owm)
+
+        raw_daily        = fetch_open_meteo_daily()
+        daily_atmo       = parse_open_meteo_daily(raw_daily) if raw_daily else []
+        raw_marine_daily = fetch_open_meteo_marine_daily()
+        daily_marine     = parse_marine_daily(raw_marine_daily) if raw_marine_daily else []
+        daily            = build_daily_summary(daily_atmo, daily_marine) if daily_atmo else []
+        if daily:
+            log.info(f"კვირის ხედი: {len(daily)} დღე ✓")
+        else:
+            log.warning("კვირის ხედი ✗ — daily მონაცემები მიუწვდომელია (forecast/daily ველი ცარიელია)")
+
+        output = build_output(consensus, sources_used, daily)
+
+        with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+            json.dump(output, f, ensure_ascii=False, indent=2)
+
+        # Telegram შეტყობინება (სტატუსის ცვლილებაზე)
         send_telegram(output)
         send_sos_alert(output)
         send_digest_telegram(output)
         send_shift_handover_telegram(output)
-    except Exception as e:
-        log.error(f"Telegram-ის გაგზავნა ჩავარდა: {e}")
 
-    s = output.get("summary_24h", {})
-    log.info("══ შედეგი ══")
-    log.info(f"  წყაროები:    {', '.join(sources_used)}")
-    log.info(f"  ტალღა მაქს:  {s.get('max_wave_height', 0)} მ")
-    log.info(f"  დაქროლვა მაქს: {s.get('max_wind_gusts', 0)} მ/წმ")
-    log.info(f"  შეჩერება:    {s.get('suspended_hours', 0)}h / {len(consensus)}h")
-    log.info(f"  სტატუსი:     {s.get('overall_status', 'N/A').upper()}")
-    log.info(f"  ✓ {OUTPUT_FILE}")
+        s = output["summary_24h"]
+        log.info("══ შედეგი ══")
+        log.info(f"  წყაროები:    {', '.join(sources_used)}")
+        log.info(f"  ტალღა მაქს:  {s['max_wave_height']} მ")
+        log.info(f"  დაქროლვა მაქს: {s['max_wind_gusts']} მ/წმ")
+        log.info(f"  შეჩერება:    {s['suspended_hours']}h / {len(consensus)}h")
+        log.info(f"  სტატუსი:     {s['overall_status'].upper()}")
+        log.info(f"  ✓ {OUTPUT_FILE}")
+
+    except SystemExit:
+        raise
+    except Exception as e:
+        log.exception("მოულოდნელი შეცდომა fetch.py-ში")
+        send_failure_alert(
+            f"🚨 <b>ფოთის პორტი — განახლება ჩავარდა (გამონაკლისი)</b>\n"
+            f"<code>{type(e).__name__}: {e}</code>\n"
+            f"მონაცემები გაჩერებულია ბოლო წარმატებულ მნიშვნელობაზე."
+        )
+        sys.exit(1)
+
+
+# ─────────────────────────────────
+def _safe(lst, i, scale=1.0, default=0.0):
+    try:
+        v = lst[i]
+        return round(v * scale, 3) if v is not None else default
+    except (IndexError, TypeError):
+        return default
+
+def _r(v, n=2):
+    return round(v, n)
+# ─────────────────────────────────
 
 if __name__ == "__main__":
     main()
