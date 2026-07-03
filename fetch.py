@@ -36,7 +36,15 @@ from urllib3.util.retry import Retry
 
 def _session():
     s = requests.Session()
-    r = Retry(total=3, backoff_factor=2)
+    r = Retry(
+        total=3,
+        read=3,                        # ReadTimeout-ზეც გაიმეოროს (ადრე ეს არ იყო!)
+        connect=3,
+        backoff_factor=2,              # 0წმ, 2წმ, 4წმ შუალედებით
+        status_forcelist=[500, 502, 503, 504],
+        allowed_methods=["GET", "POST"],
+        raise_on_status=False,
+    )
     s.mount("https://", HTTPAdapter(max_retries=r))
     return s
 
@@ -48,7 +56,7 @@ TBILISI_TZ = timezone(timedelta(hours=4))   # საქართველოს 
 
 FORECAST_HOURS      = 48
 DAILY_FORECAST_DAYS = 7   # კვირის ხედი — დღიური აგრეგატები, საათობრივი ჩაშლის გარეშე
-REQUEST_TIMEOUT     = 15
+REQUEST_TIMEOUT     = 30  # 15→30წმ: Open-Meteo timeout-ის წინააღმდეგ
 OUTPUT_FILE         = "data.json"
 STATUS_CACHE        = "status_cache.json"
 SOS_CACHE           = "sos_cache.json"
@@ -58,10 +66,13 @@ STORMGLASS_INTERVAL = 3
 YR_NO_INTERVAL      = 1   # yr.no ყოველ საათში განახლდება
 
 THRESHOLDS = {
-    "wind_speed":  15.0,
-    "wind_gusts":  21.5,
-    "wave_height":  1.50,
-    "visibility":   1.0,
+    # cell_selection="sea"-ის შემდეგ ჩვენი კონსენსუსი პიკ-გასტებს ~80-85%-ზე "ხედავს"
+    # (MTA 27-28 ივნ: real gusts ~17-18, ჩვენი peak: 14.2 → კოეფ. ~0.82).
+    # ამიტომ ზღვრები კალიბრირებულია:  actual_limit × 0.82 ≈ our_threshold
+    "wind_speed":  12.0,   # 15.0 × 0.82 ≈ 12.3 — ყვითელი ზონა (ბორანი ≥10 MTA)
+    "wind_gusts":  17.5,   # 21.5 × 0.82 ≈ 17.6 — წითელი ზონა (გემ.გასვლა ≥21.5 MTA)
+    "wave_height":  1.50,  # უცვლელი — Marine API კარგად ახდენს ტალღის კალიბრაციას
+    "visibility":   1.0,   # უცვლელი
 }
 
 BASE_WEIGHTS = {
@@ -790,6 +801,18 @@ DIGEST_HOURS          = {2, 5, 11, 14, 17, 23}   # 08:00/20:00 ცვლის �
 DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პროგნოზის ფანჯარა
 
 
+def _precip_label(mm: float) -> str:
+    """მმ/სთ მნიშვნელობას ადამიანისთვის გასაგებ აღწერად გარდაქმნის."""
+    if mm is None: return "—"
+    if mm == 0:       return "მოსალოდნელი არ არის"
+    if mm < 0.1:      return f"{mm} მმ — კვალი"
+    if mm < 1.0:      return f"{mm} მმ — მსუბუქი წვიმა"
+    if mm < 2.5:      return f"{mm} მმ — ზომიერი წვიმა"
+    if mm < 7.5:      return f"{mm} მმ — ძლიერი წვიმა"
+    if mm < 15.0:     return f"{mm} მმ — ძალიან ძლიერი წვიმა"
+    return              f"{mm} მმ — ექსტრემალური წვიმა ⚠️"
+
+
 def send_digest_telegram(output: dict):
     """ცვლის გადაბარების (08:00/20:00) გარდა, დღე-ღამეში 6-ჯერ — მიმდინარე ვითარება
     + მომდევნო 3 საათის პროგნოზი. სტატუსის ცვლილებაზე დამოკიდებული არ არის."""
@@ -815,7 +838,7 @@ def send_digest_telegram(output: dict):
         f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>\n"
         f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>\n"
-        f"🌧 ნალექი: <b>{c['precipitation']} მმ/სთ</b>\n"
+        f"🌧 ნალექი: <b>{_precip_label(c['precipitation'])}</b>\n"
         f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
         f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
     )
@@ -829,11 +852,14 @@ def send_digest_telegram(output: dict):
             t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
             hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
             temp_str = f"{h['air_temp']}°C, " if h.get("air_temp") is not None else ""
+            rain_str = _precip_label(h.get("precipitation", 0))
             text += (
                 f"{hem} {t_label} — {temp_str}ქარი {h['wind_speed']} მ/წმ, "
-                f"ტალღა {h['wave_height']} მ, ნალექი {h['precipitation']} მმ/სთ\n"
+                f"ტალღა {h['wave_height']} მ\n"
+                f"     🌧 {rain_str}\n"
             )
 
+    text += f"─────────────────\n{PORTAL_URL}"
     _send_telegram_text(text, label="Digest")
 
 
