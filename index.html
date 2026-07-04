@@ -302,7 +302,9 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <div class="logo">
     <div class="logo-icon">⚓</div>
     <div>
-      <h1>APMT Poti — ამინდის კონსენსუს-პორტალი</h1>
+      <h1 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">APMT Poti — ამინდის კონსენსუს-პორტალი
+        <span id="hdr-confidence" style="display:none;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;"></span>
+      </h1>
       <p id="sources-line">მონაცემები იტვირთება...</p>
     </div>
   </div>
@@ -369,6 +371,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div class="card-unit">მ/წმ</div>
       </div>
       <div class="card-sub">დაქროლვა: <span id="c-gusts" class="mono">--</span> მ/წმ</div>
+      <div class="card-sub" id="c-confidence" style="margin-top:4px;display:flex;align-items:center;gap:5px;"></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wind" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-wave">
@@ -738,6 +741,7 @@ function render(d) {
   setCard('card-wind','c-wind', c.wind_speed,
     w>=THR.suspended?'danger': w>=THR.vessel?'alert': w>=THR.barge?'warn':'ok');
   document.getElementById('c-gusts').textContent = fmt(c.wind_gusts);
+  renderConfidence(c);
   setBar('bar-wind', (c.wind_gusts||0)/30,
     (c.wind_gusts||0)>=THR.suspended?'rd': (c.wind_gusts||0)>=THR.vessel?'or': (c.wind_gusts||0)>=THR.barge?'yw':'gn');
 
@@ -986,6 +990,35 @@ function switchTab(h,el){
   if (titleEl) titleEl.textContent = 'საათობრივი პროგნოზი';
   if(allForecast.length) buildTable(allForecast.slice(nowIndex, nowIndex+h));
 }
+const CONF_STYLE = {
+  high:    {emoji:'🟢', label:'მაღალი ნდობა',  color:'var(--txt-ok)',    bg:'rgba(45,212,160,.15)'},
+  medium:  {emoji:'🟡', label:'საშუალო ნდობა', color:'var(--txt-warn)',  bg:'rgba(245,200,66,.15)'},
+  low:     {emoji:'🔴', label:'დაბალი ნდობა',  color:'var(--txt-danger)',bg:'rgba(245,90,90,.15)'},
+  unknown: {emoji:'⚪', label:'შეზღუდული მონაცემი', color:'var(--sb)',   bg:'var(--ov2)'},
+};
+function renderConfidence(c){
+  const conf = c.confidence || 'unknown';
+  const st = CONF_STYLE[conf] || CONF_STYLE.unknown;
+  const spread = c.wind_spread!=null ? Number(c.wind_spread).toFixed(1) : '?';
+  const nSrc = c.source_count || 0;
+
+  const cardEl = document.getElementById('c-confidence');
+  if(cardEl){
+    cardEl.innerHTML = `<span style="color:${st.color};font-weight:600">${st.emoji} ${st.label}</span>`
+      + ` <span style="color:var(--mu);font-size:10px">σ=${spread} · ${nSrc} წყ.</span>`;
+  }
+  const hdrEl = document.getElementById('hdr-confidence');
+  if(hdrEl){
+    if(conf==='unknown'){ hdrEl.style.display='none'; }
+    else {
+      hdrEl.style.display='inline-block';
+      hdrEl.style.color = st.color;
+      hdrEl.style.background = st.bg;
+      hdrEl.textContent = `${st.emoji} კონსენსუსი: ${st.label}`;
+    }
+  }
+}
+
 function setCard(cardId,valId,val,level){
   document.getElementById(valId).textContent = fmt(val);
   const card=document.getElementById(cardId);
