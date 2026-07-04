@@ -294,7 +294,88 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 .recap-metrics b{color:var(--tl);font-weight:600;}
 </style>
 </head>
+<style>
+/* ═══ VIDEO INTRO ═══ */
+#intro-overlay {
+  position: fixed; inset: 0; z-index: 99999; background: #000;
+  display: flex; align-items: center; justify-content: center;
+}
+#intro-video {
+  width: 100%; height: 100%; object-fit: cover; background: #000;
+}
+#intro-vignette {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.4) 100%);
+}
+#intro-hud {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: 0;
+}
+#intro-hud.show { animation: hudIn 0.8s ease-out forwards; }
+@keyframes hudIn { to { opacity: 1; } }
+#intro-hud-title {
+  position: absolute; left: 50%; bottom: 18%;
+  transform: translateX(-50%); text-align: center; white-space: nowrap;
+}
+#intro-hud-title .kicker {
+  color: rgba(0,220,160,0.9); font-size: clamp(9px,2.2vw,12px);
+  letter-spacing: 0.4em; text-transform: uppercase; margin-bottom: 8px;
+  text-shadow: 0 0 12px rgba(0,220,160,0.5);
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+#intro-hud-title .main {
+  color: #fff; font-size: clamp(20px,5.5vw,40px);
+  font-weight: 300; letter-spacing: 0.15em;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+#intro-hud-title .coords {
+  color: rgba(255,255,255,0.55); font-size: clamp(8px,1.8vw,11px);
+  letter-spacing: 0.25em; margin-top: 10px;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+.i-bracket {
+  position: absolute; width: clamp(22px,5vw,40px); height: clamp(22px,5vw,40px);
+  border-color: rgba(0,220,160,0.5);
+}
+.i-tl{top:6%;left:6%;border-top:1.5px solid;border-left:1.5px solid;}
+.i-tr{top:6%;right:6%;border-top:1.5px solid;border-right:1.5px solid;}
+.i-bl{bottom:6%;left:6%;border-bottom:1.5px solid;border-left:1.5px solid;}
+.i-br{bottom:6%;right:6%;border-bottom:1.5px solid;border-right:1.5px solid;}
+#intro-skip {
+  position: absolute; bottom: 20px; right: 20px; z-index: 100;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.55); font-size: 11px; letter-spacing: 0.1em;
+  padding: 7px 15px; border-radius: 5px; cursor: pointer; transition: all .2s;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+#intro-skip:hover { background: rgba(255,255,255,0.16); color: #fff; }
+#intro-overlay.fade-out { animation: introFadeOut 0.8s ease-in forwards; }
+@keyframes introFadeOut { to { opacity: 0; pointer-events: none; } }
+@media (prefers-reduced-motion: reduce) {
+  #intro-overlay { display: none !important; }
+}
+</style>
 <body>
+
+<!-- ═══ VIDEO INTRO — ყოველ 1 საათში ერთხელ ═══ -->
+<div id="intro-overlay">
+  <video id="intro-video" playsinline muted autoplay preload="auto">
+    <source src="intro.mp4" type="video/mp4">
+  </video>
+  <div id="intro-vignette"></div>
+  <div id="intro-hud">
+    <div class="i-bracket i-tl"></div>
+    <div class="i-bracket i-tr"></div>
+    <div class="i-bracket i-bl"></div>
+    <div class="i-bracket i-br"></div>
+    <div id="intro-hud-title">
+      <div class="kicker">APMT Terminals</div>
+      <div class="main">ფოთის პორტი</div>
+      <div class="coords">42°09′N &nbsp;·&nbsp; 41°40′E</div>
+    </div>
+  </div>
+  <button id="intro-skip" onclick="finishIntro()">გამოტოვება ▶</button>
+</div>
 <div class="bg-photo"></div>
 <div class="bg-overlay"></div>
 
@@ -1259,6 +1340,40 @@ setInterval(()=>{
 },1000);
 
 loadData();
+
+// ═══ VIDEO INTRO — ყოველ 1 საათში ═══
+(function(){
+  const INTRO_MS = 60 * 60 * 1000;
+  const overlay = document.getElementById('intro-overlay');
+  const video   = document.getElementById('intro-video');
+  const hud     = document.getElementById('intro-hud');
+  let done = false;
+
+  function finishIntro(){
+    if(done) return; done = true;
+    overlay.classList.add('fade-out');
+    setTimeout(()=>{ overlay.style.display='none'; }, 800);
+    try{ localStorage.setItem('poti-intro-last', Date.now()); }catch(e){}
+  }
+  window.finishIntro = finishIntro;
+
+  // 1 საათი გავიდა?
+  try{
+    const last = parseInt(localStorage.getItem('poti-intro-last')||'0');
+    if(Date.now()-last < INTRO_MS){ overlay.style.display='none'; done=true; }
+  }catch(e){}
+
+  if(!done){
+    video.addEventListener('timeupdate',()=>{
+      if(video.duration && video.currentTime>=video.duration-1.6) hud.classList.add('show');
+    });
+    video.addEventListener('ended', ()=>setTimeout(finishIntro,400));
+    video.addEventListener('error', finishIntro);
+    setTimeout(()=>{ if(!done&&video.paused&&video.currentTime===0) finishIntro(); },7000);
+    setTimeout(()=>{ if(!done) finishIntro(); },12000);
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape'||e.key===' ') finishIntro(); });
+  }
+})();
 </script>
 </body>
 </html>
