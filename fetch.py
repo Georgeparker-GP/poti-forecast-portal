@@ -844,13 +844,12 @@ DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პ
 def _precip_label(mm: float) -> str:
     """მმ/სთ მნიშვნელობას ადამიანისთვის გასაგებ აღწერად გარდაქმნის."""
     if mm is None: return "—"
-    if mm == 0:       return "მოსალოდნელი არ არის"
-    if mm < 0.1:      return f"{mm} მმ — კვალი"
-    if mm < 1.0:      return f"{mm} მმ — მსუბუქი წვიმა"
-    if mm < 2.5:      return f"{mm} მმ — ზომიერი წვიმა"
-    if mm < 7.5:      return f"{mm} მმ — ძლიერი წვიმა"
-    if mm < 15.0:     return f"{mm} მმ — ძალიან ძლიერი წვიმა"
-    return              f"{mm} მმ — ექსტრემალური წვიმა ⚠️"
+    if mm == 0:      return "მოსალოდნელი არ არის"
+    if mm < 1.0:     return f"{mm} მმ — ჟინჟლი"
+    if mm < 5.0:     return f"{mm} მმ — მსუბუქი წვიმა"
+    if mm < 10.0:    return f"{mm} მმ — ზომიერი წვიმა"
+    if mm < 20.0:    return f"{mm} მმ — ძლიერი წვიმა"
+    return             f"{mm} მმ — ინტენსიური წვიმა ⚠️"
 
 
 def send_digest_telegram(output: dict):
