@@ -605,6 +605,15 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
         wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
 
+        # 4. Confidence — წყაროებს შორის ქარის სიჩქარის გაფანტვა (std dev).
+        #    დაბალი gap = წყაროები თანხმდებიან = მაღალი ნდობა.
+        wind_values = [
+            src[i].get("wind_speed")
+            for src, _ in active_wind_pool
+            if i < len(src) and src[i].get("wind_speed") is not None
+        ]
+        wind_spread = _stddev(wind_values)
+
         # ─── დანარჩენი პარამეტრები ───
         precip = _wavg(atmo_pool, i, "precipitation", total_w)
         visibility = _wavg(atmo_pool, i, "visibility_km", total_w)
@@ -652,8 +661,36 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "air_temp": round(air_temp, 1) if air_temp is not None else None,
             "status": status,
             "alerts": alerts,
+            "wind_spread": _r(wind_spread, 2),
+            "confidence": _confidence_level(wind_spread, len(wind_values)),
+            "source_count": len(wind_values),
         })
     return result
+
+
+CONF_HIGH_MAX   = 1.5   # σ < 1.5 მ/წმ → მაღალი ნდობა
+CONF_MEDIUM_MAX = 3.0   # σ 1.5–3.0 → საშუალო; > 3.0 → დაბალი
+
+
+def _stddev(values):
+    """ნიმუშის სტანდარტული გადახრა. <2 მნიშვნელობაზე — 0."""
+    n = len(values)
+    if n < 2:
+        return 0.0
+    mean = sum(values) / n
+    var = sum((v - mean) ** 2 for v in values) / n
+    return var ** 0.5
+
+
+def _confidence_level(spread, n_sources):
+    """ნდობის დონე ქარის სიჩქარის გაფანტვის მიხედვით."""
+    if n_sources < 2:
+        return "unknown"     # ერთი წყარო — შედარება შეუძლებელია
+    if spread < CONF_HIGH_MAX:
+        return "high"
+    if spread < CONF_MEDIUM_MAX:
+        return "medium"
+    return "low"
 
 
 def _vector_avg_direction(pool, i, field, total_w):
@@ -1147,6 +1184,7 @@ def build_output(consensus, sources_used, daily=None):
             "visibility_km": 10, "wave_period": 0, "wave_direction": 0,
             "swell_height": 0, "water_temp": 0, "current_speed": 0, "air_temp": None,
             "status": "operational", "alerts": [],
+            "wind_spread": 0, "confidence": "unknown", "source_count": 0,
         }.items()},
         "summary_24h": {
             "max_wave_height":   _r(max((h["wave_height"] for h in consensus), default=0)),
