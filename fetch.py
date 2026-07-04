@@ -931,8 +931,11 @@ def send_shift_handover_telegram(output: dict):
     if not next_hours:
         return
 
-    period_start = f"{now_hour:02d}:00"
-    period_end   = f"{(now_hour + SHIFT_FORECAST_HOURS) % 24:02d}:00"
+    # პერიოდი ყოველთვის "მიეჭიდება" ცვლის ოფიციალურ საათს (8 ან 20),
+    # მიუხედავად trigger-ის ზუსტი დროისა (catch-up, ხელით გაშვება და ა.შ.)
+    anchor_hour = 8 if shift_label == "დილის ცვლა" else 20
+    period_start = f"{anchor_hour:02d}:00"
+    period_end   = f"{(anchor_hour + SHIFT_FORECAST_HOURS) % 24:02d}:00"
 
     max_gust   = max((h["wind_gusts"]    for h in next_hours if h.get("wind_gusts")    is not None), default=0)
     max_wave   = max((h["wave_height"]   for h in next_hours if h.get("wave_height")   is not None), default=0)
