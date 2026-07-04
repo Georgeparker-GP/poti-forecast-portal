@@ -745,7 +745,10 @@ def send_telegram(output: dict):
         log.info("Telegram გამოტოვებულია (TOKEN/CHAT_ID არ არის)")
         return
 
-    new_status = output["summary_24h"]["overall_status"]
+    # მიმდინარე საათის სტატუსი, არა 48სთ პროგნოზისა
+    # (overall_status="warning" ითვლება, თუ პროგნოზში 1 warning-საათი მაინცაა —
+    # ცვლისთვის უფრო რელევანტურია რა ხდება ახლა)
+    new_status = output["current"].get("status", "operational")
     old_status = _load_status_cache()
 
     if old_status == new_status:
