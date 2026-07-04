@@ -60,6 +60,13 @@ REQUEST_TIMEOUT     = 30  # 15→30წმ: Open-Meteo timeout-ის წინ�
 OUTPUT_FILE         = "data.json"
 STATUS_CACHE        = "status_cache.json"
 SOS_CACHE           = "sos_cache.json"
+SQUALL_CACHE        = "squall_cache.json"
+
+# ─── შკვალის ალერტის ზღვრები ────────────────────────────────────────────
+SQUALL_GUST_FACTOR   = 8.0   # WMO: gusts − wind_speed ≥ 8 მ/წმ
+SQUALL_DELTA         = 6.0   # Delta T: gusts[next] − gusts[now] ≥ 6 მ/წმ
+SQUALL_ABS           = 12.0  # Absolute: gusts[next] ≥ 12 მ/წმ (warning ზღვარი)
+SQUALL_PRECIP        = 2.0   # Convective: precip[next] ≥ 2 მმ/სთ
 STORMGLASS_CACHE    = "stormglass_cache.json"
 YR_NO_CACHE         = "yr_cache.json"
 STORMGLASS_INTERVAL = 3
@@ -913,6 +920,136 @@ PORTAL_URL = "https://georgeparker-gp.github.io/poti-forecast-portal/"
 STATUS_SEVERITY = {"operational": 0, "warning": 1, "suspended": 2}
 
 
+# ═══════════════════════════════════════════════════════════════
+#  შკვალის გამოვლენა — 4 კრიტერიუმი (WMO-ს სტანდარტი)
+# ═══════════════════════════════════════════════════════════════
+
+def _load_squall_cache() -> str:
+    try:
+        with open(SQUALL_CACHE, encoding="utf-8") as f:
+            return json.load(f).get("warned_for", "")
+    except (FileNotFoundError, KeyError, ValueError):
+        return ""
+
+
+def _save_squall_cache(warned_for: str):
+    try:
+        with open(SQUALL_CACHE, "w", encoding="utf-8") as f:
+            json.dump({"warned_for": warned_for,
+                       "sent": datetime.now(TBILISI_TZ).isoformat()}, f)
+    except Exception as e:
+        log.warning(f"squall_cache შენახვა ✗ — {e}")
+
+
+def _detect_squall(fc: list, now_idx: int) -> dict | None:
+    """
+    ამოწმებს მომდევნო 1 საათს 4 კრიტერიუმით:
+
+    1. Gust Factor (WMO):    gusts − wind_speed ≥ SQUALL_GUST_FACTOR
+    2. Delta T:              gusts[next] − gusts[now] ≥ SQUALL_DELTA
+    3. Absolute threshold:   gusts[next] ≥ SQUALL_ABS
+    4. Convective indicator: precip[next] ≥ SQUALL_PRECIP
+
+    ალერტი იგზავნება თუ: კრიტ.1 + კრიტ.3 + (კრიტ.2 OR კრიტ.4)
+    — Gust Factor და Absolute Threshold სავალდებულოა,
+      Delta T ან Convective ინდიკატორიდან ერთი საკმარისია.
+
+    დაბრუნება: dict-ი დეტალებით, ან None.
+    """
+    if now_idx + 1 >= len(fc):
+        return None
+
+    cur  = fc[now_idx]
+    nxt  = fc[now_idx + 1]
+
+    g_now   = cur.get("wind_gusts", 0) or 0
+    w_now   = cur.get("wind_speed",  0) or 0
+    g_next  = nxt.get("wind_gusts", 0) or 0
+    w_next  = nxt.get("wind_speed",  0) or 0
+    p_next  = nxt.get("precipitation", 0) or 0
+
+    # კრიტ. 1 — Gust Factor (WMO): სხვაობა gusts − avg_wind
+    gust_factor_now  = g_now  - w_now
+    gust_factor_next = g_next - w_next
+    crit1 = gust_factor_next >= SQUALL_GUST_FACTOR
+
+    # კრიტ. 2 — Delta T: gusts-ის მოულოდნელი ნახტომი
+    delta = g_next - g_now
+    crit2 = delta >= SQUALL_DELTA
+
+    # კრიტ. 3 — Absolute threshold
+    crit3 = g_next >= SQUALL_ABS
+
+    # კრიტ. 4 — Convective: წვიმის მოულოდნელი ზრდა
+    p_now  = cur.get("precipitation", 0) or 0
+    crit4 = p_next >= SQUALL_PRECIP
+
+    if not (crit1 and crit3 and (crit2 or crit4)):
+        return None
+
+    return {
+        "time":         nxt.get("time", ""),
+        "g_now":        round(g_now, 2),
+        "g_next":       round(g_next, 2),
+        "w_next":       round(w_next, 2),
+        "gust_factor":  round(gust_factor_next, 2),
+        "delta":        round(delta, 2),
+        "p_next":       round(p_next, 2),
+        "crit1": crit1, "crit2": crit2, "crit3": crit3, "crit4": crit4,
+        "direction":    _compass_full(nxt.get("wind_direction", 0)),
+    }
+
+
+def send_squall_alert(output: dict):
+    """შკვალის ალერტი — გაიგზავნება მხოლოდ ერთხელ კონკრეტულ საათზე
+    (cache-ით დუბლირების თავიდან აცილება)."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+
+    fc      = output.get("forecast", [])
+    now_idx = _current_hour_index(fc)
+    squall  = _detect_squall(fc, now_idx)
+
+    if squall is None:
+        return
+
+    target_time = squall["time"]
+    if _load_squall_cache() == target_time:
+        return   # ამ საათზე უკვე გაგზავნილია
+
+    t_label = target_time[11:16] if len(target_time) >= 16 else target_time
+    now_str = output["meta"]["last_update"]
+
+    # კრიტერიუმების ახსნა
+    crits = []
+    crits.append(f"💨 Gust Factor {squall['gust_factor']} მ/წმ (≥{SQUALL_GUST_FACTOR})")
+    if squall["crit2"]:
+        crits.append(f"⬆️ Delta T +{squall['delta']} მ/წმ ნახტომი (≥{SQUALL_DELTA})")
+    if squall["crit4"]:
+        crits.append(f"🌧 კონვექცია: {squall['p_next']} მმ/სთ (≥{SQUALL_PRECIP})")
+
+    text = (
+        f"🌪️ <b>შკვალის ალერტი — ≈1 საათში!</b>\n"
+        f"🕐 ახლა: {now_str} | ⏰ მოახლოება: <b>{t_label}</b>\n"
+        f"─────────────────\n"
+        f"💨 ქარი: <b>{squall['w_next']} მ/წმ</b> | "
+        f"დაქროლვა: <b>{squall['g_next']} მ/წმ</b> | "
+        f"მიმართ: <b>{squall['direction']}</b>\n"
+        f"─────────────────\n"
+        f"<b>ამოქმედებული კრიტერიუმები:</b>\n"
+        + "\n".join(f"  ✅ {c}" for c in crits) + "\n"
+        f"─────────────────\n"
+        f"⚠️ WMO-ს სტანდარტით შკვალის ნიშნები. "
+        f"გადაამოწმეთ MTA-ს ოფიციალური ბიულეტენი."
+    )
+
+    _send_telegram_text(text, label="Squall")
+    _save_squall_cache(target_time)
+    log.info(f"შკვალის ალერტი გაიგზავნა — {t_label}, "
+             f"gusts={squall['g_next']}, factor={squall['gust_factor']}, "
+             f"delta={squall['delta']}, precip={squall['p_next']}")
+
+
 def _load_shift_cache():
     try:
         with open(SHIFT_CACHE, encoding="utf-8") as f:
@@ -1316,6 +1453,7 @@ def main():
         # Telegram შეტყობინება (სტატუსის ცვლილებაზე)
         send_telegram(output)
         send_sos_alert(output)
+        send_squall_alert(output)
         send_digest_telegram(output)
         send_shift_handover_telegram(output)
 
