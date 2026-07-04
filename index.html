@@ -445,8 +445,8 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           </g>
         </svg>
         <div class="compass-info" style="gap:10px;">
-          <div class="compass-row" style="font-size:15px">მიმართ: <span id="c-wdir-deg">--</span>°</div>
-          <div class="compass-row" style="font-size:15px">სიმბოლო: <span id="c-wdir-sym" style="font-size:28px;color:var(--tl)">--</span></div>
+          <div class="compass-row" style="font-size:15px"><span data-i18n="compass_dir_lbl">მიმართ:</span> <span id="c-wdir-deg">--</span>°</div>
+          <div class="compass-row" style="font-size:15px"><span data-i18n="compass_sym_lbl">სიმბოლო:</span> <span id="c-wdir-sym" style="font-size:28px;color:var(--tl)">--</span></div>
           <div class="compass-row" style="margin-top:6px;font-size:11px;color:var(--mu)"><span data-i18n="compass_conv">მეტეოროლ. კონვ.</span><br><span data-i18n="compass_from">საიდან ქრის ქარი</span></div>
         </div>
       </div>
@@ -534,7 +534,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       </svg>
       <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--sb);flex-wrap:wrap;">
         <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--bl);display:inline-block"></span><span data-i18n="th_wind">ქარი მ/წმ</span></span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--tl);display:inline-block"></span>ტალღა ×5</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--tl);display:inline-block"></span><span data-i18n="chart_wave_lbl">ტალღა ×5</span></span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,90,90,0.7);display:inline-block;width:14px"></span><span data-i18n="chart_susp">შეჩ. 21.5</span></span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,146,58,0.6);display:inline-block;width:14px"></span><span data-i18n="chart_vessel">გემ. 17</span></span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,200,66,0.5);display:inline-block;width:14px"></span><span data-i18n="chart_barge">ბორ. 10</span></span>
@@ -724,11 +724,11 @@ function render(d) {
   } else if (w >= THR.vessel) {
     vesselLevel = 'danger';
     vesselText  = 'გემების მანევრირება — შეზღუდულია';
-    vesselSub   = 'ქარი ≥ 17 მ/წმ';
+    vesselSub   = currentLang==='eng' ? 'Wind ≥ 17 m/s' : 'ქარი ≥ 17 მ/წმ';
   } else if (w >= THR.barge) {
     vesselLevel = 'warn';
     vesselText  = 'გემების მანევრირება — ნებადართული';
-    vesselSub   = '⚠ ბორანის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
+    vesselSub   = currentLang==='eng' ? '⚠ Barge movement restricted (Wind ≥ 10 m/s)' : '⚠ ბორანის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
   } else {
     vesselLevel = 'ok';
     vesselText  = 'გემების მანევრირება — ნებადართული';
@@ -805,10 +805,10 @@ function render(d) {
         return `<div class="recap-row">
           <span class="recap-time">${t}</span>
           <span class="recap-metrics">
-            <span>ქარი <b>${fmt(h.wind_speed)}</b></span>
-            <span>დაქრ. <b>${fmt(h.wind_gusts)}</b></span>
-            <span>ტალღა <b>${fmt(h.wave_height)}</b>მ</span>
-            <span>ნალ. <b>${fmt(h.precipitation)}</b></span>
+            <span>${currentLang==='eng'?'Wind':'ქარი'} <b>${fmt(h.wind_speed)}</b></span>
+            <span>${currentLang==='eng'?'Gust':'დაქრ.'} <b>${fmt(h.wind_gusts)}</b></span>
+            <span>${currentLang==='eng'?'Wave':'ტალღა'} <b>${fmt(h.wave_height)}</b>${currentLang==='eng'?'m':'მ'}</span>
+            <span>${currentLang==='eng'?'Rain':'ნალ.'} <b>${fmt(h.precipitation)}</b></span>
           </span>
           ${pill}
         </div>`;
@@ -818,9 +818,16 @@ function render(d) {
 
   allForecast = fc;
   buildChart(fc);
+  // update thead to match current language and tab
+  const theadEl = document.getElementById('tbl-thead');
+  const titleEl = document.getElementById('tbl-title');
   if (activeTab === 'week') {
+    if(theadEl) theadEl.innerHTML = currentLang==='eng' ? WEEK_THEAD_ENG : WEEK_THEAD_GEO;
+    if(titleEl) titleEl.textContent = currentLang==='eng' ? '1-Week Forecast (daily)' : '1 კვირის პროგნოზი (დღეების მიხედვით)';
     buildWeekTable(d.daily);
   } else {
+    if(theadEl) theadEl.innerHTML = currentLang==='eng' ? HOURLY_THEAD_ENG : HOURLY_THEAD_GEO;
+    if(titleEl) titleEl.textContent = currentLang==='eng' ? 'Hourly Forecast' : 'საათობრივი პროგნოზი';
     buildTable(fc.slice(nowIndex, nowIndex+showHours));
   }
 }
@@ -951,7 +958,7 @@ function buildWeekTable(daily) {
   }).join('');
 }
 
-const HOURLY_THEAD = `<tr>
+const HOURLY_THEAD_GEO = `<tr>
             <th>დრო</th>
             <th>ტემპ. °C</th>
             <th>ქარი მ/წმ</th>
@@ -962,7 +969,7 @@ const HOURLY_THEAD = `<tr>
             <th>ხილვ. კმ</th>
             <th>სტატუსი</th>
           </tr>`;
-const WEEK_THEAD = `<tr>
+const WEEK_THEAD_GEO = `<tr>
             <th>თარიღი</th>
             <th>ტემპ. °C (მინ–მაქს)</th>
             <th>ქარი მაქს. მ/წმ</th>
@@ -974,6 +981,29 @@ const WEEK_THEAD = `<tr>
             <th>სტატუსი</th>
           </tr>`;
 
+const HOURLY_THEAD_ENG = `<tr>
+            <th>Time</th>
+            <th>Temp. °C</th>
+            <th>Wind m/s</th>
+            <th>Gusts</th>
+            <th>Dir.</th>
+            <th>Wave m</th>
+            <th>Rain</th>
+            <th>Vis. km</th>
+            <th>Status</th>
+          </tr>`;
+const WEEK_THEAD_ENG = `<tr>
+            <th>Date</th>
+            <th>Temp. °C (Min–Max)</th>
+            <th>Wind Max m/s</th>
+            <th>Gust Max.</th>
+            <th>Dom. Dir.</th>
+            <th>Wave Max m</th>
+            <th>Precip. mm</th>
+            <th>Vis. km</th>
+            <th>Status</th>
+          </tr>`;
+
 // ═══ HELPERS ═══
 function switchTab(h,el){
   activeTab = h;
@@ -982,14 +1012,14 @@ function switchTab(h,el){
   const titleEl = document.getElementById('tbl-title');
   const theadEl = document.getElementById('tbl-thead');
   if (h === 'week') {
-    theadEl.innerHTML = WEEK_THEAD;
-    if (titleEl) titleEl.textContent = '1 კვირის პროგნოზი (დღეების მიხედვით)';
+    theadEl.innerHTML = currentLang==='eng' ? WEEK_THEAD_ENG : WEEK_THEAD_GEO;
+    if (titleEl) titleEl.textContent = currentLang==='eng' ? '1-Week Forecast (daily)' : '1 კვირის პროგნოზი (დღეების მიხედვით)';
     buildWeekTable(lastData ? lastData.daily : []);
     return;
   }
   showHours = h;
-  theadEl.innerHTML = HOURLY_THEAD;
-  if (titleEl) titleEl.textContent = 'საათობრივი პროგნოზი';
+  theadEl.innerHTML = currentLang==='eng' ? HOURLY_THEAD_ENG : HOURLY_THEAD_GEO;
+  if (titleEl) titleEl.textContent = currentLang==='eng' ? 'Hourly Forecast' : 'საათობრივი პროგნოზი';
   if(allForecast.length) buildTable(allForecast.slice(nowIndex, nowIndex+h));
 }
 const CONF_STYLE = {
@@ -1116,6 +1146,9 @@ const I18N = {
   lbl_compass:   {geo:'ქარის მიმართულება', eng:'Wind Direction'},
   compass_conv:  {geo:'მეტეოროლ. კონვ.', eng:'Meteorol. conv.'},
   compass_from:  {geo:'საიდან ქრის ქარი', eng:'wind FROM direction'},
+  compass_dir_lbl:{geo:'მიმართ:', eng:'Dir:'},
+  compass_sym_lbl:{geo:'სიმბოლო:', eng:'Symbol:'},
+  chart_wave_lbl:{geo:'ტალღა ×5', eng:'Wave ×5'},
   recap_title_full:{geo:'მომდევნო 6 საათის კონსენსუს რეკაპი', eng:'Next 6 Hours Consensus Recap'},
   recap_title:   {geo:'მომდევნო 6 საათის რეკაპი', eng:'Next 6 Hours Recap'},
   sum_title:     {geo:'48H შეჯამება', eng:'48H Summary'},
