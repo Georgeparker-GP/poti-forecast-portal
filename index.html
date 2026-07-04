@@ -707,11 +707,14 @@ function render(d) {
   const w = Math.max(c.wind_speed||0, c.wind_gusts||0);
   const wv= c.wave_height||0;
   const vis= c.visibility_km!=null ? c.visibility_km : 99;
+  const isEng = currentLang==='eng';
 
   // ამწეები — მხოლოდ suspended ზღვარზე იცვლება
   setOps('ops-cranes',
     w >= THR.suspended ? 'danger' : 'ok',
-    w >= THR.suspended ? 'ამწეები — შეჩერებულია' : 'ამწეები — ოპერაციული');
+    w >= THR.suspended
+      ? (isEng ? 'Cranes — Suspended' : 'ამწეები — შეჩერებულია')
+      : (isEng ? 'Cranes — Operational' : 'ამწეები — ოპერაციული'));
 
   // გემების მანევრირება — 4 დონის ერთიანი ლოგიკა
   const depBlocked = w >= THR.suspended || wv >= THR.wave || vis <= THR.fog;
@@ -719,20 +722,20 @@ function render(d) {
 
   if (depBlocked) {
     vesselLevel = 'danger';
-    vesselText  = 'გემების გასვლა — შეზღუდულია';
-    vesselSub   = 'კრიტიკული ზღვარი გადაცილებულია';
+    vesselText  = isEng ? 'Vessel Departure — Restricted' : 'გემების გასვლა — შეზღუდულია';
+    vesselSub   = isEng ? 'Critical threshold exceeded' : 'კრიტიკული ზღვარი გადაცილებულია';
   } else if (w >= THR.vessel) {
     vesselLevel = 'danger';
-    vesselText  = 'გემების მანევრირება — შეზღუდულია';
-    vesselSub   = currentLang==='eng' ? 'Wind ≥ 17 m/s' : 'ქარი ≥ 17 მ/წმ';
+    vesselText  = isEng ? 'Vessel Manoeuvring — Restricted' : 'გემების მანევრირება — შეზღუდულია';
+    vesselSub   = isEng ? 'Wind ≥ 17 m/s' : 'ქარი ≥ 17 მ/წმ';
   } else if (w >= THR.barge) {
     vesselLevel = 'warn';
-    vesselText  = 'გემების მანევრირება — ნებადართული';
-    vesselSub   = currentLang==='eng' ? '⚠ Barge movement restricted (Wind ≥ 10 m/s)' : '⚠ ბორანის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
+    vesselText  = isEng ? 'Vessel Manoeuvring — Permitted' : 'გემების მანევრირება — ნებადართული';
+    vesselSub   = isEng ? '⚠ Barge movement restricted (Wind ≥ 10 m/s)' : '⚠ ბორანის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
   } else {
     vesselLevel = 'ok';
-    vesselText  = 'გემების მანევრირება — ნებადართული';
-    vesselSub   = 'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ';
+    vesselText  = isEng ? 'Vessel Manoeuvring — Permitted' : 'გემების მანევრირება — ნებადართული';
+    vesselSub   = isEng ? 'Limits: Barge ≥10 | Manoeuvre ≥17 | Departure ≥21.5 m/s' : 'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ';
   }
 
   setOps('ops-vessel', vesselLevel, vesselText);
