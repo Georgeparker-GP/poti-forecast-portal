@@ -6,375 +6,165 @@
 <title>APMT Poti — Weather Portal</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden;
+    font-family: 'Helvetica Neue', Arial, sans-serif; }
 
-  html, body {
-    width: 100%; height: 100%;
-    background: #000;
-    overflow: hidden;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-  }
-
-  /* ─── INTRO OVERLAY ─── */
+  /* ═══ INTRO ═══ */
   #intro {
-    position: fixed; inset: 0; z-index: 9999;
+    position: fixed; inset: 0; z-index: 9999; background: #000;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  #intro-video {
+    width: 100%; height: 100%;
+    object-fit: cover;   /* fill screen, crop edges */
     background: #000;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
   }
 
-  /* starfield */
-  #stars {
-    position: absolute; inset: 0;
-    background:
-      radial-gradient(1px 1px at 10% 15%, #fff 0%, transparent 100%),
-      radial-gradient(1px 1px at 25% 40%, #fff 0%, transparent 100%),
-      radial-gradient(1px 1px at 40% 8%,  #fff 0%, transparent 100%),
-      radial-gradient(1px 1px at 60% 30%, #fff 0%, transparent 100%),
-      radial-gradient(1px 1px at 75% 55%, #fff 0%, transparent 100%),
-      radial-gradient(1px 1px at 85% 20%, #fff 0%, transparent 100%),
-      radial-gradient(1px 1px at 92% 70%, #fff 0%, transparent 100%),
-      radial-gradient(1px 1px at 5%  80%, #fff 0%, transparent 100%),
-      radial-gradient(1px 1px at 50% 90%, #fff 0%, transparent 100%),
-      radial-gradient(2px 2px at 33% 65%, rgba(255,255,255,0.6) 0%, transparent 100%),
-      radial-gradient(2px 2px at 70% 12%, rgba(255,255,255,0.6) 0%, transparent 100%),
-      radial-gradient(1px 1px at 18% 52%, rgba(255,255,255,0.4) 0%, transparent 100%),
-      radial-gradient(1px 1px at 88% 88%, rgba(255,255,255,0.4) 0%, transparent 100%);
-    opacity: 1;
-    transition: opacity 0.8s ease;
+  /* subtle vignette for cinematic depth */
+  #vignette {
+    position: absolute; inset: 0; pointer-events: none; z-index: 5;
+    background: radial-gradient(ellipse at center,
+      transparent 55%, rgba(0,0,0,0.35) 100%);
   }
 
-  /* zoom container — clip to circle representing Earth */
-  #zoom-wrap {
-    position: relative;
-    width: min(80vw, 80vh);
-    height: min(80vw, 80vh);
-    border-radius: 50%;
-    overflow: hidden;
-    box-shadow: 0 0 60px 20px rgba(30, 90, 180, 0.35),
-                0 0 120px 60px rgba(10, 40, 100, 0.2);
-    transform: scale(1);
-    transform-origin: center center;
-    animation: zoomToPort 4.2s cubic-bezier(0.25, 0.1, 0.25, 1) 0.6s forwards;
-  }
-
-  /* Earth SVG base — the whole planet */
-  #earth-svg {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-  }
-
-  /* satellite image layer — starts invisible, fades in as we zoom */
-  #satellite-img {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    object-fit: cover;
+  /* ── HUD overlay that fades in near the end ── */
+  #hud {
+    position: absolute; inset: 0; z-index: 6; pointer-events: none;
     opacity: 0;
-    transform: scale(1);
-    transform-origin: 58% 35%; /* ფოთის პოზიცია რუკაზე */
-    transition: none;
   }
+  #hud.show { animation: hudIn 0.8s ease-out forwards; }
+  @keyframes hudIn { to { opacity: 1; } }
 
-  /* atmosphere glow rim */
-  #atmo {
-    position: absolute; inset: -4px;
-    border-radius: 50%;
-    box-shadow: inset 0 0 40px 12px rgba(80, 140, 255, 0.4),
-                inset 0 0 80px 30px rgba(30, 80, 200, 0.15);
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  /* crosshair / target on Poti */
-  #target {
-    position: absolute;
-    left: 56%; top: 34%;
-    width: 0; height: 0;
-    opacity: 0;
-    transform: translate(-50%, -50%);
-    z-index: 20;
-    animation: showTarget 0.6s ease-out 3.8s forwards;
-  }
-  #target::before, #target::after {
-    content: '';
-    position: absolute;
-    background: rgba(0, 220, 160, 0.9);
-  }
-  #target::before { width: 1px; height: 24px; left: 12px; top: 0; }
-  #target::after  { width: 24px; height: 1px; left: 0; top: 12px; }
-  .target-ring {
-    position: absolute;
-    left: 50%; top: 50%;
-    transform: translate(-50%, -50%);
-    border: 1.5px solid rgba(0, 220, 160, 0.8);
-    border-radius: 50%;
-  }
-  .ring1 { width: 26px; height: 26px; }
-  .ring2 { width: 44px; height: 44px; opacity: 0.4; }
-
-  /* label at target */
-  #poti-label {
-    position: absolute;
-    left: 56%; top: 34%;
-    transform: translate(20px, -20px);
-    color: rgba(0, 220, 160, 0.95);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    opacity: 0;
-    z-index: 20;
-    text-shadow: 0 0 8px rgba(0, 220, 160, 0.6);
-    animation: showTarget 0.6s ease-out 4.0s forwards;
-  }
-
-  /* HUD corner lines */
-  .hud-corner {
-    position: absolute;
-    width: 20px; height: 20px;
-    opacity: 0;
-    animation: showTarget 0.4s ease-out 3.9s forwards;
-  }
-  .hud-corner::before, .hud-corner::after {
-    content: '';
-    position: absolute;
-    background: rgba(0, 220, 160, 0.5);
-  }
-  .hud-corner::before { width: 100%; height: 1px; top: 0; left: 0; }
-  .hud-corner::after  { width: 1px; height: 100%; top: 0; left: 0; }
-  .c-tl { top: 8%; left: 8%; }
-  .c-tr { top: 8%; right: 8%; transform: scaleX(-1); }
-  .c-bl { bottom: 8%; left: 8%; transform: scaleY(-1); }
-  .c-br { bottom: 8%; right: 8%; transform: scale(-1); }
-
-  /* coords text */
-  #coords {
-    position: absolute;
-    bottom: 8%; left: 50%;
+  #hud-title {
+    position: absolute; left: 50%; bottom: 18%;
     transform: translateX(-50%);
-    color: rgba(0, 220, 160, 0.6);
-    font-size: 9px;
-    letter-spacing: 0.12em;
+    text-align: center; white-space: nowrap;
+  }
+  #hud-title .kicker {
+    color: rgba(0, 220, 160, 0.9);
+    font-size: clamp(10px, 2.4vw, 13px);
+    letter-spacing: 0.4em; text-transform: uppercase;
+    margin-bottom: 10px;
+    text-shadow: 0 0 12px rgba(0,220,160,0.5);
+  }
+  #hud-title .main {
+    color: #fff;
+    font-size: clamp(22px, 6vw, 44px);
+    font-weight: 300; letter-spacing: 0.15em;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+  }
+  #hud-title .coords {
+    color: rgba(255,255,255,0.6);
+    font-size: clamp(9px, 2vw, 12px);
+    letter-spacing: 0.25em; margin-top: 12px;
     font-variant-numeric: tabular-nums;
-    opacity: 0;
-    z-index: 20;
-    animation: showTarget 0.4s ease-out 4.0s forwards;
   }
 
-  /* ── ZOOM KEYFRAME ── */
-  @keyframes zoomToPort {
-    0%   { transform: scale(1); }
-    /* pull back slightly for drama, then slam in */
-    5%   { transform: scale(0.95); }
-    100% { transform: scale(22); }
+  /* corner brackets */
+  .bracket {
+    position: absolute; width: clamp(24px,6vw,44px); height: clamp(24px,6vw,44px);
+    border-color: rgba(0,220,160,0.55);
   }
+  .b-tl { top: 6%; left: 6%; border-top: 1.5px solid; border-left: 1.5px solid; }
+  .b-tr { top: 6%; right: 6%; border-top: 1.5px solid; border-right: 1.5px solid; }
+  .b-bl { bottom: 6%; left: 6%; border-bottom: 1.5px solid; border-left: 1.5px solid; }
+  .b-br { bottom: 6%; right: 6%; border-bottom: 1.5px solid; border-right: 1.5px solid; }
 
-  /* ── SATELLITE REVEAL during zoom ── */
-  @keyframes revealSat {
-    0%   { opacity: 0; transform: scale(1); }
-    80%  { opacity: 0; transform: scale(1); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-
-  #satellite-img {
-    animation: revealSat 4.2s ease-in 0.6s forwards;
-  }
-
-  @keyframes showTarget {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-
-  /* ── INTRO FADE OUT ── */
-  #intro.fade-out {
-    animation: introFade 0.7s ease-in forwards;
-  }
-  @keyframes introFade {
-    to { opacity: 0; pointer-events: none; }
-  }
-
-  /* ── stars fade during zoom ── */
-  #intro.zooming #stars { opacity: 0; }
-
-  /* ── SKIP BUTTON ── */
+  /* ── skip ── */
   #skip {
-    position: absolute;
-    bottom: 24px; right: 24px;
-    z-index: 100;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.5);
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    padding: 6px 14px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
+    position: absolute; bottom: 20px; right: 20px; z-index: 100;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.55); font-size: 11px; letter-spacing: 0.1em;
+    padding: 7px 15px; border-radius: 5px; cursor: pointer; transition: all .2s;
   }
-  #skip:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  #skip:hover { background: rgba(255,255,255,0.16); color: #fff; }
 
-  /* ── PORTAL (hidden until intro done) ── */
+  /* ── fade out ── */
+  #intro.fade-out { animation: introFade 0.8s ease-in forwards; }
+  @keyframes introFade { to { opacity: 0; pointer-events: none; } }
+
+  /* ═══ PORTAL PLACEHOLDER ═══ */
   #portal {
-    position: fixed; inset: 0;
-    opacity: 0;
-    transition: opacity 0.6s ease;
-    overflow-y: auto;
-    background: #0d1821;
-    display: flex; align-items: center; justify-content: center;
+    position: fixed; inset: 0; opacity: 0; transition: opacity 0.7s ease;
+    background: #0d1821; display: flex; align-items: center; justify-content: center;
   }
   #portal.visible { opacity: 1; }
-  #portal-msg {
-    color: rgba(0,220,160,0.8);
-    font-size: 18px;
-    letter-spacing: 0.08em;
-  }
+  #portal-msg { color: rgba(0,220,160,0.8); font-size: 16px; letter-spacing: 0.08em; padding: 20px; text-align:center; }
 
-  /* ─── reduced motion ─── */
   @media (prefers-reduced-motion: reduce) {
-    #zoom-wrap { animation: none; transform: scale(22); }
-    #satellite-img { animation: none; opacity: 1; }
-    #target, #poti-label, .hud-corner, #coords { animation: none; opacity: 1; }
-    #intro { animation: none; opacity: 0; pointer-events: none; }
+    #intro { display: none; }
     #portal { opacity: 1; }
   }
 </style>
 </head>
 <body>
 
-<!-- ═══ INTRO SEQUENCE ═══ -->
 <div id="intro">
-  <div id="stars"></div>
+  <video id="intro-video" playsinline muted autoplay preload="auto">
+    <source src="intro.mp4" type="video/mp4">
+  </video>
 
-  <div id="zoom-wrap">
-    <!-- Earth SVG — simplified but realistic continents -->
-    <svg id="earth-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="ocean" cx="45%" cy="38%" r="60%">
-          <stop offset="0%"   stop-color="#1a4a7a"/>
-          <stop offset="40%"  stop-color="#0e2d52"/>
-          <stop offset="100%" stop-color="#071828"/>
-        </radialGradient>
-        <radialGradient id="nightside" cx="80%" cy="55%" r="50%">
-          <stop offset="0%"   stop-color="rgba(0,0,0,0.7)"/>
-          <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-        </radialGradient>
-        <radialGradient id="sunside" cx="30%" cy="30%" r="55%">
-          <stop offset="0%"   stop-color="rgba(255,220,140,0.18)"/>
-          <stop offset="100%" stop-color="rgba(255,220,140,0)"/>
-        </radialGradient>
-        <radialGradient id="atmo-grad" cx="50%" cy="50%" r="50%">
-          <stop offset="82%"  stop-color="rgba(60,120,220,0)"/>
-          <stop offset="95%"  stop-color="rgba(60,120,220,0.25)"/>
-          <stop offset="100%" stop-color="rgba(100,160,255,0.5)"/>
-        </radialGradient>
-        <clipPath id="globe-clip">
-          <circle cx="200" cy="200" r="198"/>
-        </clipPath>
-      </defs>
+  <div id="vignette"></div>
 
-      <!-- ocean base -->
-      <circle cx="200" cy="200" r="198" fill="url(#ocean)"/>
-
-      <!-- continents (clipped to globe) -->
-      <g clip-path="url(#globe-clip)" fill="#2d5a3d" opacity="0.92">
-        <!-- Europe -->
-        <path d="M185,95 L200,88 L218,90 L228,98 L235,108 L230,118 L220,122 L208,125 L198,120 L188,115 L180,108 Z"/>
-        <!-- Scandinavia -->
-        <path d="M195,70 L205,65 L215,68 L220,80 L215,90 L205,88 L198,82 Z"/>
-        <!-- UK -->
-        <path d="M172,88 L180,85 L185,92 L180,100 L173,97 Z"/>
-        <!-- Africa -->
-        <path d="M190,140 L210,135 L230,145 L240,165 L245,190 L240,215 L225,235 L208,242 L195,235 L185,215 L180,190 L183,165 L188,148 Z"/>
-        <!-- Asia (simplified) -->
-        <path d="M225,90 L260,85 L300,90 L330,100 L350,115 L360,135 L355,155 L340,165 L315,168 L290,160 L268,150 L250,140 L235,128 L225,115 L222,100 Z"/>
-        <!-- India -->
-        <path d="M278,148 L292,145 L300,155 L298,175 L288,190 L278,185 L272,170 L273,155 Z"/>
-        <!-- Australia -->
-        <path d="M310,225 L340,220 L360,230 L365,250 L355,268 L335,275 L315,270 L305,255 L305,238 Z"/>
-        <!-- North America -->
-        <path d="M55,90 L90,82 L120,85 L145,95 L155,115 L150,140 L135,158 L115,165 L92,160 L72,148 L58,130 L50,110 Z"/>
-        <!-- Greenland -->
-        <path d="M145,55 L165,48 L178,55 L175,70 L162,75 L148,68 Z"/>
-        <!-- South America -->
-        <path d="M108,170 L130,162 L148,170 L155,190 L152,215 L140,238 L120,252 L102,248 L90,230 L88,208 L92,188 Z"/>
-        <!-- Caucasus region (highlight) -->
-        <path d="M248,118 L262,115 L272,120 L270,130 L258,133 L248,128 Z" fill="#3a7050" opacity="1"/>
-      </g>
-
-      <!-- lighting & atmosphere -->
-      <circle cx="200" cy="200" r="198" fill="url(#sunside)"/>
-      <circle cx="200" cy="200" r="198" fill="url(#nightside)"/>
-      <circle cx="200" cy="200" r="198" fill="url(#atmo-grad)"/>
-
-      <!-- ice caps -->
-      <g clip-path="url(#globe-clip)" fill="#c8ddf0" opacity="0.7">
-        <ellipse cx="200" cy="22" rx="55" ry="20"/>
-        <ellipse cx="200" cy="378" rx="45" ry="16"/>
-      </g>
-    </svg>
-
-    <!-- satellite/map image layer (fades in at end of zoom) -->
-    <img id="satellite-img"
-      src="https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/41.67,42.15,11,0/800x800?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw"
-      alt="Poti satellite"
-      onerror="this.src='';this.style.display='none'"
-    />
-
-    <!-- atmosphere rim inside globe -->
-    <div id="atmo"></div>
-
-    <!-- HUD corners -->
-    <div class="hud-corner c-tl"></div>
-    <div class="hud-corner c-tr"></div>
-    <div class="hud-corner c-bl"></div>
-    <div class="hud-corner c-br"></div>
-
-    <!-- target crosshair on Poti -->
-    <div id="target">
-      <div class="target-ring ring1"></div>
-      <div class="target-ring ring2"></div>
+  <div id="hud">
+    <div class="bracket b-tl"></div>
+    <div class="bracket b-tr"></div>
+    <div class="bracket b-bl"></div>
+    <div class="bracket b-br"></div>
+    <div id="hud-title">
+      <div class="kicker">APMT Terminals</div>
+      <div class="main">ფოთის პორტი</div>
+      <div class="coords">42°09′N · 41°40′E</div>
     </div>
-
-    <!-- coords -->
-    <div id="coords">42°09'N · 41°40'E · POTI PORT</div>
   </div>
 
-  <!-- Poti label outside zoom-wrap so it doesn't clip -->
-  <div id="poti-label">POTI PORT</div>
-
-  <button id="skip" onclick="skipIntro()">SKIP ▶</button>
+  <button id="skip" onclick="skipIntro()">გამოტოვება ▶</button>
 </div>
 
-<!-- ═══ PORTAL ═══ -->
 <div id="portal">
-  <div id="portal-msg">← აქ ჩასვი portal-ის index.html კონტენტი →</div>
+  <div id="portal-msg">✅ ვიდეო-ინტრო მუშაობს<br><br>← აქ ჩაჯდება პორტალის კონტენტი →</div>
 </div>
 
 <script>
 (function(){
-  const intro = document.getElementById('intro');
+  const intro  = document.getElementById('intro');
   const portal = document.getElementById('portal');
+  const video  = document.getElementById('intro-video');
+  const hud    = document.getElementById('hud');
   let done = false;
 
-  function finishIntro() {
-    if (done) return;
-    done = true;
+  function finish() {
+    if (done) return; done = true;
     intro.classList.add('fade-out');
     portal.classList.add('visible');
-    setTimeout(() => { intro.style.display = 'none'; }, 700);
+    setTimeout(() => { intro.style.display = 'none'; }, 800);
   }
+  window.skipIntro = finish;
 
-  // start zoom animation after brief pause
-  setTimeout(() => { intro.classList.add('zooming'); }, 400);
+  // show HUD title in the last ~1.5s of video
+  video.addEventListener('timeupdate', () => {
+    if (video.duration && video.currentTime >= video.duration - 1.6) {
+      hud.classList.add('show');
+    }
+  });
 
-  // finish intro after full animation (0.6s delay + 4.2s anim + 0.8s hold)
-  setTimeout(finishIntro, 6000);
+  // when video ends → transition to portal
+  video.addEventListener('ended', () => setTimeout(finish, 400));
 
-  window.skipIntro = finishIntro;
+  // fallbacks: if video fails to load or autoplay blocked
+  video.addEventListener('error', finish);
+  setTimeout(() => {
+    // safety: if video never played (e.g. mobile autoplay block), skip after 8s
+    if (video.paused && video.currentTime === 0) finish();
+  }, 8000);
+
+  // hard cap: never hang longer than video + buffer
+  setTimeout(finish, 12000);
 
   // keyboard skip
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' || e.key === ' ') finishIntro();
+    if (e.key === 'Escape' || e.key === ' ') finish();
   });
 })();
 </script>
