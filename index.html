@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title> <span data-geo="APMT Poti  — ამინდის კონსენსუს-პორტალი" data-eng="APMT Poti — Weather Consensus Portal">APMT Poti  — ამინდის კონსენსუს-პორტალი</span></title>
+<title> APMT Poti  — ამინდის კონსენსუს-პორტალი</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -302,18 +302,18 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <div class="logo">
     <div class="logo-icon">⚓</div>
     <div>
-      <h1 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span data-geo="APMT Poti — ამინდის კონსენსუს-პორტალი" data-eng="APMT Poti — Weather Consensus Portal">APMT Poti — ამინდის კონსენსუს-პორტალი</span>
+      <h1 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span data-i18n="title">APMT Poti — ამინდის კონსენსუს-პორტალი</span>
         <span id="hdr-confidence" style="display:none;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;"></span>
       </h1>
-      <p id="sources-line"><span data-geo="მონაცემები <span data-geo="იტვირთება..." data-eng="Loading...">იტვირთება...</span>" data-eng="Loading data...">მონაცემები <span data-geo="იტვირთება..." data-eng="Loading...">იტვირთება...</span></span></p>
+      <p id="sources-line"><span data-i18n="src_loading">მონაცემები იტვირთება...</span></p>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
     <div style="text-align:right;flex-shrink:0">
-      <div style="font-size:10px;color:var(--sb)"><span data-geo="ბოლო განახლება" data-eng="Last updated">ბოლო განახლება</span></div>
+      <div style="font-size:10px;color:var(--sb)"><span data-i18n="last_updated">ბოლო განახლება</span></div>
       <div id="update-time" class="mono" style="font-size:14px;color:var(--bl);margin-top:2px;font-weight:600">--:--</div>
-      <div id="next-time" style="font-size:10px;color:var(--mu);margin-top:1px"><span data-geo="შემდეგი: ---" data-eng="Next: ---">შემდეგი: ---</span></div>
-      <div style="display:none"><span data-geo="განახლება:" data-eng="Refresh:">განახლება:</span> <span id="cd" style="color:var(--tl)">60</span><span data-geo="წმ" data-eng="s">წმ</span></div>
+      <div id="next-time" style="font-size:10px;color:var(--mu);margin-top:1px">შემდეგი: ---</div>
+      <div style="display:none">განახლება: <span id="cd" style="color:var(--tl)">60</span>წმ</div>
       <div class="local-time-line">
         <span>📅</span><span id="local-date" class="mono">--</span>
         <span style="margin-left:2px">🕐</span><span id="local-clock" class="mono">--:--:--</span>
@@ -324,9 +324,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <path fill="#fff" d="M180.7 62.3 156 178.4c-1.9 8.6-6.9 10.7-14 6.7l-38.7-28.6-18.7 18c-2.1 2.1-3.8 3.8-7.8 3.8l2.8-39.7 72.3-65.3c3.1-2.8-.7-4.4-4.8-1.6l-89.4 56.3-38.5-12c-8.4-2.6-8.5-8.4 1.8-12.4l150.7-58.1c7-2.6 13.1 1.7 10.7 12.8z"/>
       </svg>
     </button>
-    <button class="theme-toggle-btn" id="lang-toggle-btn" onclick="toggleLang()" title="Switch language / ენის შეცვლა" style="width:auto;border-radius:20px;padding:0 12px;font-size:12px;font-weight:700;letter-spacing:.05em;">
-      <span id="lang-toggle-label">ENG</span>
-    </button>
+    <button class="theme-toggle-btn" id="lang-btn" onclick="toggleLang()" title="Switch language / ენის შეცვლა" style="width:auto;border-radius:20px;padding:0 12px;font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--text-strong);">ENG</button>
     <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="თემის შეცვლა">
       <span id="theme-toggle-icon">🌙</span>
     </button>
@@ -335,59 +333,59 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 
 <div id="stale-banner" style="display:none;background:rgba(245,90,90,0.15);border:1px solid var(--rd);border-radius:8px;margin:12px 24px 0;padding:10px 16px;color:var(--txt-danger);font-size:13px;font-weight:600;align-items:center;gap:8px;">
   <span style="font-size:16px">⚠️</span>
-  <span id="stale-banner-text"><span data-geo="მონაცემები დიდი ხანია არ განახლებულა" data-eng="Data has not been updated for a long time">მონაცემები დიდი ხანია არ განახლებულა</span></span>
+  <span id="stale-banner-text"><span data-i18n="stale_text">მონაცემები დიდი ხანია არ განახლებულა</span></span>
 </div>
 
 <div id="status-bar" class="status-bar operational">
   <div class="pulse"></div>
-  <span id="status-text"><span data-geo="<span data-geo="სტატუსი" data-eng="Status">სტატუსი</span> <span data-geo="იტვირთება..." data-eng="Loading...">იტვირთება...</span>" data-eng="Loading status..."><span data-geo="სტატუსი" data-eng="Status">სტატუსი</span> <span data-geo="იტვირთება..." data-eng="Loading...">იტვირთება...</span></span></span>
+  <span id="status-text"><span data-i18n="th_status">სტატუსი</span> იტვირთება...</span>
   <div id="alert-items" style="margin-left:8px;display:flex;gap:10px;flex-wrap:wrap;font-weight:400;font-size:12px;"></div>
 </div>
 
 <main>
 
-  <!-- <span data-geo="ოპერაციული სტატუს-პანელი" data-eng="Operational Status Panel">ოპერაციული სტატუს-პანელი</span> -->
+  <!-- ოპერაციული სტატუს-პანელი -->
   <div class="ops-panel rel" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
     <div class="ops-item" id="ops-cranes" style="padding:14px 16px;">
       <div class="ops-dot" style="background:var(--gn);width:12px;height:12px;"></div>
       <div>
-        <div class="ops-text" id="ops-cranes-text" style="font-size:13px;"><span data-geo="ამწეები — ოპერაციული" data-eng="Cranes — Operational">ამწეები — ოპერაციული</span></div>
-        <div class="ops-sub">შეჩერება: ≥ 21.5 მ/<span data-geo="წმ" data-eng="s">წმ</span></div>
+        <div class="ops-text" id="ops-cranes-text" style="font-size:13px;"><span data-i18n="op_cranes">ამწეები — ოპერაციული</span></div>
+        <div class="ops-sub"><span data-i18n="op_cranes_sub">შეჩერება: ≥ 21.5 მ/წმ</span></div>
       </div>
     </div>
     <div class="ops-item" id="ops-vessel" style="padding:14px 16px;">
       <div class="ops-dot" style="background:var(--gn);width:12px;height:12px;"></div>
       <div>
-        <div class="ops-text" id="ops-vessel-text" style="font-size:13px;"><span data-geo="გემების მანევრირება — ნებადართული" data-eng="Vessel Manoeuvring — Permitted">გემების მანევრირება — ნებადართული</span></div>
-        <div class="ops-sub" id="ops-vessel-sub">შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/<span data-geo="წმ" data-eng="s">წმ</span></div>
+        <div class="ops-text" id="ops-vessel-text" style="font-size:13px;"><span data-i18n="op_vessel">გემების მანევრირება — ნებადართული</span></div>
+        <div class="ops-sub" id="ops-vessel-sub"><span data-i18n="op_vessel_sub">შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ</span></div>
       </div>
     </div>
   </div>
 
 
- <!-- <span data-geo="<span data-geo="მეტრი" data-eng="m">მეტრი</span>კის ბარათები (ზედა რიგი)" data-eng="Metric cards (top row)"><span data-geo="მეტრი" data-eng="m">მეტრი</span>კის ბარათები (ზედა რიგი)</span> -->
+ <!-- მეტრიკის ბარათები (ზედა რიგი) -->
   <div class="cards-grid rel">
     <div class="card neutral" id="card-wind">
-      <div class="card-label"><span data-geo="ქარის სიჩქარე" data-eng="Wind Speed">ქარის სიჩქარე</span></div>
+      <div class="card-label"><span data-i18n="lbl_wind">ქარის სიჩქარე</span></div>
       <div class="card-value-row">
         <div class="card-value" id="c-wind">--</div>
-        <div class="card-unit">მ/<span data-geo="წმ" data-eng="s">წმ</span></div>
+        <div class="card-unit">მ/წმ</div>
       </div>
-      <div class="card-sub"><span data-geo="<span data-geo="დაქროლვა" data-eng="Gusts">დაქროლვა</span>:" data-eng="Gusts:"><span data-geo="დაქროლვა" data-eng="Gusts">დაქროლვა</span>:</span> <span id="c-gusts" class="mono">--</span> მ/<span data-geo="წმ" data-eng="s">წმ</span></div>
+      <div class="card-sub"><span data-i18n="gusts_lbl">დაქროლვა:</span> <span id="c-gusts" class="mono">--</span> მ/წმ</div>
       <div class="card-sub" id="c-confidence" style="margin-top:4px;display:flex;align-items:center;gap:5px;"></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wind" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-wave">
-      <div class="card-label"><span data-geo="ტალღის სიმაღლე" data-eng="Wave Height">ტალღის სიმაღლე</span></div>
+      <div class="card-label"><span data-i18n="lbl_wave">ტალღის სიმაღლე</span></div>
       <div class="card-value-row">
         <div class="card-value" id="c-wave">--</div>
-        <div class="card-unit"><span data-geo="მეტრი" data-eng="m">მეტრი</span></div>
+        <div class="card-unit">მეტრი</div>
       </div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wave" style="width:0%"></div></div>
     </div>
-    <!-- <span data-geo="ჰაერის ტემპერატურა" data-eng="Air Temperature">ჰაერის ტემპერატურა</span> -->
+    <!-- ჰაერის ტემპერატურა -->
     <div class="card neutral" id="card-airtemp">
-      <div class="card-label"><span data-geo="ჰაერის ტემპ." data-eng="Air Temp.">ჰაერის ტემპ.</span></div>
+      <div class="card-label"><span data-i18n="lbl_temp">ჰაერის ტემპ.</span></div>
       <div class="card-value-row">
         <div class="card-value" id="c-airtemp">--</div>
         <div class="card-unit">°C</div>
@@ -395,39 +393,39 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-airtemp" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-rain">
-      <div class="card-label"><span data-geo="ნალექი" data-eng="Precipitation">ნალექი</span></div>
+      <div class="card-label"><span data-i18n="lbl_rain">ნალექი</span></div>
       <div class="card-value-row">
         <div class="card-value" id="c-rain">--</div>
-        <div class="card-unit"><span data-geo="მმ/სთ" data-eng="mm/h">მმ/სთ</span></div>
+        <div class="card-unit">მმ/სთ</div>
       </div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-rain" style="width:0%"></div></div>
     </div>
 
-    <!-- <span data-geo="ხილვადობა" data-eng="Visibility">ხილვადობა</span> -->
+    <!-- <span data-i18n="lbl_vis">ხილვადობა</span> -->
     <div class="card neutral" id="card-vis">
-      <div class="card-label"><span data-geo="ხილვადობა" data-eng="Visibility">ხილვადობა</span></div>
+      <div class="card-label"><span data-i18n="lbl_vis">ხილვადობა</span></div>
       <div class="card-value-row">
         <div class="card-value" id="c-vis">--</div>
-        <div class="card-unit"><span data-geo="კმ" data-eng="km">კმ</span></div>
+        <div class="card-unit">კმ</div>
       </div>
-      <div class="card-sub"><span data-geo="ნისლის ზღვარი: 0.1 <span data-geo="კმ" data-eng="km">კმ</span>" data-eng="Fog threshold: 0.1 km">ნისლის ზღვარი: 0.1 <span data-geo="კმ" data-eng="km">კმ</span></span></div>
+      <div class="card-sub"><span data-i18n="vis_sub">ნისლის ზღვარი: 0.1 კმ</span></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
     </div>
   </div>
 
-  <!-- <span data-geo="დეტალური ბარათები (ქვედა რიგი)" data-eng="Detail cards (bottom row)">დეტალური ბარათები (ქვედა რიგი)</span> -->
+  <!-- დეტალური ბარათები (ქვედა რიგი) -->
   <div class="cards-grid rel">
-    <!-- <span data-geo="მომდევნო 6 საათის კონსენსუს რეკაპი" data-eng="Next 6 Hours Consensus Recap">მომდევნო 6 საათის კონსენსუს რეკაპი</span> -->
+    <!-- <span data-i18n="recap_title_full">მომდევნო 6 საათის კონსენსუს რეკაპი</span> -->
     <div class="card teal" style="grid-column:span 2">
-      <div class="card-label"><span data-geo="მომდევნო 6 საათის რეკაპი" data-eng="Next 6 Hours Recap">მომდევნო 6 საათის რეკაპი</span></div>
+      <div class="card-label"><span data-i18n="recap_title">მომდევნო 6 საათის რეკაპი</span></div>
       <div id="recap-6h" style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
-        <div style="font-size:11px;color:var(--mu)"><span data-geo="იტვირთება..." data-eng="Loading...">იტვირთება...</span></div>
+        <div style="font-size:11px;color:var(--mu)">იტვირთება...</div>
       </div>
     </div>
 
-    <!-- <span data-geo="ქარის ვარდი" data-eng="Wind Rose">ქარის ვარდი</span> -->
+    <!-- ქარის ვარდი -->
     <div class="card teal" style="grid-column:span 2">
-      <div class="card-label"><span data-geo="ქარის მიმართულება" data-eng="Wind Direction">ქარის მიმართულება</span></div>
+      <div class="card-label"><span data-i18n="lbl_compass">ქარის მიმართულება</span></div>
       <div class="wind-rose-wrap" style="justify-content:center;gap:24px;">
         <svg id="compass-svg" width="130" height="130" viewBox="0 0 110 110">
           <circle cx="55" cy="55" r="50" fill="none" stroke="var(--ov2)" stroke-width="1"/>
@@ -447,52 +445,52 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           </g>
         </svg>
         <div class="compass-info" style="gap:10px;">
-          <div class="compass-row" style="font-size:15px"><span data-geo="მიმართ:" data-eng="Dir:">მიმართ:</span> <span id="c-wdir-deg">--</span>°</div>
-          <div class="compass-row" style="font-size:15px"><span data-geo="სიმბოლო:" data-eng="Symbol:">სიმბოლო:</span> <span id="c-wdir-sym" style="font-size:28px;color:var(--tl)">--</span></div>
-          <div class="compass-row" style="margin-top:6px;font-size:11px;color:var(--mu)"><span data-geo="მეტეოროლ. კონვ." data-eng="Meteorol. conv.">მეტეოროლ. კონვ.</span><br><span data-geo="საიდან ქრის ქარი" data-eng="wind FROM direction">საიდან ქრის ქარი</span></div>
+          <div class="compass-row" style="font-size:15px">მიმართ: <span id="c-wdir-deg">--</span>°</div>
+          <div class="compass-row" style="font-size:15px">სიმბოლო: <span id="c-wdir-sym" style="font-size:28px;color:var(--tl)">--</span></div>
+          <div class="compass-row" style="margin-top:6px;font-size:11px;color:var(--mu)"><span data-i18n="compass_conv">მეტეოროლ. კონვ.</span><br><span data-i18n="compass_from">საიდან ქრის ქარი</span></div>
         </div>
       </div>
     </div>
 
-    <!-- <span data-geo="48H შეჯამება" data-eng="48H Summary">48H შეჯამება</span> -->
+    <!-- <span data-i18n="sum_title">48H შეჯამება</span> -->
     <div class="card teal" style="grid-column:span 2">
-      <div class="card-label"><span data-geo="48H შეჯამება" data-eng="48H Summary">48H შეჯამება</span></div>
+      <div class="card-label"><span data-i18n="sum_title">48H შეჯამება</span></div>
       <div style="display:flex;gap:20px;margin-top:12px;">
-        <!-- <span data-geo="სვეტი 1: სტატუს საათები" data-eng="Col 1: Status hours">სვეტი 1: სტატუს საათები</span> -->
+        <!-- სვეტი 1: სტატუს საათები -->
         <div style="display:flex;flex-direction:column;gap:10px;flex:1;">
           <div style="display:flex;justify-content:space-between;font-size:14px;">
-            <span style="color:var(--sb)"><span data-geo="🚨 შეჩერება" data-eng="🚨 Suspended">🚨 შეჩერება</span></span>
+            <span style="color:var(--sb)"><span data-i18n="sum_susp">🚨 შეჩერება</span></span>
             <span id="s-stop" class="mono" style="color:var(--txt-danger);font-weight:700;font-size:16px">--h</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:14px;">
-            <span style="color:var(--sb)"><span data-geo="🟠 გემ. მანევრ." data-eng="🟠 Vessel Manv.">🟠 გემ. მანევრ.</span></span>
+            <span style="color:var(--sb)"><span data-i18n="sum_vessel">🟠 გემ. მანევრ.</span></span>
             <span id="s-vessel" class="mono" style="color:var(--txt-alert);font-weight:700;font-size:16px">--h</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:14px;">
-            <span style="color:var(--sb)"><span data-geo="🟡 ბორანი" data-eng="🟡 Barge">🟡 ბორანი</span></span>
+            <span style="color:var(--sb)"><span data-i18n="sum_barge">🟡 ბორანი</span></span>
             <span id="s-barge" class="mono" style="color:var(--txt-warn);font-weight:700;font-size:16px">--h</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:14px;">
-            <span style="color:var(--sb)"><span data-geo="🟢 სრული ოპ." data-eng="🟢 Full Op.">🟢 სრული ოპ.</span></span>
+            <span style="color:var(--sb)"><span data-i18n="sum_op">🟢 სრული ოპ.</span></span>
             <span id="s-op" class="mono" style="color:var(--txt-ok);font-weight:700;font-size:16px">--h</span>
           </div>
         </div>
-        <!-- <span data-geo="სვეტი 2: მაქსიმალური მნიშვნელობები" data-eng="Col 2: Maximum values">სვეტი 2: მაქსიმალური მნიშვნელობები</span> -->
+        <!-- სვეტი 2: მაქსიმალური მნიშვნელობები -->
         <div style="display:flex;flex-direction:column;gap:10px;flex:1;border-left:1px solid var(--br);padding-left:16px;">
           <div style="display:flex;justify-content:space-between;font-size:14px;">
-            <span style="color:var(--sb)"><span data-geo="<span data-geo="ტალღა მ" data-eng="Wave m">ტალღა მ</span>აქს" data-eng="Wave Max"><span data-geo="ტალღა მ" data-eng="Wave m">ტალღა მ</span>აქს</span></span>
+            <span style="color:var(--sb)"><span data-i18n="sum_wave_max">ტალღა მაქს</span></span>
             <span id="s-mw" class="mono" style="color:var(--tl);font-size:16px">--მ</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:14px;">
-            <span style="color:var(--sb)"><span data-geo="<span data-geo="დაქროლვა" data-eng="Gusts">დაქროლვა</span> მაქს" data-eng="Gust Max"><span data-geo="დაქროლვა" data-eng="Gusts">დაქროლვა</span> მაქს</span></span>
-            <span id="s-mg" class="mono" style="color:var(--tl);font-size:16px">-- მ/<span data-geo="წმ" data-eng="s">წმ</span></span>
+            <span style="color:var(--sb)"><span data-i18n="sum_gust_max">დაქროლვა მაქს</span></span>
+            <span id="s-mg" class="mono" style="color:var(--tl);font-size:16px">-- მ/წმ</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:14px;margin-top:4px;">
-            <span style="color:var(--sb)"><span data-geo="ტემპ. მინ" data-eng="Temp. Min">ტემპ. მინ</span></span>
+            <span style="color:var(--sb)"><span data-i18n="sum_tmin">ტემპ. მინ</span></span>
             <span id="s-tmin" class="mono" style="color:var(--txt-cold);font-size:16px">--°C</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:14px;">
-            <span style="color:var(--sb)"><span data-geo="ტემპ. მაქს" data-eng="Temp. Max">ტემპ. მაქს</span></span>
+            <span style="color:var(--sb)"><span data-i18n="sum_tmax">ტემპ. მაქს</span></span>
             <span id="s-tmax" class="mono" style="color:var(--txt-hot);font-size:16px">--°C</span>
           </div>
         </div>
@@ -500,11 +498,11 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     </div>
   </div>
 
-  <!-- <span data-geo="ტრენდ-გრაფიკი" data-eng="Trend Chart">ტრენდ-გრაფიკი</span> -->
+  <!-- ტრენდ-გრაფიკი -->
   <div class="panel rel">
     <div class="panel-head">
-      <h3><span data-geo="48-საათიანი ტრენდი" data-eng="48-Hour Trend">48-საათიანი ტრენდი</span></h3>
-      <p><span data-geo="ქარი (ლურჯი) · <span data-geo="ტალღა ×5" data-eng="Wave ×5">ტალღა ×5</span> (ბირთვისფერი) · სა<span data-geo="ოპერ. ზღვრები" data-eng="Op. Limits">ოპერ. ზღვრები</span>" data-eng="Wind (blue) · Wave ×5 (purple) · Operational limits">ქარი (ლურჯი) · <span data-geo="ტალღა ×5" data-eng="Wave ×5">ტალღა ×5</span> (ბირთვისფერი) · სა<span data-geo="ოპერ. ზღვრები" data-eng="Op. Limits">ოპერ. ზღვრები</span></span></p>
+      <h3><span data-i18n="chart_title">48-საათიანი ტრენდი</span></h3>
+      <p><span data-i18n="chart_legend">ქარი (ლურჯი) · ტალღა ×5 (ბირთვისფერი) · საოპერ. ზღვრები</span></p>
     </div>
     <div style="padding:16px">
       <svg class="chart" id="trend-chart" viewBox="0 0 1000 140" preserveAspectRatio="none">
@@ -521,7 +519,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <line x1="0" y1="35"  x2="1000" y2="35"  stroke="var(--ov1)" stroke-width="1"/>
         <line x1="0" y1="70"  x2="1000" y2="70"  stroke="var(--ov1)" stroke-width="1"/>
         <line x1="0" y1="105" x2="1000" y2="105" stroke="var(--ov1)" stroke-width="1"/>
-        <!-- <span data-geo="ოპერ. ზღვრები" data-eng="Op. Limits">ოპერ. ზღვრები</span> -->
+        <!-- ოპერ. ზღვრები -->
         <line id="thresh-suspended" x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,90,90,0.5)"   stroke-width="1" stroke-dasharray="5,3"/>
         <line id="thresh-vessel"    x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,146,58,0.4)"  stroke-width="1" stroke-dasharray="3,4"/>
         <line id="thresh-barge"     x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,200,66,0.35)" stroke-width="1" stroke-dasharray="2,5"/>
@@ -535,43 +533,43 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <g id="chart-labels" font-family="'JetBrains Mono',monospace" font-size="9" fill="var(--sb)"></g>
       </svg>
       <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--sb);flex-wrap:wrap;">
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--bl);display:inline-block"></span>ქარი მ/<span data-geo="წმ" data-eng="s">წმ</span></span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--tl);display:inline-block"></span><span data-geo="ტალღა ×5" data-eng="Wave ×5">ტალღა ×5</span></span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,90,90,0.7);display:inline-block;width:14px"></span><span data-geo="შეჩ. 21.5" data-eng="Susp. 21.5">შეჩ. 21.5</span></span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,146,58,0.6);display:inline-block;width:14px"></span><span data-geo="გემ. 17" data-eng="Vessel 17">გემ. 17</span></span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,200,66,0.5);display:inline-block;width:14px"></span><span data-geo="ბორ. 10" data-eng="Barge 10">ბორ. 10</span></span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--bl);display:inline-block"></span><span data-i18n="th_wind">ქარი მ/წმ</span></span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--tl);display:inline-block"></span>ტალღა ×5</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,90,90,0.7);display:inline-block;width:14px"></span><span data-i18n="chart_susp">შეჩ. 21.5</span></span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,146,58,0.6);display:inline-block;width:14px"></span><span data-i18n="chart_vessel">გემ. 17</span></span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,200,66,0.5);display:inline-block;width:14px"></span><span data-i18n="chart_barge">ბორ. 10</span></span>
       </div>
     </div>
   </div>
 
-  <!-- <span data-geo="ცხრილი" data-eng="Table">ცხრილი</span> -->
+  <!-- ცხრილი -->
   <div class="panel rel">
     <div class="panel-head">
-      <h3 id="tbl-title"><span data-geo="საათობრივი პროგნოზი" data-eng="Hourly Forecast">საათობრივი პროგნოზი</span></h3>
-      <p id="tbl-sources"><span data-geo="<span data-geo="წყაროები:" data-eng="Sources:">წყაროები:</span> <span data-geo="იტვირთება..." data-eng="Loading...">იტვირთება...</span>" data-eng="Sources: loading..."><span data-geo="წყაროები:" data-eng="Sources:">წყაროები:</span> <span data-geo="იტვირთება..." data-eng="Loading...">იტვირთება...</span></span></p>
+      <h3 id="tbl-title"><span data-i18n="tbl_title">საათობრივი პროგნოზი</span></h3>
+      <p id="tbl-sources">წყაროები: იტვირთება...</p>
     </div>
     <div class="tabs">
-      <div class="tab active" onclick="switchTab(24,this)"><span data-geo="24 საათი" data-eng="24 Hours">24 საათი</span></div>
-      <div class="tab"        onclick="switchTab(48,this)"><span data-geo="48 საათი" data-eng="48 Hours">48 საათი</span></div>
-      <div class="tab"        onclick="switchTab('week',this)"><span data-geo="1 კვირა" data-eng="1 Week">1 კვირა</span></div>
+      <div class="tab active" onclick="switchTab(24,this)"><span data-i18n="tab_24">24 საათი</span></div>
+      <div class="tab"        onclick="switchTab(48,this)"><span data-i18n="tab_48">48 საათი</span></div>
+      <div class="tab"        onclick="switchTab('week',this)"><span data-i18n="tab_week">1 კვირა</span></div>
     </div>
     <div style="overflow-x:auto">
       <table class="tbl">
         <thead id="tbl-thead">
           <tr>
-            <th><span data-geo="დრო" data-eng="Time">დრო</span></th>
-            <th><span data-geo="ტემპ. °C" data-eng="Temp. °C">ტემპ. °C</span></th>
-            <th>ქარი მ/<span data-geo="წმ" data-eng="s">წმ</span></th>
-            <th><span data-geo="დაქროლვა" data-eng="Gusts">დაქროლვა</span></th>
-            <th><span data-geo="მიმართ." data-eng="Dir.">მიმართ.</span></th>
-            <th><span data-geo="ტალღა მ" data-eng="Wave m">ტალღა მ</span></th>
-            <th><span data-geo="წვიმა" data-eng="Rain">წვიმა</span></th>
-            <th><span data-geo="ხილვ. <span data-geo="კმ" data-eng="km">კმ</span>" data-eng="Vis. km">ხილვ. <span data-geo="კმ" data-eng="km">კმ</span></span></th>
-            <th><span data-geo="სტატუსი" data-eng="Status">სტატუსი</span></th>
+            <th>დრო</th>
+            <th><span data-i18n="th_temp">ტემპ. °C</span></th>
+            <th><span data-i18n="th_wind">ქარი მ/წმ</span></th>
+            <th><span data-i18n="th_gusts">დაქროლვა</span></th>
+            <th><span data-i18n="th_dir">მიმართ.</span></th>
+            <th><span data-i18n="th_wave">ტალღა მ</span></th>
+            <th><span data-i18n="th_rain">წვიმა</span></th>
+            <th><span data-i18n="th_vis">ხილვ. კმ</span></th>
+            <th><span data-i18n="th_status">სტატუსი</span></th>
           </tr>
         </thead>
         <tbody id="tbl-body">
-          <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)"><span data-geo="იტვირთება..." data-eng="Loading...">იტვირთება...</span></td></tr>
+          <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)">იტვირთება...</td></tr>
         </tbody>
       </table>
     </div>
@@ -579,7 +577,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 
   <!-- meta -->
   <div class="meta-strip rel">
-    <span style="color:var(--mu)"><span data-geo="წყაროები:" data-eng="Sources:">წყაროები:</span></span>
+    <span style="color:var(--mu)">წყაროები:</span>
     <div id="source-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     <span style="margin-left:auto;font-size:10px;color:var(--mu)" id="coords-lbl"></span>
   </div>
@@ -701,8 +699,7 @@ function render(d) {
   const st = c.status || 'operational';
   const sb = document.getElementById('status-bar');
   sb.className = 'status-bar '+st;
-  const statusLabels = currentLang==='eng' ? STATUS_LBL_ENG : STATUS_LBL_GEO;
-  document.getElementById('status-text').textContent = statusLabels[st]||st;
+  document.getElementById('status-text').textContent = (currentLang==='eng' ? STATUS_LBL_ENG : STATUS_LBL)[st]||st;
   const ai = document.getElementById('alert-items');
   ai.innerHTML = (c.alerts||[]).map(a=>`<span>▲ ${a}</span>`).join('');
 
@@ -803,7 +800,7 @@ function render(d) {
     } else {
       recapEl.innerHTML = next6.map(h=>{
         const t = (h.time||'').slice(11,16) || '--:--';
-        const pills = currentLang==='eng' ? PILL_ENG : PILL_GEO;
+        const pills = currentLang==='eng' ? PILL_ENG : PILL;
         const pill = pills[h.status] || '';
         return `<div class="recap-row">
           <span class="recap-time">${t}</span>
@@ -916,7 +913,7 @@ function buildTable(fc) {
       <td class="t-num ${vc}">${fmt(h.wave_height)}</td>
       <td class="t-num ${(h.precipitation||0)>=2?'t-yw':'t-mu'}">${fmt(h.precipitation)}</td>
       <td class="t-num ${visc}">${fmt(h.visibility_km)}</td>
-      <td>${(currentLang==='eng'?PILL_ENG:PILL_GEO)[st]||''}</td>
+      <td>${(currentLang==='eng'?PILL_ENG:PILL)[st]||''}</td>
     </tr>`;
   }).join('');
 }
@@ -924,12 +921,10 @@ function buildTable(fc) {
 function buildWeekTable(daily) {
   const body = document.getElementById('tbl-body');
   if (!daily || !daily.length) {
-    body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)">${currentLang==='eng'?'Weekly data not available':'კვირის მონაცემები მიუწვდომელია'}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)">კვირის მონაცემები მიუწვდომელია</td></tr>`;
     return;
   }
-  const WD = currentLang==='eng'
-    ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-    : ['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
+  const WD = ['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
   body.innerHTML = daily.map((d,i)=>{
     const st  = d.status || 'operational';
     const rc  = st==='suspended'?'row-suspended':'';
@@ -951,7 +946,7 @@ function buildWeekTable(daily) {
       <td class="t-num ${vc}">${fmt(d.wave_max)}</td>
       <td class="t-num ${(d.precip_sum||0)>=5?'t-yw':'t-mu'}">${fmt(d.precip_sum)}</td>
       <td class="t-num t-mu">—</td>
-      <td>${(currentLang==='eng'?PILL_ENG:PILL_GEO)[st]||''}</td>
+      <td>${(currentLang==='eng'?PILL_ENG:PILL)[st]||''}</td>
     </tr>`;
   }).join('');
 }
@@ -988,7 +983,7 @@ function switchTab(h,el){
   const theadEl = document.getElementById('tbl-thead');
   if (h === 'week') {
     theadEl.innerHTML = WEEK_THEAD;
-    if (titleEl) titleEl.textContent = currentLang==='eng' ? '1-Week Forecast (daily)' : '1 კვირის პროგნოზი (დღეების მიხედვით)';
+    if (titleEl) titleEl.textContent = '1 კვირის პროგნოზი (დღეების მიხედვით)';
     buildWeekTable(lastData ? lastData.daily : []);
     return;
   }
@@ -1008,15 +1003,13 @@ function renderConfidence(c){
   const st = CONF_STYLE[conf] || CONF_STYLE.unknown;
   const spread = c.wind_spread!=null ? Number(c.wind_spread).toFixed(1) : '?';
   const nSrc = c.source_count || 0;
-  const confLabels = currentLang==='eng' ? CONF_LABEL_ENG : CONF_LABEL_GEO;
-  const label = confLabels[conf] || st.label;
-  const srcLabel = currentLang==='eng' ? 'src' : 'წყ.';
-  const consensusLabel = currentLang==='eng' ? 'Consensus:' : 'კონსენსუსი:';
 
   const cardEl = document.getElementById('c-confidence');
   if(cardEl){
-    cardEl.innerHTML = `<span style="color:${st.color};font-weight:600">${st.emoji} ${label}</span>`
-      + ` <span style="color:var(--mu);font-size:10px">σ=${spread} · ${nSrc} ${srcLabel}</span>`;
+    const confLabel = (currentLang==='eng' ? CONF_LABEL_ENG : CONF_LABEL_GEO)[conf] || st.label;
+  const srcLbl = currentLang==='eng' ? 'src' : 'წყ.';
+  cardEl.innerHTML = `<span style="color:${st.color};font-weight:600">${st.emoji} ${confLabel}</span>`
+      + ` <span style="color:var(--mu);font-size:10px">σ=${spread} · ${nSrc} ${srcLbl}</span>`;
   }
   const hdrEl = document.getElementById('hdr-confidence');
   if(hdrEl){
@@ -1025,7 +1018,9 @@ function renderConfidence(c){
       hdrEl.style.display='inline-block';
       hdrEl.style.color = st.color;
       hdrEl.style.background = st.bg;
-      hdrEl.textContent = `${st.emoji} ${consensusLabel} ${label}`;
+      const hdrConfLabel = (currentLang==='eng' ? CONF_LABEL_ENG : CONF_LABEL_GEO)[conf] || st.label;
+      const hdrPfx = currentLang==='eng' ? 'Consensus:' : 'კონსენსუსი:';
+      hdrEl.textContent = `${st.emoji} ${hdrPfx} ${hdrConfLabel}`;
     }
   }
 }
@@ -1075,9 +1070,7 @@ function updateLocalClock(){
   const d = new Date();
   const dateEl = document.getElementById('local-date');
   const clockEl = document.getElementById('local-clock');
-  if(dateEl) dateEl.textContent = currentLang==='eng'
-    ? `${d.getDate()} ${MONTHS_ENG[d.getMonth()]} ${d.getFullYear()}`
-    : `${d.getDate()} ${GEO_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  if(dateEl) dateEl.textContent = currentLang==='eng' ? `${d.getDate()} ${MONTHS_ENG[d.getMonth()]} ${d.getFullYear()}` : `${d.getDate()} ${GEO_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   if(clockEl) clockEl.textContent =
     `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
 }
@@ -1105,27 +1098,70 @@ function shareToTelegram(){
 // ═══ i18n — GEO / ENG ═══
 let currentLang = 'geo';
 
-// JS-rendered strings (status labels, pills, etc.)
-const STATUS_LBL_ENG = {
-  operational: 'Port — Full Operational Mode',
-  barge:       'Barge Manoeuvring Restricted',
-  vessel:      'Vessel Manoeuvring Restricted',
-  suspended:   'Cranes + Vessel Departure Suspended',
+const I18N = {
+  title:         {geo:'APMT Poti — ამინდის კონსენსუს-პორტალი', eng:'APMT Poti — Weather Consensus Portal'},
+  src_loading:   {geo:'მონაცემები იტვირთება...', eng:'Loading data...'},
+  last_updated:  {geo:'ბოლო განახლება', eng:'Last updated'},
+  op_cranes:     {geo:'ამწეები — ოპერაციული', eng:'Cranes — Operational'},
+  op_cranes_sub: {geo:'შეჩერება: ≥ 21.5 მ/წმ', eng:'Suspended: ≥ 21.5 m/s'},
+  op_vessel:     {geo:'გემების მანევრირება — ნებადართული', eng:'Vessel Manoeuvring — Permitted'},
+  op_vessel_sub: {geo:'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ', eng:'Limits: Barge ≥10 | Manoeuvre ≥17 | Departure ≥21.5 m/s'},
+  lbl_wind:      {geo:'ქარის სიჩქარე', eng:'Wind Speed'},
+  lbl_wave:      {geo:'ტალღის სიმაღლე', eng:'Wave Height'},
+  lbl_temp:      {geo:'ჰაერის ტემპ.', eng:'Air Temp.'},
+  lbl_rain:      {geo:'ნალექი', eng:'Precipitation'},
+  lbl_vis:       {geo:'ხილვადობა', eng:'Visibility'},
+  vis_sub:       {geo:'ნისლის ზღვარი: 0.1 კმ', eng:'Fog threshold: 0.1 km'},
+  gusts_lbl:     {geo:'დაქროლვა:', eng:'Gusts:'},
+  lbl_compass:   {geo:'ქარის მიმართულება', eng:'Wind Direction'},
+  compass_conv:  {geo:'მეტეოროლ. კონვ.', eng:'Meteorol. conv.'},
+  compass_from:  {geo:'საიდან ქრის ქარი', eng:'wind FROM direction'},
+  recap_title_full:{geo:'მომდევნო 6 საათის კონსენსუს რეკაპი', eng:'Next 6 Hours Consensus Recap'},
+  recap_title:   {geo:'მომდევნო 6 საათის რეკაპი', eng:'Next 6 Hours Recap'},
+  sum_title:     {geo:'48H შეჯამება', eng:'48H Summary'},
+  sum_wave_max:  {geo:'ტალღა მაქს', eng:'Wave Max'},
+  sum_gust_max:  {geo:'დაქროლვა მაქს', eng:'Gust Max'},
+  sum_tmin:      {geo:'ტემპ. მინ', eng:'Temp. Min'},
+  sum_tmax:      {geo:'ტემპ. მაქს', eng:'Temp. Max'},
+  sum_susp:      {geo:'🚨 შეჩერება', eng:'🚨 Suspended'},
+  sum_vessel:    {geo:'🟠 გემ. მანევრ.', eng:'🟠 Vessel Manv.'},
+  sum_barge:     {geo:'🟡 ბორანი', eng:'🟡 Barge'},
+  sum_op:        {geo:'🟢 სრული ოპ.', eng:'🟢 Full Op.'},
+  tab_24:        {geo:'24 საათი', eng:'24 Hours'},
+  tab_48:        {geo:'48 საათი', eng:'48 Hours'},
+  tab_week:      {geo:'1 კვირა', eng:'1 Week'},
+  tbl_title:     {geo:'საათობრივი პროგნოზი', eng:'Hourly Forecast'},
+  th_temp:       {geo:'ტემპ. °C', eng:'Temp. °C'},
+  th_wind:       {geo:'ქარი მ/წმ', eng:'Wind m/s'},
+  th_gusts:      {geo:'დაქროლვა', eng:'Gusts'},
+  th_dir:        {geo:'მიმართ.', eng:'Dir.'},
+  th_wave:       {geo:'ტალღა მ', eng:'Wave m'},
+  th_rain:       {geo:'წვიმა', eng:'Rain'},
+  th_vis:        {geo:'ხილვ. კმ', eng:'Vis. km'},
+  th_status:     {geo:'სტატუსი', eng:'Status'},
+  chart_title:   {geo:'48-საათიანი ტრენდი', eng:'48-Hour Trend'},
+  chart_legend:  {geo:'ქარი (ლურჯი) · ტალღა ×5 (ბირთვისფერი) · საოპერ. ზღვრები', eng:'Wind (blue) · Wave ×5 (purple) · Op. limits'},
+  chart_susp:    {geo:'შეჩ. 21.5', eng:'Susp. 21.5'},
+  chart_barge:   {geo:'ბორ. 10', eng:'Barge 10'},
+  chart_vessel:  {geo:'გემ. 17', eng:'Vsl. 17'},
+  footer_text:   {geo:'ფოთის პორტის შიდა საოპერაციო მონიტორინგის სისტემა © 2026 \xa0·\xa0 48h კონსენსუს-პროგნოზი', eng:'Poti Port Internal Operational Monitoring System © 2026 \xa0·\xa0 48h Consensus Forecast'},
+  stale_text:    {geo:'მონაცემები დიდი ხანია არ განახლებულა', eng:'Data not updated for a long time'},
 };
-const STATUS_KA_ENG = {
-  operational: 'Full Operational Mode',
-  barge:       'Barge Restricted',
-  vessel:      'Vessel Restricted',
-  suspended:   'Operations Suspended',
+
+// Dynamic JS strings
+const STATUS_LBL_ENG = {
+  operational:'Port — Full Operational Mode', barge:'Barge Manoeuvring Restricted',
+  vessel:'Vessel Manoeuvring Restricted', suspended:'Cranes + Vessel Departure Suspended',
 };
 const PILL_ENG = {
-  operational: '<span class="pill pill-op">Full Op.</span>',
-  barge:       '<span class="pill pill-bg">Barge ↓</span>',
-  vessel:      '<span class="pill pill-vs">Vessel ↓</span>',
-  suspended:   '<span class="pill pill-sus">Suspended</span>',
+  operational:'<span class="pill pill-op">Full Op.</span>',
+  barge:'<span class="pill pill-bg">Barge ↓</span>',
+  vessel:'<span class="pill pill-vs">Vessel ↓</span>',
+  suspended:'<span class="pill pill-sus">Suspended</span>',
 };
-const CONF_LABEL_ENG = {high:'High confidence', medium:'Medium confidence', low:'Low confidence', unknown:'Limited data'};
-const CONF_LABEL_GEO = {high:'მაღალი ნდობა', medium:'საშუალო ნდობა', low:'დაბალი ნდობა', unknown:'შეზღუდული მონაცემი'};
+const CONF_LABEL_ENG = {high:'High confidence',medium:'Medium confidence',low:'Low confidence',unknown:'Limited data'};
+const CONF_LABEL_GEO = {high:'მაღალი ნდობა',medium:'საშუალო ნდობა',low:'დაბალი ნდობა',unknown:'შეზღუდული მონაცემი'};
+const WD_ENG = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS_ENG = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 function applyLang(lang){
@@ -1133,15 +1169,16 @@ function applyLang(lang){
   try { localStorage.setItem('poti-lang', lang); } catch(e){}
 
   // swap all tagged spans
-  document.querySelectorAll('span[data-geo]').forEach(el=>{
-    el.textContent = lang==='eng' ? el.dataset.eng : el.dataset.geo;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.dataset.i18n;
+    if(I18N[key]) el.textContent = I18N[key][lang] || I18N[key].geo;
   });
 
-  // toggle button label
-  const lb = document.getElementById('lang-toggle-label');
-  if(lb) lb.textContent = lang==='eng' ? 'GEO' : 'ENG';
+  // update button label
+  const btn = document.getElementById('lang-btn');
+  if(btn) btn.textContent = lang==='eng' ? 'GEO' : 'ENG';
 
-  // re-render dynamic content if data is loaded
+  // re-render dynamic content
   if(lastData) render(lastData);
 }
 
@@ -1149,14 +1186,10 @@ function toggleLang(){
   applyLang(currentLang==='geo' ? 'eng' : 'geo');
 }
 
-// override STATUS_LBL and PILL for re-renders
-const STATUS_LBL_GEO = {...STATUS_LBL};
-const PILL_GEO = {...PILL};
-
 (function initLang(){
   let saved = null;
   try { saved = localStorage.getItem('poti-lang'); } catch(e){}
-  applyLang(saved === 'eng' ? 'eng' : 'geo');
+  applyLang(saved==='eng' ? 'eng' : 'geo');
 })();
 
 // ═══ THEME (Dark / Light) ═══
