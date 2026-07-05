@@ -1156,9 +1156,11 @@ def send_shift_handover_telegram(output: dict):
         seg_gust    = max(h["wind_gusts"]  for h in seg)
         seg_wave    = max(h["wave_height"] for h in seg)
         seg_rain    = round(sum(h["precipitation"] for h in seg), 1)
+        rain_desc   = _precip_label(seg_rain).split(" — ", 1)[-1] if seg_rain > 0 else "მოსალოდნელი არ არის"
         text += (
             f"{sem} {seg_start_h:02d}:00–{seg_end_h:02d}:00 — დაქროლვა ≤{seg_gust} მ/წმ, "
-            f"ტალღა ≤{seg_wave} მ, ნალექი {seg_rain} მმ\n"
+            f"ტალღა ≤{seg_wave} მ\n"
+            f"     🌧 ნალექი: {seg_rain} მმ — {rain_desc}\n"
         )
 
     text += f"─────────────────\nდეტალური მონაცემებისთვის გადადით პორტალზე:\n{PORTAL_URL}"
