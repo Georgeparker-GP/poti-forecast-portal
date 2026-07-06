@@ -528,6 +528,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div class="compass-info" style="gap:10px;">
           <div class="compass-row" style="font-size:15px"><span data-i18n="compass_dir_lbl">მიმართ:</span> <span id="c-wdir-deg">--</span>°</div>
           <div class="compass-row" style="font-size:15px"><span data-i18n="compass_sym_lbl">სიმბოლო:</span> <span id="c-wdir-sym" style="font-size:28px;color:var(--tl)">--</span></div>
+          <div class="compass-row" id="c-beaufort" style="font-size:13px;margin-top:4px;"></div>
           <div class="compass-row" style="margin-top:6px;font-size:11px;color:var(--mu)"><span data-i18n="compass_conv">მეტეოროლ. კონვ.</span><br><span data-i18n="compass_from">საიდან ქრის ქარი</span></div>
         </div>
       </div>
@@ -576,6 +577,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           </div>
         </div>
       </div>
+      <div id="sum-confidence" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--br);font-size:13px;display:flex;align-items:center;gap:6px;"></div>
     </div>
   </div>
 
@@ -678,6 +680,27 @@ const THR = {
 
 const COMPASS = ['N','NE','E','SE','S','SW','W','NW'];
 function toCompass(d){ return COMPASS[Math.round(((d%360)+360)%360/45)%8]; }
+
+// Beaufort scale — ქარის ძალა m/s-დან
+function beaufort(ms){
+  const scale = [
+    {max:0.5,  s:0, geo:'შტილი',           eng:'Calm',            color:'var(--txt-ok)'},
+    {max:1.5,  s:1, geo:'ნიავი',            eng:'Light air',       color:'var(--txt-ok)'},
+    {max:3.3,  s:2, geo:'სუსტი ნიავი',      eng:'Light breeze',    color:'var(--txt-ok)'},
+    {max:5.5,  s:3, geo:'სუსტი ქარი',       eng:'Gentle breeze',   color:'var(--txt-ok)'},
+    {max:7.9,  s:4, geo:'ზომიერი ქარი',     eng:'Moderate breeze', color:'var(--txt-warn)'},
+    {max:10.7, s:5, geo:'ცოცხალი ქარი',     eng:'Fresh breeze',    color:'var(--txt-warn)'},
+    {max:13.8, s:6, geo:'ძლიერი ქარი',      eng:'Strong breeze',   color:'var(--txt-alert)'},
+    {max:17.1, s:7, geo:'ძალიან ძლიერი ქარი',eng:'Near gale',      color:'var(--txt-alert)'},
+    {max:20.7, s:8, geo:'შტორმისწინა ქარი', eng:'Gale',            color:'var(--txt-danger)'},
+    {max:24.4, s:9, geo:'შტორმი',           eng:'Strong gale',     color:'var(--txt-danger)'},
+    {max:28.4, s:10,geo:'ძლიერი შტორმი',    eng:'Storm',           color:'var(--txt-danger)'},
+    {max:32.6, s:11,geo:'სასტიკი შტორმი',   eng:'Violent storm',   color:'var(--txt-danger)'},
+    {max:999,  s:12,geo:'ქარიშხალი',        eng:'Hurricane',       color:'var(--txt-danger)'},
+  ];
+  for(const b of scale){ if(ms <= b.max) return {scale:b.s, geo:b.geo, eng:b.eng, color:b.color}; }
+  return scale[scale.length-1];
+}
 function fmt(v,n=2){ return v!=null ? Number(v).toFixed(n) : '--'; }
 
 let allForecast = [];
@@ -858,6 +881,30 @@ function render(d) {
   document.getElementById('compass-arrow').setAttribute('transform',`rotate(${deg},55,55)`);
   document.getElementById('c-wdir-deg').textContent = Math.round(deg);
   document.getElementById('c-wdir-sym').textContent = toCompass(deg);
+
+  // Beaufort scale (ქარის ძალის სიტყვიერი აღწერა — max wind/gust)
+  const bfEl = document.getElementById('c-beaufort');
+  if(bfEl){
+    const bf = beaufort(Math.max(c.wind_speed||0, c.wind_gusts||0));
+    bfEl.innerHTML = `<span style="color:${bf.color};font-weight:600">${bf.scale} ${currentLang==='eng'?'Bft':'ბალი'}</span> `
+      + `<span style="color:var(--sb);font-size:11px">${currentLang==='eng'?bf.eng:bf.geo}</span>`;
+  }
+
+  // Confidence indicator in 48H summary card
+  const sumConf = document.getElementById('sum-confidence');
+  if(sumConf){
+    const conf = c.confidence || 'unknown';
+    const st = (typeof CONF_STYLE!=='undefined' ? CONF_STYLE[conf] : null) || {emoji:'⚪',color:'var(--sb)'};
+    const label = (currentLang==='eng' ? CONF_LABEL_ENG : CONF_LABEL_GEO)[conf] || '';
+    const spread = c.wind_spread!=null ? Number(c.wind_spread).toFixed(1) : '?';
+    const consLbl = currentLang==='eng' ? 'Consensus:' : 'კონსენსუსი:';
+    if(conf==='unknown'){ sumConf.style.display='none'; }
+    else {
+      sumConf.style.display='flex';
+      sumConf.innerHTML = `<span style="color:${st.color};font-weight:600">${st.emoji} ${consLbl} ${label}</span>`
+        + ` <span style="color:var(--mu);font-size:11px">σ=${spread}</span>`;
+    }
+  }
 
   // 48h summary — მხოლოდ "ახლა"-დან წინ (არა დღევანდელი გასული საათები)
   const fcFuture = fc.slice(nowIndex);
