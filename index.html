@@ -671,7 +671,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 <script>
 // ═══ CONSTANTS ═══
 const THR = {
-  barge:     10.0,   // ბორანის შეზღუდვა
+  barge:     10.0,   // ბორნის შეზღუდვა
   vessel:    17.0,   // გემების მანევრირება
   suspended: 21.5,   // ამწე + გემების გასვლა
   wave:       2.0,   // ტალღა → გემების გასვლა
@@ -751,7 +751,7 @@ function computeStatus(h) {
 // ═══ STATUS LABELS ═══
 const STATUS_LBL = {
   operational: 'პორტი — სრული საოპერაციო რეჟიმი',
-  barge:       'ბორანის მანევრირება შეზღუდულია',
+  barge:       'ბორნის მანევრირება შეზღუდულია',
   vessel:      'გემების მანევრირება შეზღუდულია',
   suspended:   'ამწე + გემების გასვლა შეჩერებულია',
 };
@@ -835,7 +835,7 @@ function render(d) {
   } else if (w >= THR.barge) {
     vesselLevel = 'warn';
     vesselText  = isEng ? 'Vessel Manoeuvring — Permitted' : 'გემების მანევრირება — ნებადართული';
-    vesselSub   = isEng ? '⚠ Barge movement restricted (Wind ≥ 10 m/s)' : '⚠ ბორანის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
+    vesselSub   = isEng ? '⚠ Barge movement restricted (Wind ≥ 10 m/s)' : '⚠ ბორნის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
   } else {
     vesselLevel = 'ok';
     vesselText  = isEng ? 'Vessel Manoeuvring — Permitted' : 'გემების მანევრირება — ნებადართული';
