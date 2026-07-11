@@ -851,7 +851,7 @@ DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პ
 def _precip_label(mm: float) -> str:
     """მმ/სთ მნიშვნელობას ადამიანისთვის გასაგებ აღწერად გარდაქმნის."""
     if mm is None: return "—"
-    if mm == 0:      return "მოსალოდნელი არ არის"
+    if mm < 0.1:     return "მოსალოდნელი არ არის"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
     if mm < 1.0:     return f"{mm} მმ — ჟინჟლი"
     if mm < 5.0:     return f"{mm} მმ — მსუბუქი წვიმა"
     if mm < 10.0:    return f"{mm} მმ — ზომიერი წვიმა"
@@ -1118,9 +1118,13 @@ def send_shift_handover_telegram(output: dict):
     max_temp   = max((h["air_temp"]      for h in next_hours if h.get("air_temp")      is not None), default=None)
     min_vis    = min((h["visibility_km"] for h in next_hours if h.get("visibility_km") is not None), default=None)
     total_rain = round(sum(h["precipitation"] for h in next_hours), 1)
-    rain_hours = sum(1 for h in next_hours if (h["precipitation"] or 0) > 0)
-    rain_line  = ("მოსალოდნელი არ არის" if rain_hours == 0
-                  else f"მოსალოდნელია — ცვლის განმავლობაში ~{total_rain} მმ")
+    rain_hours = sum(1 for h in next_hours if (h["precipitation"] or 0) >= 0.1)
+    peak_rain  = max((h["precipitation"] or 0 for h in next_hours), default=0)
+    if rain_hours == 0 or total_rain < 0.1:
+        rain_line = "მოსალოდნელი არ არის"
+    else:
+        peak_desc = _precip_label(peak_rain).split(" — ", 1)[-1]
+        rain_line = f"~{total_rain} მმ ცვლის განმავლობაში — მაქს. {peak_desc}"
 
     worst       = max(next_hours, key=lambda h: STATUS_SEVERITY.get(h.get("status"), 0))
     worst_status = worst.get("status")
@@ -1156,11 +1160,15 @@ def send_shift_handover_telegram(output: dict):
         seg_gust    = max(h["wind_gusts"]  for h in seg)
         seg_wave    = max(h["wave_height"] for h in seg)
         seg_rain    = round(sum(h["precipitation"] for h in seg), 1)
-        rain_desc   = _precip_label(seg_rain).split(" — ", 1)[-1] if seg_rain > 0 else "მოსალოდნელი არ არის"
+        if seg_rain < 0.1:
+            rain_str = "🌧 ნალექი: მოსალოდნელი არ არის"
+        else:
+            rain_desc = _precip_label(seg_rain).split(" — ", 1)[-1]
+            rain_str  = f"🌧 ნალექი: {seg_rain} მმ — {rain_desc}"
         text += (
             f"{sem} {seg_start_h:02d}:00–{seg_end_h:02d}:00 — დაქროლვა ≤{seg_gust} მ/წმ, "
             f"ტალღა ≤{seg_wave} მ\n"
-            f"     🌧 ნალექი: {seg_rain} მმ — {rain_desc}\n"
+            f"     {rain_str}\n"
         )
 
     text += f"─────────────────\nდეტალური მონაცემებისთვის გადადით პორტალზე:\n{PORTAL_URL}"
