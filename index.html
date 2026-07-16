@@ -630,8 +630,8 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <!-- წვიმის რადარი (RainViewer) -->
   <div class="panel rel">
     <div class="panel-head">
-      <h3><span data-i18n="radar_title">წვიმის რადარი (2სთ + პროგნოზი)</span></h3>
-      <p><span data-i18n="radar_legend">ბოლო 2 საათი + მომდევნო ~30 წთ პროგნოზი · წყარო: RainViewer</span></p>
+      <h3><span data-i18n="radar_title">წვიმის რადარი</span></h3>
+      <p><span data-i18n="radar_legend">ცოცხალი რადარი · ბოლო ~30 წთ მოძრაობა · წყარო: RainViewer</span></p>
     </div>
     <div style="padding:16px">
       <div id="radar-map" style="width:100%;height:360px;border-radius:10px;overflow:hidden;background:var(--ov1);"></div>
@@ -639,6 +639,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div style="display:flex;align-items:center;gap:10px;">
           <button id="radar-play" onclick="toggleRadarPlay()" style="background:var(--sf);border:1px solid var(--br);color:var(--tx);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:13px;">⏸</button>
           <span id="radar-time" class="mono" style="font-size:12px;color:var(--sb);">--:--</span>
+          <button id="radar-cov" onclick="toggleRadarCoverage()" style="background:var(--sf);border:1px solid var(--br);color:var(--sb);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;" data-i18n="radar_cov_off">დაფარვა: გამორთ.</button>
         </div>
         <div style="font-size:10px;color:var(--mu);">
           <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" style="color:var(--mu);">Weather data by RainViewer</a>
@@ -1329,9 +1330,10 @@ const I18N = {
   th_vis:        {geo:'ხილვ. კმ', eng:'Vis. km'},
   th_status:     {geo:'სტატუსი', eng:'Status'},
   chart_title:   {geo:'48-საათიანი ტრენდი', eng:'48-Hour Trend'},
-  radar_title:   {geo:'წვიმის რადარი (2სთ + პროგნოზი)', eng:'Rain Radar (2h + nowcast)'},
-  radar_legend:  {geo:'ბოლო 2 საათი + მომდევნო ~30 წთ პროგნოზი · წყარო: RainViewer', eng:'Last 2 hours + next ~30 min nowcast · source: RainViewer'},
+  radar_title:   {geo:'წვიმის რადარი', eng:'Rain Radar'},
+  radar_legend:  {geo:'ცოცხალი რადარი · ბოლო ~30 წთ მოძრაობა · წყარო: RainViewer', eng:'Live radar · last ~30 min movement · source: RainViewer'},
   radar_nodata:  {geo:'⚠️ ამ რეგიონში მიწისზედა რადარი შეზღუდულია — სატელიტ-შეფასება', eng:'⚠️ Ground radar limited in this region — satellite estimate'},
+  radar_cov_off: {geo:'დაფარვა: გამორთ.', eng:'Coverage: off'},
   chart_legend:  {geo:'ქარი (ლურჯი) · ტალღა ×5 (ბირთვისფერი) · საოპერ. ზღვრები', eng:'Wind (blue) · Wave ×5 (purple) · Op. limits'},
   chart_susp:    {geo:'შეჩ. 21.5', eng:'Susp. 21.5'},
   chart_barge:   {geo:'ბორ. 10', eng:'Barge 10'},
@@ -1434,6 +1436,21 @@ loadData();
       }).addTo(radarMap);
       L.circleMarker(POTI, {radius:6, color:'#00dca0', fillColor:'#00dca0', fillOpacity:0.9, weight:2})
         .addTo(radarMap).bindTooltip('ფოთი');
+
+      // Coverage mask — აჩვენებს სად არის ნამდვილი რადარი (გამჭვირვალე) vs არა (შავი)
+      // ეს გვეხმარება გავიგოთ ფოთის მონაცემი ნამდვილი რადარია თუ არა
+      window.toggleRadarCoverage = function(){
+        if (window._covLayer){
+          radarMap.removeLayer(window._covLayer);
+          window._covLayer = null;
+          document.getElementById('radar-cov').textContent = currentLang==='eng' ? 'Coverage: off' : 'დაფარვა: გამორთ.';
+        } else if (radarFrames.length && window._covUrl){
+          window._covLayer = L.tileLayer(window._covUrl, {opacity:0.45, maxNativeZoom:7, maxZoom:10, zIndex:5});
+          window._covLayer.addTo(radarMap);
+          document.getElementById('radar-cov').textContent = currentLang==='eng' ? 'Coverage: on' : 'დაფარვა: ჩართ.';
+        }
+      };
+
       fetchRadarFrames();
     } catch(e){ console.warn('radar init failed', e); }
   }
@@ -1443,18 +1460,23 @@ loadData();
       const r = await fetch('https://api.rainviewer.com/public/weather-maps.json');
       const data = await r.json();
       const host = data.host;
+      // coverage mask URL (options და color scheme = 0, დოკუმენტაციის მიხედვით)
+      if (data.radar && data.radar.past && data.radar.past.length){
+        const p = data.radar.past[0].path;
+        window._covUrl = `${host}${p}/512/{z}/{x}/{y}/0/0_0.png`;
+      }
       const past = (data.radar && data.radar.past) ? data.radar.past : [];
-      const nowcast = (data.radar && data.radar.nowcast) ? data.radar.nowcast : [];
-      // წარსული 2სთ + მომავალი ~30წთ (nowcast) ერთ ანიმაციაში
-      radarFrames = past.concat(nowcast).map(f => ({
+      // მხოლოდ ბოლო ~30 წუთი (3-4 frame) — უახლესი მოძრაობა/ტენდენცია,
+      // ზედმეტი წარსულის გარეშე. frame-ები ~10 წთ ინტერვალითაა.
+      const recent = past.slice(-4);
+      radarFrames = recent.map(f => ({
         time: f.time,
-        future: !past.includes(f),
+        future: false,
         url: `${host}${f.path}/512/{z}/{x}/{y}/4/1_1.png`
       }));
       if (!radarFrames.length){ document.getElementById('radar-nodata').style.display='block'; return; }
-      // "ახლა"-ს ინდექსი = ბოლო past frame (nowcast-ის დაწყებამდე)
-      radarNowIdx = past.length - 1;
-      radarIdx = radarNowIdx >= 0 ? radarNowIdx : radarFrames.length - 1;
+      radarNowIdx = radarFrames.length - 1;
+      radarIdx = radarNowIdx;
       showRadarFrame(radarIdx);
       startRadarAnim();
     } catch(e){
@@ -1479,14 +1501,7 @@ loadData();
     const hh = String(tb.getHours()).padStart(2,'0');
     const mm = String(tb.getMinutes()).padStart(2,'0');
     const el = document.getElementById('radar-time');
-    if(el){
-      if(frame.future){
-        const lbl = currentLang==='eng' ? 'forecast' : 'პროგნოზი';
-        el.innerHTML = `<span style="color:var(--tl)">${hh}:${mm} · ${lbl} ⏩</span>`;
-      } else {
-        el.textContent = `${hh}:${mm}`;
-      }
-    }
+    if(el) el.textContent = `${hh}:${mm}`;
   }
 
   function startRadarAnim(){
