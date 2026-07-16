@@ -294,6 +294,8 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 .recap-metrics b{color:var(--tl);font-weight:600;}
 </style>
 </head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ═══ VIDEO INTRO ═══ */
 #intro-overlay {
@@ -621,6 +623,29 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,90,90,0.7);display:inline-block;width:14px"></span><span data-i18n="chart_susp">შეჩ. 21.5</span></span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,146,58,0.6);display:inline-block;width:14px"></span><span data-i18n="chart_vessel">გემ. 17</span></span>
         <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,200,66,0.5);display:inline-block;width:14px"></span><span data-i18n="chart_barge">ბორ. 10</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- წვიმის რადარი (RainViewer) -->
+  <div class="panel rel">
+    <div class="panel-head">
+      <h3><span data-i18n="radar_title">წვიმის რადარი (2სთ)</span></h3>
+      <p><span data-i18n="radar_legend">ცოცხალი რადარი · ბოლო 2 საათი · წყარო: RainViewer</span></p>
+    </div>
+    <div style="padding:16px">
+      <div id="radar-map" style="width:100%;height:360px;border-radius:10px;overflow:hidden;background:var(--ov1);"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button id="radar-play" onclick="toggleRadarPlay()" style="background:var(--sf);border:1px solid var(--br);color:var(--tx);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:13px;">⏸</button>
+          <span id="radar-time" class="mono" style="font-size:12px;color:var(--sb);">--:--</span>
+        </div>
+        <div style="font-size:10px;color:var(--mu);">
+          <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" style="color:var(--mu);">Weather data by RainViewer</a>
+        </div>
+      </div>
+      <div id="radar-nodata" style="display:none;margin-top:8px;font-size:11px;color:var(--txt-warn);">
+        <span data-i18n="radar_nodata">⚠️ ამ რეგიონში მიწისზედა რადარი შეზღუდულია — სატელიტ-შეფასება</span>
       </div>
     </div>
   </div>
@@ -1304,6 +1329,9 @@ const I18N = {
   th_vis:        {geo:'ხილვ. კმ', eng:'Vis. km'},
   th_status:     {geo:'სტატუსი', eng:'Status'},
   chart_title:   {geo:'48-საათიანი ტრენდი', eng:'48-Hour Trend'},
+  radar_title:   {geo:'წვიმის რადარი (2სთ)', eng:'Rain Radar (2h)'},
+  radar_legend:  {geo:'ცოცხალი რადარი · ბოლო 2 საათი · წყარო: RainViewer', eng:'Live radar · last 2 hours · source: RainViewer'},
+  radar_nodata:  {geo:'⚠️ ამ რეგიონში მიწისზედა რადარი შეზღუდულია — სატელიტ-შეფასება', eng:'⚠️ Ground radar limited in this region — satellite estimate'},
   chart_legend:  {geo:'ქარი (ლურჯი) · ტალღა ×5 (ბირთვისფერი) · საოპერ. ზღვრები', eng:'Wind (blue) · Wave ×5 (purple) · Op. limits'},
   chart_susp:    {geo:'შეჩ. 21.5', eng:'Susp. 21.5'},
   chart_barge:   {geo:'ბორ. 10', eng:'Barge 10'},
@@ -1387,6 +1415,82 @@ setInterval(()=>{
 },1000);
 
 loadData();
+
+// ═══ RAIN RADAR (RainViewer) ═══
+(function(){
+  const POTI = [42.15, 41.67];
+  let radarMap, radarFrames = [], radarLayers = {}, radarIdx = 0, radarTimer = null, radarPlaying = true;
+
+  function initRadar(){
+    if (typeof L === 'undefined') { return; }
+    try {
+      radarMap = L.map('radar-map', {
+        center: POTI, zoom: 8, zoomControl: true,
+        attributionControl: false, scrollWheelZoom: false
+      });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 12, subdomains: 'abcd'
+      }).addTo(radarMap);
+      L.circleMarker(POTI, {radius:6, color:'#00dca0', fillColor:'#00dca0', fillOpacity:0.9, weight:2})
+        .addTo(radarMap).bindTooltip('ფოთი');
+      fetchRadarFrames();
+    } catch(e){ console.warn('radar init failed', e); }
+  }
+
+  async function fetchRadarFrames(){
+    try {
+      const r = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+      const data = await r.json();
+      const host = data.host;
+      radarFrames = (data.radar && data.radar.past) ? data.radar.past.map(f => ({
+        time: f.time,
+        url: `${host}${f.path}/512/{z}/{x}/{y}/4/1_1.png`
+      })) : [];
+      if (!radarFrames.length){ document.getElementById('radar-nodata').style.display='block'; return; }
+      radarIdx = radarFrames.length - 1;
+      showRadarFrame(radarIdx);
+      startRadarAnim();
+    } catch(e){
+      console.warn('radar fetch failed', e);
+      document.getElementById('radar-nodata').style.display='block';
+    }
+  }
+
+  function showRadarFrame(idx){
+    const frame = radarFrames[idx];
+    if (!frame || !radarMap) return;
+    if (!radarLayers[idx]){
+      radarLayers[idx] = L.tileLayer(frame.url, {opacity:0, maxZoom:12, zIndex:10});
+      radarLayers[idx].addTo(radarMap);
+    }
+    Object.keys(radarLayers).forEach(k => {
+      radarLayers[k].setOpacity(parseInt(k)===idx ? 0.7 : 0);
+    });
+    const d = new Date(frame.time * 1000);
+    const el = document.getElementById('radar-time');
+    if(el) el.textContent = d.toLocaleTimeString(currentLang==='eng'?'en-GB':'ka-GE', {hour:'2-digit', minute:'2-digit'});
+  }
+
+  function startRadarAnim(){
+    if (radarTimer) clearInterval(radarTimer);
+    radarTimer = setInterval(() => {
+      if (!radarPlaying) return;
+      radarIdx = (radarIdx + 1) % radarFrames.length;
+      showRadarFrame(radarIdx);
+    }, 700);
+  }
+
+  window.toggleRadarPlay = function(){
+    radarPlaying = !radarPlaying;
+    document.getElementById('radar-play').textContent = radarPlaying ? '⏸' : '▶';
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRadar);
+  } else {
+    setTimeout(initRadar, 500);
+  }
+})();
 
 // ═══ VIDEO INTRO — ყოველ 1 საათში ═══
 (function(){
