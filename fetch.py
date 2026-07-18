@@ -622,26 +622,17 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         wind_spread = _stddev(wind_values)
 
         # ─── დანარჩენი პარამეტრები ───
-        # ნალექი — შერბილებული Veto: "მე-2 ყველაზე მაღალი" მნიშვნელობა.
-        # სუფთა max (ძველი ვერსია) ერთი მოდელის false alarm-საც ატარებდა —
-        # მზიან ამინდში 0.6 მმ "ჟინჟლი" ჩნდებოდა.
-        # ახლა საჭიროა ≥2 წყაროს თანხმობა: თუ მხოლოდ ერთი ხედავს — უგულებელვყოფთ,
-        # თუ ორი მაინც ხედავს — ვიღებთ მათგან უფრო დაბალს (კონსერვატიული სიგნალი).
-        # შეწონილი საშუალოსგან განსხვავებით, ლოკალურ კონვექციას მაინც იჭერს.
-        precip_values = sorted(
-            (
-                src[i].get("precipitation")
-                for src, _ in atmo_pool
-                if i < len(src) and src[i].get("precipitation") is not None
-            ),
-            reverse=True,
-        )
-        if len(precip_values) >= 2:
-            precip = precip_values[1]          # მე-2 ყველაზე მაღალი = ≥2 წყარო თანხმდება
-        elif precip_values:
-            precip = precip_values[0]          # მხოლოდ 1 წყაროა ხელმისაწვდომი
-        else:
-            precip = 0.0
+        # ნალექი — Veto (max), + ვითვლით რამდენი წყარო "ხედავს" ნალექს.
+        # 1 წყარო  → სიგნალი ჩანს, მაგრამ label-ში "შესაძლებელია" (ნაკლებად სანდო)
+        # 2+ წყარო → სანდო სიგნალი, ჩვეულებრივი label
+        # ასე ლოკალურ კონვექციას არ ვკარგავთ, მაგრამ გაურკვევლობა გამჭვირვალეა.
+        precip_all = [
+            src[i].get("precipitation")
+            for src, _ in atmo_pool
+            if i < len(src) and src[i].get("precipitation") is not None
+        ]
+        precip = max(precip_all) if precip_all else 0.0
+        precip_sources = sum(1 for v in precip_all if v >= 0.1)
         visibility = _wavg(atmo_pool, i, "visibility_km", total_w)
 
         # ტალღა (Marine, Stormglass — Windy აქ აღარ მონაწილეობს)
@@ -677,6 +668,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "wind_gusts": _r(wind_gusts),
             "wind_direction": _r(wind_direction, 0),
             "precipitation": _r(precip),
+            "precip_sources": precip_sources,
             "visibility_km": _r(visibility),
             "wave_height": _r(wave_h),
             "wave_period": _r(wave_p),
@@ -867,15 +859,25 @@ DIGEST_HOURS          = {2, 5, 11, 14, 17, 23}   # 08:00/20:00 ცვლის �
 DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პროგნოზის ფანჯარა
 
 
-def _precip_label(mm: float) -> str:
-    """მმ/სთ მნიშვნელობას ადამიანისთვის გასაგებ აღწერად გარდაქმნის."""
+def _precip_label(mm: float, sources: int = None) -> str:
+    """მმ/სთ მნიშვნელობას ადამიანისთვის გასაგებ აღწერად გარდაქმნის.
+
+    sources — რამდენი მოდელი "ხედავს" ამ ნალექს (≥0.1 მმ).
+    თუ მხოლოდ 1 წყარო ხედავს, სიგნალი ნაკლებად სანდოა და ემატება
+    "შესაძლებელია" — მენეჯერი ხედავს გაურკვევლობას, სიგნალი კი არ იკარგება.
+    """
     if mm is None: return "—"
     if mm < 0.1:     return "მოსალოდნელი არ არის"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
-    if mm < 1.0:     return f"{mm} მმ — ჟინჟლი"
-    if mm < 5.0:     return f"{mm} მმ — მსუბუქი წვიმა"
-    if mm < 10.0:    return f"{mm} მმ — ზომიერი წვიმა"
-    if mm < 20.0:    return f"{mm} მმ — ძლიერი წვიმა"
-    return             f"{mm} მმ — ინტენსიური წვიმა ⚠️"
+
+    if   mm < 1.0:   desc = "ჟინჟლი"
+    elif mm < 5.0:   desc = "მსუბუქი წვიმა"
+    elif mm < 10.0:  desc = "ზომიერი წვიმა"
+    elif mm < 20.0:  desc = "ძლიერი წვიმა"
+    else:            desc = "ინტენსიური წვიმა ⚠️"
+
+    if sources is not None and sources <= 1:
+        return f"{mm} მმ — შესაძლებელია {desc}"
+    return f"{mm} მმ — {desc}"
 
 
 def send_digest_telegram(output: dict):
@@ -903,7 +905,7 @@ def send_digest_telegram(output: dict):
         f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>\n"
         f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>\n"
-        f"🌧 ნალექი: <b>{_precip_label(c['precipitation'])}</b>\n"
+        f"🌧 ნალექი: <b>{_precip_label(c['precipitation'], c.get('precip_sources'))}</b>\n"
         f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
         f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
     )
@@ -917,7 +919,7 @@ def send_digest_telegram(output: dict):
             t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
             hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
             temp_str = f"{h['air_temp']}°C, " if h.get("air_temp") is not None else ""
-            rain_str = _precip_label(h.get("precipitation", 0))
+            rain_str = _precip_label(h.get("precipitation", 0), h.get("precip_sources"))
             text += (
                 f"{hem} {t_label} — {temp_str}ქარი {h['wind_speed']} მ/წმ, "
                 f"ტალღა {h['wave_height']} მ\n"
@@ -1139,10 +1141,13 @@ def send_shift_handover_telegram(output: dict):
     total_rain = round(sum(h["precipitation"] for h in next_hours), 1)
     rain_hours = sum(1 for h in next_hours if (h["precipitation"] or 0) >= 0.1)
     peak_rain  = max((h["precipitation"] or 0 for h in next_hours), default=0)
+    # რამდენი წყარო ხედავს ნალექს იმ საათებში, სადაც ნალექია
+    peak_src   = max((h.get("precip_sources", 0) or 0
+                      for h in next_hours if (h["precipitation"] or 0) >= 0.1), default=0)
     if rain_hours == 0 or total_rain < 0.1:
         rain_line = "მოსალოდნელი არ არის"
     else:
-        peak_desc = _precip_label(peak_rain).split(" — ", 1)[-1]
+        peak_desc = _precip_label(max(peak_rain, 0.1), peak_src).split(" — ", 1)[-1]
         rain_line = f"~{total_rain} მმ ცვლის განმავლობაში — მაქს. {peak_desc}"
 
     worst       = max(next_hours, key=lambda h: STATUS_SEVERITY.get(h.get("status"), 0))
@@ -1179,10 +1184,12 @@ def send_shift_handover_telegram(output: dict):
         seg_gust    = max(h["wind_gusts"]  for h in seg)
         seg_wave    = max(h["wave_height"] for h in seg)
         seg_rain    = round(sum(h["precipitation"] for h in seg), 1)
+        seg_src     = max((h.get("precip_sources", 0) or 0
+                           for h in seg if (h["precipitation"] or 0) >= 0.1), default=0)
         if seg_rain < 0.1:
             rain_str = "🌧 ნალექი: მოსალოდნელი არ არის"
         else:
-            rain_desc = _precip_label(seg_rain).split(" — ", 1)[-1]
+            rain_desc = _precip_label(seg_rain, seg_src).split(" — ", 1)[-1]
             rain_str  = f"🌧 ნალექი: {seg_rain} მმ — {rain_desc}"
         text += (
             f"{sem} {seg_start_h:02d}:00–{seg_end_h:02d}:00 — დაქროლვა ≤{seg_gust} მ/წმ, "
@@ -1350,6 +1357,7 @@ def build_output(consensus, sources_used, daily=None):
             "swell_height": 0, "water_temp": 0, "current_speed": 0, "air_temp": None,
             "status": "operational", "alerts": [],
             "wind_spread": 0, "confidence": "unknown", "source_count": 0,
+            "precip_sources": 0,
         }.items()},
         "summary_24h": {
             "max_wave_height":   _r(max((h["wave_height"] for h in consensus), default=0)),
