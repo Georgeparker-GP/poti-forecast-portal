@@ -622,16 +622,26 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         wind_spread = _stddev(wind_values)
 
         # ─── დანარჩენი პარამეტრები ───
-        # ნალექი — Veto პრინციპი (როგორც გასტებზე): მაქსიმუმი ყველა წყაროდან.
-        # კონვექციური (ლოკალური) წვიმა ხშირად მხოლოდ 1-2 მოდელს "უჩანს" —
-        # შეწონილი საშუალო ამ სიგნალს შლიდა (მაგ. ICON 1.5მმ + 4×0მმ → ~0.2მმ).
-        # წვიმის false alarm ოპერაციულად იაფია, გამოტოვება კი — არა.
-        precip_values = [
-            src[i].get("precipitation")
-            for src, _ in atmo_pool
-            if i < len(src) and src[i].get("precipitation") is not None
-        ]
-        precip = max(precip_values) if precip_values else 0.0
+        # ნალექი — შერბილებული Veto: "მე-2 ყველაზე მაღალი" მნიშვნელობა.
+        # სუფთა max (ძველი ვერსია) ერთი მოდელის false alarm-საც ატარებდა —
+        # მზიან ამინდში 0.6 მმ "ჟინჟლი" ჩნდებოდა.
+        # ახლა საჭიროა ≥2 წყაროს თანხმობა: თუ მხოლოდ ერთი ხედავს — უგულებელვყოფთ,
+        # თუ ორი მაინც ხედავს — ვიღებთ მათგან უფრო დაბალს (კონსერვატიული სიგნალი).
+        # შეწონილი საშუალოსგან განსხვავებით, ლოკალურ კონვექციას მაინც იჭერს.
+        precip_values = sorted(
+            (
+                src[i].get("precipitation")
+                for src, _ in atmo_pool
+                if i < len(src) and src[i].get("precipitation") is not None
+            ),
+            reverse=True,
+        )
+        if len(precip_values) >= 2:
+            precip = precip_values[1]          # მე-2 ყველაზე მაღალი = ≥2 წყარო თანხმდება
+        elif precip_values:
+            precip = precip_values[0]          # მხოლოდ 1 წყაროა ხელმისაწვდომი
+        else:
+            precip = 0.0
         visibility = _wavg(atmo_pool, i, "visibility_km", total_w)
 
         # ტალღა (Marine, Stormglass — Windy აქ აღარ მონაწილეობს)
