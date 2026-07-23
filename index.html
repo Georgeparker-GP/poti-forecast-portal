@@ -527,11 +527,15 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <circle cx="55" cy="55" r="4" fill="var(--bg)" stroke="var(--ov5)" stroke-width="1"/>
           </g>
         </svg>
-        <div class="compass-info" style="gap:10px;">
-          <div class="compass-row" style="font-size:15px"><span data-i18n="compass_dir_lbl">მიმართ:</span> <span id="c-wdir-deg">--</span>°</div>
-          <div class="compass-row" style="font-size:15px"><span data-i18n="compass_sym_lbl">სიმბოლო:</span> <span id="c-wdir-sym" style="font-size:28px;color:var(--tl)">--</span></div>
-          <div class="compass-row" id="c-beaufort" style="font-size:13px;margin-top:4px;"></div>
-          <div class="compass-row" style="margin-top:6px;font-size:11px;color:var(--mu)"><span data-i18n="compass_conv">მეტეოროლ. კონვ.</span><br><span data-i18n="compass_from">საიდან ქრის ქარი</span></div>
+        <div class="compass-info" style="gap:8px;">
+          <div class="compass-row" style="font-size:22px;font-weight:700;color:var(--tl);line-height:1.1">
+            <span id="c-wdir-sym">--</span>
+            <span style="font-size:14px;color:var(--sb);font-weight:500"> · <span id="c-wdir-deg">--</span>°</span>
+          </div>
+          <div class="compass-row" id="c-beaufort" style="font-size:13px;"></div>
+          <div style="height:1px;background:var(--br);margin:4px 0;"></div>
+          <div class="compass-row" id="c-onshore" style="font-size:13px;"></div>
+          <div class="compass-row" id="c-trend" style="font-size:12px;"></div>
         </div>
       </div>
     </div>
@@ -666,6 +670,19 @@ const THR = {
 
 const COMPASS = ['N','NE','E','SE','S','SW','W','NW'];
 function toCompass(d){ return COMPASS[Math.round(((d%360)+360)%360/45)%8]; }
+
+// ფოთის სანაპირო: ზღვა დასავლეთით. ზღვიდან ქრის ქარი სექტორში 202°–022°
+// (SSW → W → NNE). ასეთ დროს ტალღა იზრდება პორტში.
+function isOnshore(deg){
+  const d = ((deg % 360) + 360) % 360;
+  return d >= 202 || d <= 22;
+}
+
+// ორ კუთხეს შორის უმოკლესი სხვაობა (-180..180). დადებითი = საათის ისრით.
+function angleDiff(from, to){
+  let d = ((to - from) % 360 + 540) % 360 - 180;
+  return d;
+}
 
 // Beaufort scale — ქარის ძალა m/s-დან
 function beaufort(ms){
@@ -874,6 +891,51 @@ function render(d) {
     const bf = beaufort(Math.max(c.wind_speed||0, c.wind_gusts||0));
     bfEl.innerHTML = `<span style="color:${bf.color};font-weight:600">${bf.scale} ${currentLang==='eng'?'Bft':'ბალი'}</span> `
       + `<span style="color:var(--sb);font-size:11px">${currentLang==='eng'?bf.eng:bf.geo}</span>`;
+  }
+
+  // ზღვიდან / ხმელეთიდან — ფოთის სანაპირო: ზღვა დასავლეთით (სექტორი 202°–022°)
+  const onEl = document.getElementById('c-onshore');
+  if(onEl){
+    const on = isOnshore(deg);
+    if(on){
+      onEl.innerHTML = `<span style="color:var(--txt-warn);font-weight:600">🌊 ${currentLang==='eng'?'Onshore':'ზღვიდან'}</span>`
+        + ` <span style="color:var(--mu);font-size:11px">${currentLang==='eng'?'wave builds':'ტალღა იზრდება'}</span>`;
+    } else {
+      onEl.innerHTML = `<span style="color:var(--txt-ok);font-weight:600">🏭 ${currentLang==='eng'?'Offshore':'ხმელეთიდან'}</span>`
+        + ` <span style="color:var(--mu);font-size:11px">${currentLang==='eng'?'sheltered':'ტალღა მცირდება'}</span>`;
+    }
+  }
+
+  // მიმართულების ტენდენცია — მომდევნო 6 საათი
+  const trEl = document.getElementById('c-trend');
+  if(trEl){
+    const next6 = fc.slice(nowIndex, nowIndex+7).filter(h=>h.wind_direction!=null);
+    if(next6.length >= 3){
+      const first = next6[0].wind_direction;
+      const mid   = next6[Math.floor(next6.length/2)].wind_direction;
+      const last  = next6[next6.length-1].wind_direction;
+      const delta = angleDiff(first, last);          // ჯამური ცვლილება
+      const absD  = Math.abs(delta);
+      let icon, note, col;
+      if(absD < 25){
+        icon = '→'; col = 'var(--txt-ok)';
+        note = currentLang==='eng' ? 'steady' : 'სტაბილური';
+      } else {
+        icon = delta > 0 ? '↻' : '↺';               // საათის ისრით / საწინააღმდეგოდ
+        col  = absD >= 60 ? 'var(--txt-warn)' : 'var(--sb)';
+        note = currentLang==='eng'
+          ? (delta>0 ? 'veering' : 'backing')
+          : (delta>0 ? 'მარჯვნივ ბრუნავს' : 'მარცხნივ ბრუნავს');
+      }
+      const path = absD < 25
+        ? toCompass(first)
+        : `${toCompass(first)} → ${toCompass(mid)} → ${toCompass(last)}`;
+      trEl.innerHTML = `<span style="color:${col};font-weight:600">${icon} 6${currentLang==='eng'?'h':'სთ'}:</span> `
+        + `<span style="color:var(--tx)">${path}</span> `
+        + `<span style="color:var(--mu);font-size:11px">(${note})</span>`;
+    } else {
+      trEl.innerHTML = '';
+    }
   }
 
   // Confidence indicator in 48H summary card
