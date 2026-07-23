@@ -895,6 +895,9 @@ function render(d) {
   // 7-დღიანი მინი-პროგნოზი (48H შეჯამების ნაცვლად)
   renderWeekMini(d.daily || []);
 
+  // "ახლა"-დან წინ მიმავალი საათები (რეკაპისთვის)
+  const fcFuture = fc.slice(nowIndex);
+
   // მომდევნო 6 საათის კონსენსუს რეკაპი
   const recapEl = document.getElementById('recap-6h');
   const next6 = fcFuture.slice(1, 7);
