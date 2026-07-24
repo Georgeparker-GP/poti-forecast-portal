@@ -174,7 +174,8 @@ def fetch_open_meteo_marine():
     params = {
         "latitude": LOCATION["lat"], "longitude": LOCATION["lon"],
         "hourly": "wave_height,wave_period,wave_direction,"
-                  "wind_wave_height,swell_wave_height",
+                  "wind_wave_height,wind_wave_period,"
+                  "swell_wave_height,swell_wave_period,swell_wave_direction",
         "forecast_days": 3,
         "timezone": LOCATION["timezone"],
     }
@@ -429,12 +430,15 @@ def parse_open_meteo_marine(raw, hours=FORECAST_HOURS):
     h = raw["hourly"]
     return [
         {
-            "time":              h["time"][i],
-            "wave_height":       _safe(h["wave_height"], i),
-            "wave_period":       _safe(h["wave_period"], i),
-            "wave_direction":    _safe(h["wave_direction"], i),
-            "wind_wave_height":  _safe(h.get("wind_wave_height", []), i),
-            "swell_wave_height": _safe(h.get("swell_wave_height", []), i),
+            "time":                  h["time"][i],
+            "wave_height":           _safe(h["wave_height"], i),
+            "wave_period":           _safe(h["wave_period"], i),
+            "wave_direction":        _safe(h["wave_direction"], i),
+            "wind_wave_height":      _safe(h.get("wind_wave_height", []), i),
+            "wind_wave_period":      _safe(h.get("wind_wave_period", []), i),
+            "swell_wave_height":     _safe(h.get("swell_wave_height", []), i),
+            "swell_wave_period":     _safe(h.get("swell_wave_period", []), i),
+            "swell_wave_direction":  _safe(h.get("swell_wave_direction", []), i),
         }
         for i in range(min(hours, len(h["time"])))
     ]
@@ -668,9 +672,18 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         wave_p = marine[i].get("wave_period", 0) if marine and i < len(marine) else 0
         wave_d = marine[i].get("wave_direction", 0) if marine and i < len(marine) else 0
 
-        swell = marine[i].get("swell_wave_height", 0) if marine and i < len(marine) else 0
+        # ─── Swell / wind-wave დაშლა ───
+        # swell = შორეული სისტემიდან მოსული, გრძელპერიოდიანი ტალღა.
+        # ბერთზე ხომალდის ranging-ისთვის პერიოდი უფრო კრიტიკულია, ვიდრე სიმაღლე.
+        swell     = marine[i].get("swell_wave_height", 0) if marine and i < len(marine) else 0
+        swell_p   = marine[i].get("swell_wave_period", 0) if marine and i < len(marine) else 0
+        swell_d   = marine[i].get("swell_wave_direction", 0) if marine and i < len(marine) else 0
+        wind_wave = marine[i].get("wind_wave_height", 0) if marine and i < len(marine) else 0
+
         if stormglass and i < len(stormglass) and stormglass[i].get("swell_height", 0) > 0:
             swell = stormglass[i]["swell_height"]
+            if stormglass[i].get("swell_period", 0) > 0:
+                swell_p = stormglass[i]["swell_period"]
 
         water_temp = stormglass[i].get("water_temp", 0.0) if stormglass and i < len(stormglass) else 0.0
         current_speed = stormglass[i].get("current_speed", 0.0) if stormglass and i < len(stormglass) else 0.0
@@ -700,6 +713,9 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "wave_period": _r(wave_p),
             "wave_direction": _r(wave_d),
             "swell_height": _r(swell),
+            "swell_period": _r(swell_p),
+            "swell_direction": _r(swell_d, 0),
+            "wind_wave_height": _r(wind_wave),
             "water_temp": _r(water_temp),
             "current_speed": _r(current_speed),
             "air_temp": round(air_temp, 1) if air_temp is not None else None,
@@ -1454,7 +1470,9 @@ def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, s
         "icon_eu":    grab(atmo_icon,  atmo_fields),
         "ecmwf":      grab(atmo_ecmwf, atmo_fields),
         "yr_no":      grab(yr_no,      atmo_fields),
-        "marine":     grab(marine,     {"wave": "wave_height", "per": "wave_period"}),
+        "marine":     grab(marine,     {"wave": "wave_height", "per": "wave_period",
+                                        "sw": "swell_wave_height", "sw_p": "swell_wave_period",
+                                        "ww": "wind_wave_height"}),
         "stormglass": grab(stormglass, {"wave": "wave_height", "w": "wind_speed"}),
     }
     return {k: v for k, v in snap.items() if v is not None}
@@ -1478,7 +1496,9 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "time": "", "wind_speed": 0, "wind_gusts": 0,
             "wind_direction": 0, "wave_height": 0, "precipitation": 0,
             "visibility_km": 10, "wave_period": 0, "wave_direction": 0,
-            "swell_height": 0, "water_temp": 0, "current_speed": 0, "air_temp": None,
+            "swell_height": 0, "swell_period": 0, "swell_direction": 0,
+            "wind_wave_height": 0,
+            "water_temp": 0, "current_speed": 0, "air_temp": None,
             "feels_like": None,
             "status": "operational", "alerts": [],
             "wind_spread": 0, "confidence": "unknown", "source_count": 0,
