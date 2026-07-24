@@ -207,6 +207,16 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 .card-value-row .card-value{margin:0;}
 .card-unit{font-size:22px;color:var(--tl);font-weight:600;}
 .card-sub{font-size:13px;color:var(--sb);margin-top:7px;}
+/* ტალღის ჩაშლა: swell vs ქარის ტალღა */
+.wave-split{margin-top:8px;display:flex;flex-direction:column;gap:3px;}
+.wave-split-row{
+  font-size:12px;color:var(--sb);
+  display:flex;align-items:baseline;gap:6px;line-height:1.35;
+}
+.wave-split-key{color:var(--mu);min-width:74px;flex-shrink:0;}
+.wave-split-val{font-weight:600;color:var(--sb);}
+.wave-split-per{color:var(--tl);font-weight:600;}
+.wave-split-dir{color:var(--mu);font-size:11px;}
 .card-badge{
   position:absolute;top:12px;right:12px;
   font-size:9px;font-weight:700;padding:3px 7px;
@@ -464,6 +474,8 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div class="card-value" id="c-wave">--</div>
         <div class="card-unit">მეტრი</div>
       </div>
+      <!-- swell / ქარის ტალღის ჩაშლა — JS-იდან ივსება -->
+      <div class="wave-split" id="c-wave-split"></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wave" style="width:0%"></div></div>
     </div>
     <!-- ჰაერის ტემპერატურა -->
@@ -860,6 +872,7 @@ function render(d) {
   setCard('card-wave','c-wave', c.wave_height,
     wv>=THR.wave?'danger': wv>=1.2?'warn':'ok');
   setBar('bar-wave', wv/3, wv>=THR.wave?'rd': wv>=1.2?'yw':'gn');
+  renderWaveSplit(c);
 
   setCard('card-vis','c-vis', c.visibility_km,
     vis<=THR.fog?'danger': vis<=1?'warn':'ok');
@@ -1276,6 +1289,68 @@ function renderConfidence(c){
       hdrEl.textContent = `${st.emoji} ${hdrPfx} ${hdrConfLabel}`;
     }
   }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ტალღის ჩაშლა: swell (შორეული) vs ქარის ტალღა (ლოკალური)
+
+   Swell — შორეული ქარის სისტემიდან მოსული, გრძელპერიოდიანი.
+   ბერთზე მდგარი გემისთვის პერიოდი უფრო კრიტიკულია, ვიდრე სიმაღლე:
+   ≥8 წმ პერიოდი იწვევს გემის ნელ, ღრმა რწევას (ranging).
+   ───────────────────────────────────────────────────────────── */
+const SWELL_LONG_PERIOD = 8.0;   // წმ — ამის ზემოთ პერიოდი ვიზუალურად გამოიყოფა
+
+function renderWaveSplit(c){
+  const el = document.getElementById('c-wave-split');
+  if(!el) return;
+
+  const isEng = currentLang === 'eng';
+  const sw    = c.swell_height      != null ? Number(c.swell_height)      : 0;
+  const swP   = c.swell_period      != null ? Number(c.swell_period)      : 0;
+  const swD   = c.swell_direction   != null ? Number(c.swell_direction)   : null;
+  const ww    = c.wind_wave_height  != null ? Number(c.wind_wave_height)  : 0;
+
+  // თუ ბექენდი ჯერ არ აბრუნებს ამ ველებს — ბლოკს საერთოდ არ ვაჩვენებთ
+  if(sw <= 0 && ww <= 0){ el.innerHTML = ''; return; }
+
+  const mU  = isEng ? 'm'  : 'მ';
+  const sU  = isEng ? 's'  : 'წმ';
+  const kSw = isEng ? 'Swell'     : 'Swell';
+  const kWw = isEng ? 'Wind wave' : 'ქარის ტალღა';
+
+  let html = '';
+
+  if(sw > 0){
+    const longSwell = swP >= SWELL_LONG_PERIOD;
+    const perTxt = swP > 0
+      ? ` <span class="wave-split-per"${longSwell ? ' style="color:var(--txt-hot)"' : ''}>`
+        + `${fmt(swP,1)} ${sU}${longSwell ? ' ⟳' : ''}</span>`
+      : '';
+    const dirTxt = swD != null
+      ? ` <span class="wave-split-dir">${toCompass(swD)}</span>`
+      : '';
+    html += `<div class="wave-split-row">`
+          + `<span class="wave-split-key">${kSw}</span>`
+          + `<span class="wave-split-val">${fmt(sw)} ${mU}</span>`
+          + `${perTxt}${dirTxt}</div>`;
+  }
+
+  if(ww > 0){
+    html += `<div class="wave-split-row">`
+          + `<span class="wave-split-key">${kWw}</span>`
+          + `<span class="wave-split-val">${fmt(ww)} ${mU}</span></div>`;
+  }
+
+  // გრძელპერიოდიანი swell — ინფორმაციული მინიშნება (ალერტი არ არის)
+  if(sw > 0 && swP >= SWELL_LONG_PERIOD){
+    html += `<div class="wave-split-row" style="color:var(--mu);font-size:11px;margin-top:2px">`
+          + (isEng
+              ? '⟳ Long-period swell — vessel ranging possible at berth'
+              : '⟳ გრძელპერიოდიანი swell — ბერთზე გემის რწევა შესაძლებელია')
+          + `</div>`;
+  }
+
+  el.innerHTML = html;
 }
 
 function setCard(cardId,valId,val,level){
