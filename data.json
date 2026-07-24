@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-07-24 11:19",
-    "next_update": "2026-07-24 12:19",
+    "last_update": "2026-07-24 12:07",
+    "next_update": "2026-07-24 13:07",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
@@ -17,25 +17,27 @@
     "forecast_hours": 48
   },
   "current": {
-    "time": "2026-07-24T11:00",
-    "wind_speed": 1.26,
-    "wind_gusts": 3.2,
-    "wind_direction": 248.0,
-    "wave_height": 0.52,
+    "time": "2026-07-24T12:00",
+    "wind_speed": 1.95,
+    "wind_gusts": 4.5,
+    "wind_direction": 276.0,
+    "wave_height": 0.53,
     "precipitation": 0.0,
-    "visibility_km": 23.68,
-    "wave_period": 5.0,
-    "wave_direction": 292.0,
+    "visibility_km": 24.75,
+    "wave_period": 6.25,
+    "wave_direction": 288.0,
     "swell_height": 0.79,
-    "water_temp": 27.57,
-    "current_speed": 0.04,
-    "air_temp": 25.9,
-    "feels_like": 29.9,
+    "water_temp": 27.53,
+    "current_speed": 0.03,
+    "air_temp": 26.1,
+    "feels_like": 30.1,
     "status": "operational",
     "alerts": [],
-    "wind_spread": 0.34,
+    "wind_spread": 0.62,
     "confidence": "high",
     "source_count": 3,
+    "dir_agreement": 0.97,
+    "dir_fallback": false,
     "precip_sources": 0
   },
   "summary_24h": {
@@ -66,6 +68,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.07,
+      "dir_agreement": 0.81,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -88,6 +92,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.73,
+      "dir_agreement": 0.8,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -95,7 +101,7 @@
       "time": "2026-07-24T02:00",
       "wind_speed": 1.74,
       "wind_gusts": 4.0,
-      "wind_direction": 303.0,
+      "wind_direction": 304.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 25.48,
@@ -110,6 +116,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.94,
+      "dir_agreement": 0.66,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -117,7 +125,7 @@
       "time": "2026-07-24T03:00",
       "wind_speed": 1.72,
       "wind_gusts": 4.5,
-      "wind_direction": 311.0,
+      "wind_direction": 310.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 21.91,
@@ -132,6 +140,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.18,
+      "dir_agreement": 0.51,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -139,7 +149,7 @@
       "time": "2026-07-24T04:00",
       "wind_speed": 2.2,
       "wind_gusts": 4.88,
-      "wind_direction": 105.0,
+      "wind_direction": 102.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 13.87,
@@ -154,6 +164,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.15,
+      "dir_agreement": 0.34,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -161,7 +173,7 @@
       "time": "2026-07-24T05:00",
       "wind_speed": 2.39,
       "wind_gusts": 4.88,
-      "wind_direction": 80.0,
+      "wind_direction": 81.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 19.45,
@@ -176,6 +188,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.04,
+      "dir_agreement": 0.33,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -183,7 +197,7 @@
       "time": "2026-07-24T06:00",
       "wind_speed": 2.41,
       "wind_gusts": 4.38,
-      "wind_direction": 80.0,
+      "wind_direction": 77.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 18.34,
@@ -198,6 +212,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.83,
+      "dir_agreement": 0.32,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -205,7 +221,7 @@
       "time": "2026-07-24T07:00",
       "wind_speed": 2.26,
       "wind_gusts": 4.0,
-      "wind_direction": 88.0,
+      "wind_direction": 84.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 16.57,
@@ -220,6 +236,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.68,
+      "dir_agreement": 0.33,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -227,7 +245,7 @@
       "time": "2026-07-24T08:00",
       "wind_speed": 2.19,
       "wind_gusts": 3.6,
-      "wind_direction": 93.0,
+      "wind_direction": 91.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 18.14,
@@ -242,6 +260,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.54,
+      "dir_agreement": 0.33,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -249,7 +269,7 @@
       "time": "2026-07-24T09:00",
       "wind_speed": 1.6,
       "wind_gusts": 3.5,
-      "wind_direction": 107.0,
+      "wind_direction": 99.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 20.44,
@@ -264,6 +284,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.33,
+      "dir_agreement": 0.35,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -286,6 +308,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.18,
+      "dir_agreement": 0.77,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -308,6 +332,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.34,
+      "dir_agreement": 0.96,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -330,6 +356,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.62,
+      "dir_agreement": 0.97,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -352,6 +380,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.14,
+      "dir_agreement": 0.98,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -374,6 +404,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.26,
+      "dir_agreement": 0.75,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -381,7 +413,7 @@
       "time": "2026-07-24T15:00",
       "wind_speed": 2.83,
       "wind_gusts": 6.0,
-      "wind_direction": 311.0,
+      "wind_direction": 287.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 30.37,
@@ -396,6 +428,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.24,
+      "dir_agreement": 0.56,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -403,7 +437,7 @@
       "time": "2026-07-24T16:00",
       "wind_speed": 3.09,
       "wind_gusts": 6.1,
-      "wind_direction": 310.0,
+      "wind_direction": 284.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 29.33,
@@ -418,6 +452,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.89,
+      "dir_agreement": 0.6,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -425,7 +461,7 @@
       "time": "2026-07-24T17:00",
       "wind_speed": 2.91,
       "wind_gusts": 6.3,
-      "wind_direction": 305.0,
+      "wind_direction": 281.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 28.83,
@@ -440,6 +476,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.47,
+      "dir_agreement": 0.54,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -447,7 +485,7 @@
       "time": "2026-07-24T18:00",
       "wind_speed": 2.61,
       "wind_gusts": 6.3,
-      "wind_direction": 311.0,
+      "wind_direction": 290.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 28.6,
@@ -462,6 +500,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.6,
+      "dir_agreement": 0.51,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -469,7 +509,7 @@
       "time": "2026-07-24T19:00",
       "wind_speed": 1.97,
       "wind_gusts": 6.1,
-      "wind_direction": 312.0,
+      "wind_direction": 287.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 28.55,
@@ -484,6 +524,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.74,
+      "dir_agreement": 0.57,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -506,6 +548,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.8,
+      "dir_agreement": 0.8,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -528,6 +572,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.54,
+      "dir_agreement": 0.94,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -550,6 +596,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.56,
+      "dir_agreement": 0.91,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -557,7 +605,7 @@
       "time": "2026-07-24T23:00",
       "wind_speed": 1.48,
       "wind_gusts": 3.5,
-      "wind_direction": 288.0,
+      "wind_direction": 298.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 25.48,
@@ -572,6 +620,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.91,
+      "dir_agreement": 0.66,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -579,7 +629,7 @@
       "time": "2026-07-25T00:00",
       "wind_speed": 1.33,
       "wind_gusts": 4.12,
-      "wind_direction": 287.0,
+      "wind_direction": 292.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 23.93,
@@ -594,6 +644,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.27,
+      "dir_agreement": 0.62,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -601,7 +653,7 @@
       "time": "2026-07-25T01:00",
       "wind_speed": 1.41,
       "wind_gusts": 4.38,
-      "wind_direction": 261.0,
+      "wind_direction": 270.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 23.34,
@@ -616,6 +668,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.31,
+      "dir_agreement": 0.32,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -623,7 +677,7 @@
       "time": "2026-07-25T02:00",
       "wind_speed": 1.22,
       "wind_gusts": 4.0,
-      "wind_direction": 331.0,
+      "wind_direction": 342.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 23.31,
@@ -638,6 +692,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.25,
+      "dir_agreement": 0.23,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -645,7 +701,7 @@
       "time": "2026-07-25T03:00",
       "wind_speed": 1.88,
       "wind_gusts": 4.0,
-      "wind_direction": 29.0,
+      "wind_direction": 34.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 21.97,
@@ -660,6 +716,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.84,
+      "dir_agreement": 0.33,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -667,7 +725,7 @@
       "time": "2026-07-25T04:00",
       "wind_speed": 2.7,
       "wind_gusts": 8.0,
-      "wind_direction": 30.0,
+      "wind_direction": 46.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 20.47,
@@ -682,6 +740,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.05,
+      "dir_agreement": 0.39,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -689,7 +749,7 @@
       "time": "2026-07-25T05:00",
       "wind_speed": 2.88,
       "wind_gusts": 6.12,
-      "wind_direction": 48.0,
+      "wind_direction": 63.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 19.05,
@@ -704,6 +764,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.39,
+      "dir_agreement": 0.35,
+      "dir_fallback": true,
       "confidence": "high",
       "source_count": 3
     },
@@ -711,7 +773,7 @@
       "time": "2026-07-25T06:00",
       "wind_speed": 2.51,
       "wind_gusts": 6.5,
-      "wind_direction": 51.0,
+      "wind_direction": 61.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 20.21,
@@ -726,6 +788,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.85,
+      "dir_agreement": 0.34,
+      "dir_fallback": true,
       "confidence": "medium",
       "source_count": 3
     },
@@ -733,7 +797,7 @@
       "time": "2026-07-25T07:00",
       "wind_speed": 1.99,
       "wind_gusts": 6.62,
-      "wind_direction": 12.0,
+      "wind_direction": 27.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 19.67,
@@ -748,6 +812,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 2.14,
+      "dir_agreement": 0.42,
+      "dir_fallback": true,
       "confidence": "medium",
       "source_count": 3
     },
@@ -755,7 +821,7 @@
       "time": "2026-07-25T08:00",
       "wind_speed": 2.15,
       "wind_gusts": 7.25,
-      "wind_direction": 252.0,
+      "wind_direction": 251.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "visibility_km": 20.89,
@@ -770,6 +836,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 2.45,
+      "dir_agreement": 0.34,
+      "dir_fallback": true,
       "confidence": "medium",
       "source_count": 3
     },
@@ -792,6 +860,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.95,
+      "dir_agreement": 0.8,
+      "dir_fallback": false,
       "confidence": "medium",
       "source_count": 3
     },
@@ -814,6 +884,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.64,
+      "dir_agreement": 0.99,
+      "dir_fallback": false,
       "confidence": "medium",
       "source_count": 3
     },
@@ -836,6 +908,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.47,
+      "dir_agreement": 0.98,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -858,6 +932,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.25,
+      "dir_agreement": 0.95,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -880,6 +956,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.88,
+      "dir_agreement": 0.95,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -902,6 +980,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.68,
+      "dir_agreement": 0.92,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -924,6 +1004,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.56,
+      "dir_agreement": 0.88,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -946,6 +1028,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.4,
+      "dir_agreement": 0.88,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -968,6 +1052,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.48,
+      "dir_agreement": 0.89,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -992,6 +1078,8 @@
         "ქარის სიჩქარე: 4.770851063829787 მ/წმ (ყვითელი ზონა)"
       ],
       "wind_spread": 0.58,
+      "dir_agreement": 0.91,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -1014,6 +1102,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.2,
+      "dir_agreement": 0.92,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -1036,6 +1126,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.26,
+      "dir_agreement": 0.89,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -1058,6 +1150,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 0.61,
+      "dir_agreement": 0.87,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -1080,6 +1174,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.33,
+      "dir_agreement": 0.92,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     },
@@ -1102,6 +1198,8 @@
       "status": "operational",
       "alerts": [],
       "wind_spread": 1.34,
+      "dir_agreement": 0.96,
+      "dir_fallback": false,
       "confidence": "high",
       "source_count": 3
     }
@@ -1195,5 +1293,49 @@
       "status": "operational",
       "alerts": []
     }
-  ]
+  ],
+  "models_now": {
+    "best": {
+      "w": 2.56,
+      "g": 4.5,
+      "d": 291.0,
+      "p": 0.0,
+      "t": 26.1
+    },
+    "gfs": {
+      "w": 4.39,
+      "g": 2.5,
+      "d": 246.0,
+      "p": 0.0,
+      "t": 22.7
+    },
+    "icon_eu": {
+      "w": 2.56,
+      "g": 4.5,
+      "d": 291.0,
+      "p": 0.0,
+      "t": 26.1
+    },
+    "ecmwf": {
+      "w": 2.17,
+      "g": 3.2,
+      "d": 262.0,
+      "p": 0.0,
+      "t": 24.8
+    },
+    "yr_no": {
+      "w": 1.1,
+      "g": 1.38,
+      "d": 291.4,
+      "p": 0.0
+    },
+    "marine": {
+      "wave": 0.24,
+      "per": 6.25
+    },
+    "stormglass": {
+      "wave": 0.88,
+      "w": 0.17
+    }
+  }
 }
