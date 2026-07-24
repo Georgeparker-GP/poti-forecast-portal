@@ -149,7 +149,7 @@ def fetch_open_meteo_atmosphere(model: str):
     params = {
         "latitude": LOCATION["lat"], "longitude": LOCATION["lon"],
         "hourly": "wind_speed_10m,wind_gusts_10m,wind_direction_10m,"
-                  "temperature_2m,precipitation,visibility,weather_code",
+                  "temperature_2m,apparent_temperature,precipitation,visibility,weather_code",
         "wind_speed_unit": "ms",
         "forecast_days": 3,           # 72h ქაჩავს, 48h გამოვიყენებთ
         "timezone": LOCATION["timezone"],
@@ -419,6 +419,7 @@ def parse_open_meteo_atmosphere(raw, hours=FORECAST_HOURS):
             "visibility_km":  _safe(h["visibility"], i, scale=0.001),
             "weather_code":   _safe(h.get("weather_code", []), i, default=0),
             "air_temp":       _safe(h.get("temperature_2m", []), i, default=None),
+            "feels_like":     _safe(h.get("apparent_temperature", []), i, default=None),
         }
         for i in range(min(hours, len(h["time"])))
     ]
@@ -659,6 +660,15 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         current_speed = stormglass[i].get("current_speed", 0.0) if stormglass and i < len(stormglass) else 0.0
 
         air_temp = atmo_best[i].get("air_temp")
+        # RealFeel (apparent temperature) — Open-Meteo-ს გათვლა:
+        # ტემპერატურა + ტენიანობა + ქარი + მზის რადიაცია.
+        # თუ best_match-ს არ აქვს, ვცდილობთ სხვა ატმოსფერულ წყაროებს.
+        feels_like = atmo_best[i].get("feels_like")
+        if feels_like is None:
+            for src, _ in atmo_pool:
+                if i < len(src) and src[i].get("feels_like") is not None:
+                    feels_like = src[i]["feels_like"]
+                    break
 
         status, alerts = _compute_status(wind_speed, wind_gusts, wave_h, visibility)
 
@@ -677,6 +687,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "water_temp": _r(water_temp),
             "current_speed": _r(current_speed),
             "air_temp": round(air_temp, 1) if air_temp is not None else None,
+            "feels_like": round(feels_like, 1) if feels_like is not None else None,
             "status": status,
             "alerts": alerts,
             "wind_spread": _r(wind_spread, 2),
@@ -904,7 +915,11 @@ def send_digest_telegram(output: dict):
         f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
         f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>\n"
-        f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>\n"
+        f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>"
+        + (f" <i>(იგრძნობა {c['feels_like']}°C)</i>"
+           if c.get('feels_like') is not None and c.get('air_temp') is not None
+           and abs(c['feels_like'] - c['air_temp']) >= 2 else "")
+        + "\n"
         f"🌧 ნალექი: <b>{_precip_label(c['precipitation'], c.get('precip_sources'))}</b>\n"
         f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
         f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
@@ -1355,6 +1370,7 @@ def build_output(consensus, sources_used, daily=None):
             "wind_direction": 0, "wave_height": 0, "precipitation": 0,
             "visibility_km": 10, "wave_period": 0, "wave_direction": 0,
             "swell_height": 0, "water_temp": 0, "current_speed": 0, "air_temp": None,
+            "feels_like": None,
             "status": "operational", "alerts": [],
             "wind_spread": 0, "confidence": "unknown", "source_count": 0,
             "precip_sources": 0,
