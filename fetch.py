@@ -1424,7 +1424,43 @@ def _current_hour_index(consensus):
     return idx
 
 
-def build_output(consensus, sources_used, daily=None):
+def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, stormglass, idx):
+    """მიმდინარე საათის ნედლი მნიშვნელობები თითო მოდელზე ცალკე.
+
+    დანიშნულება: ისტორიული ვალიდაცია. data.json ყოველ საათს git-ში
+    ჩაიწერება, ამიტომ ეს snapshot-ები დროთა განმავლობაში ქმნის per-model
+    ბაზას. როცა რეალური დაკვირვება გვექნება (ამწის ანემომეტრი), შევძლებთ
+    დავითვალოთ თითო მოდელის ცდომილება ცალკე და BASE_WEIGHTS გადავაწონოთ
+    ფოთის კონკრეტული პირობებისთვის.
+
+    კონსენსუსის ლოგიკაზე გავლენას არ ახდენს — მხოლოდ ჩანაწერია.
+    """
+    def grab(src, fields):
+        if not src or idx >= len(src):
+            return None
+        h = src[idx]
+        out = {}
+        for short, key in fields.items():
+            v = h.get(key)
+            if v is not None:
+                out[short] = round(float(v), 2)
+        return out or None
+
+    atmo_fields = {"w": "wind_speed", "g": "wind_gusts",
+                   "d": "wind_direction", "p": "precipitation", "t": "air_temp"}
+    snap = {
+        "best":       grab(atmo_best,  atmo_fields),
+        "gfs":        grab(atmo_gfs,   atmo_fields),
+        "icon_eu":    grab(atmo_icon,  atmo_fields),
+        "ecmwf":      grab(atmo_ecmwf, atmo_fields),
+        "yr_no":      grab(yr_no,      atmo_fields),
+        "marine":     grab(marine,     {"wave": "wave_height", "per": "wave_period"}),
+        "stormglass": grab(stormglass, {"wave": "wave_height", "w": "wind_speed"}),
+    }
+    return {k: v for k, v in snap.items() if v is not None}
+
+
+def build_output(consensus, sources_used, daily=None, models_now=None):
     now  = consensus[_current_hour_index(consensus)] if consensus else {}
     susp = sum(1 for h in consensus if h["status"] == "suspended")
     warn = sum(1 for h in consensus if h["status"] == "warning")
@@ -1459,6 +1495,9 @@ def build_output(consensus, sources_used, daily=None):
         },
         "forecast": consensus,
         "daily":    daily or [],
+        # per-model ნედლი მნიშვნელობები მიმდინარე საათზე — ისტორიული
+        # ვალიდაციისთვის (git-ის ისტორია ქმნის ბაზას). ლოგიკაზე გავლენა არ აქვს.
+        "models_now": models_now or {},
     }
 
 
@@ -1572,7 +1611,18 @@ def main():
         else:
             log.warning("კვირის ხედი ✗ — daily მონაცემები მიუწვდომელია (forecast/daily ველი ცარიელია)")
 
-        output = build_output(consensus, sources_used, daily)
+        # per-model snapshot მიმდინარე საათზე (ისტორიული ვალიდაციისთვის)
+        try:
+            snap_idx  = _current_hour_index(consensus)
+            models_now = _model_snapshot(
+                atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf,
+                yr_no, marine, stormglass, snap_idx
+            )
+        except Exception as e:
+            log.warning(f"models_now snapshot ✗ — {e}")
+            models_now = {}
+
+        output = build_output(consensus, sources_used, daily, models_now)
 
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(output, f, ensure_ascii=False, indent=2)
