@@ -613,6 +613,22 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
         wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
 
+        # 3b. მიმართულების სპრედის კონტროლი.
+        # თუ მოდელები ძლიერ არ თანხმდებიან (R < DIR_AGREE_MIN ≈ ±45°+ გაფანტვა),
+        # ვექტორული საშუალო ხელოვნურ მიმართულებას იძლევა (N + S → E).
+        # ასეთ დროს ჯობია ერთი ყველაზე სანდო მოდელი — ECMWF.
+        dir_R, dir_n = _direction_agreement(active_wind_pool, i, "wind_direction")
+        dir_fallback = False
+        if dir_n >= 2 and dir_R < DIR_AGREE_MIN:
+            ref = None
+            if atmo_ecmwf and i < len(atmo_ecmwf):
+                ref = atmo_ecmwf[i].get("wind_direction")
+            if ref is None and atmo_icon and i < len(atmo_icon):
+                ref = atmo_icon[i].get("wind_direction")
+            if ref is not None:
+                wind_direction = round(float(ref), 1)
+                dir_fallback = True
+
         # 4. Confidence — წყაროებს შორის ქარის სიჩქარის გაფანტვა (std dev).
         #    დაბალი gap = წყაროები თანხმდებიან = მაღალი ნდობა.
         wind_values = [
@@ -647,7 +663,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             ww = sum(w for _, w in wave_src)
             wave_h = sum(v * w for v, w in wave_src) / ww
         else:
-            wave_h = _estimate_wave_from_wind(wind_speed)
+            wave_h = _estimate_wave_from_wind(wind_speed, wind_direction)
 
         wave_p = marine[i].get("wave_period", 0) if marine and i < len(marine) else 0
         wave_d = marine[i].get("wave_direction", 0) if marine and i < len(marine) else 0
@@ -691,6 +707,8 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "status": status,
             "alerts": alerts,
             "wind_spread": _r(wind_spread, 2),
+            "dir_agreement": round(dir_R, 2),
+            "dir_fallback": dir_fallback,
             "confidence": _confidence_level(wind_spread, len(wind_values)),
             "source_count": len(wind_values),
         })
@@ -699,6 +717,10 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
 
 CONF_HIGH_MAX   = 1.5   # σ < 1.5 მ/წმ → მაღალი ნდობა
 CONF_MEDIUM_MAX = 3.0   # σ 1.5–3.0 → საშუალო; > 3.0 → დაბალი
+
+# მიმართულების თანხმობის ზღვარი (წრიული სტატისტიკის R, 0..1).
+# R < 0.70 ≈ მოდელებს შორის ±45°-ზე მეტი გაფანტვა → საშუალო აზრს კარგავს.
+DIR_AGREE_MIN = 0.70
 
 
 def _stddev(values):
@@ -735,6 +757,31 @@ def _vector_avg_direction(pool, i, field, total_w):
     return round((math.degrees(math.atan2(sin_sum, cos_sum)) + 360) % 360, 1)
 
 
+def _direction_agreement(pool, i, field):
+    """მიმართულებაზე მოდელების თანხმობა — წრიული სტატისტიკის R.
+
+    R = შედეგიანი ვექტორის სიგრძე / წყაროების რაოდენობა.
+      R ≈ 1.0  — ყველა ერთსა და იმავე მიმართულებას აჩვენებს
+      R ≈ 0.0  — სრულიად გაფანტულია (საშუალო აზრს კარგავს)
+
+    R < 0.7 დაახლოებით ±45°-ზე მეტ გაფანტვას შეესაბამება.
+    ასეთ დროს ვექტორული საშუალო ხელოვნურ, არარსებულ მიმართულებას იძლევა
+    (მაგ. N და S → E) — ჯობია ერთი სანდო მოდელი ავიღოთ.
+    """
+    sin_sum = cos_sum = 0.0
+    n = 0
+    for src, _w in pool:
+        if i < len(src) and src[i].get(field) is not None:
+            rad = math.radians(src[i][field])
+            sin_sum += math.sin(rad)
+            cos_sum += math.cos(rad)
+            n += 1
+    if n == 0:
+        return 1.0, 0
+    R = math.sqrt(sin_sum**2 + cos_sum**2) / n
+    return R, n
+
+
 def _wavg(pool, i, field, total_w):
     if not pool or total_w == 0: return 0.0
     return sum(
@@ -744,8 +791,34 @@ def _wavg(pool, i, field, total_w):
     ) / total_w
 
 
-def _estimate_wave_from_wind(v):
-    return round(0.0248 * v**2, 2)
+def _estimate_wave_from_wind(v, direction=None):
+    """ტალღის სიმაღლის უხეში შეფასება ქარიდან — მხოლოდ fallback-ია,
+    როცა ორივე საზღვაო წყარო (Marine + Stormglass) მიუწვდომელია.
+
+    ბაზისური ფორმულა 0.0248·v² სრულად განვითარებული ზღვისთვისაა
+    (fully developed sea) — ანუ ღია წყალზე, დიდი გადარბენით (fetch).
+    ფოთისთვის ეს მხოლოდ დასავლეთის სექტორზე მართლდება.
+
+    FETCH კორექცია: ხმელეთიდან (offshore) მონაბერ ქარს ფოთის სანაპიროსთან
+    გადარბენის მანძილი პრაქტიკულად არ აქვს — 15 მ/წმ აღმოსავლეთის ქარი
+    ნაპირთან თითქმის ტალღას არ ქმნის, იმავე ძალის დასავლეთის ქარისგან
+    განსხვავებით. ამიტომ კოეფიციენტი მიმართულების მიხედვით მცირდება.
+    """
+    base = 0.0248 * v**2
+    if direction is None:
+        return round(base, 2)
+
+    d = ((direction % 360) + 360) % 360
+    # ფოთი: ზღვა დასავლეთით. გადარბენი (fetch) მიმართულებაზეა დამოკიდებული.
+    if 247 <= d <= 337:                      # W ± 45° — ღია ზღვა, მაქს. გადარბენი
+        factor = 1.00
+    elif 202 <= d < 247 or 337 < d <= 360 or 0 <= d <= 22:
+        factor = 0.75                        # SSW..W და W..NNE — ნაწილობრივი
+    elif 22 < d <= 67 or 157 <= d < 202:     # NE / S — მცირე გადარბენი
+        factor = 0.40
+    else:                                    # 67°–157° (E / SE) — სუფთა offshore
+        factor = 0.20
+    return round(base * factor, 2)
 
 
 def _compute_status(wind, gusts, wave, vis):
@@ -1373,6 +1446,7 @@ def build_output(consensus, sources_used, daily=None):
             "feels_like": None,
             "status": "operational", "alerts": [],
             "wind_spread": 0, "confidence": "unknown", "source_count": 0,
+            "dir_agreement": 1.0, "dir_fallback": False,
             "precip_sources": 0,
         }.items()},
         "summary_24h": {
