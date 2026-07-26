@@ -88,6 +88,13 @@ BASE_WEIGHTS = {
 }
 WAVE_WEIGHTS = {"marine": 0.55, "stormglass": 0.45}
 
+# ─── დაკვირვების ფაზა: DWD wave მოდელები (EWAM + GWAM) ────────────────────
+# ეს მოდელები ჯერ მხოლოდ models_now-ში იწერება (observation-only), კონსენსუსზე
+# გავლენა არ აქვთ. EWAM მაღალრეზოლუციური ევროპული, GWAM გლობალური DWD-ის.
+# ~2-3 კვირის მონაცემის შემდეგ შევადარებთ რეალურ დაკვირვებას და მხოლოდ მაშინ
+# გადავწყვეტთ, ჩავრთოთ თუ არა კონსენსუსში (WAVE_WEIGHTS-ის გადანაწილებით).
+WAVE_MODELS = ["ewam", "gwam"]
+
 STORMGLASS_API_KEY = os.environ.get("STORMGLASS_API_KEY", "")
 WINDY_API_KEY      = os.environ.get("WINDY_API_KEY",      "")
 OWM_API_KEY        = os.environ.get("OWM_API_KEY",        "")
@@ -187,6 +194,35 @@ def fetch_open_meteo_marine():
         return r.json()
     except Exception as e:
         log.warning(f"Open-Meteo Marine ✗ — {e}")
+        return None
+
+
+def fetch_wave_models():
+    """DWD EWAM + GWAM ტალღის მოდელები — DAKVIRVEBIS ფაზა (observation-only).
+
+    ერთ Marine API call-ში models=ewam,gwam. Open-Meteo თითო მოდელს ცალკე
+    სვეტად აბრუნებს სუფიქსით (მაგ. wave_height_ewam, wave_height_gwam).
+
+    ⚠️ კონსენსუსზე გავლენა არ აქვს — მხოლოდ models_now-ში იწერება git-ისტორიისთვის.
+    EWAM/GWAM გლობალურ/ევროპულ ბადეზეა; შავ ზღვაზე ერთ-ერთმა შეიძლება null
+    დააბრუნოს — ეს დასაშვებია, parse ცალკე ამუშავებს თითოეულს.
+    """
+    params = {
+        "latitude": LOCATION["lat"], "longitude": LOCATION["lon"],
+        "hourly": "wave_height,wave_period,wave_direction,"
+                  "swell_wave_height,swell_wave_period",
+        "models": ",".join(WAVE_MODELS),
+        "forecast_days": 3,
+        "timezone": LOCATION["timezone"],
+    }
+    try:
+        r = requests_session.get("https://marine-api.open-meteo.com/v1/marine",
+                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
+        r.raise_for_status()
+        log.info(f"Wave models [{','.join(WAVE_MODELS)}] ✓")
+        return r.json()
+    except Exception as e:
+        log.warning(f"Wave models ✗ — {e}")
         return None
 
 
@@ -442,6 +478,47 @@ def parse_open_meteo_marine(raw, hours=FORECAST_HOURS):
         }
         for i in range(min(hours, len(h["time"])))
     ]
+
+
+def parse_wave_models(raw, hours=FORECAST_HOURS):
+    """DWD EWAM/GWAM პარსინგი — DAKVIRVEBIS ფაზა.
+
+    Open-Meteo multi-model პასუხში თითო მოდელი ცალკე სვეტია სუფიქსით:
+      wave_height_ewam, wave_period_ewam, swell_wave_height_ewam, ...
+      wave_height_gwam, ...
+
+    დაბრუნება: dict per model → საათობრივი სია. მოდელი, რომელიც null-ს
+    აბრუნებს (შავ ზღვაზე grid არ ფარავს), გამოტოვდება.
+    """
+    if not raw or "hourly" not in raw:
+        return {}
+    h = raw["hourly"]
+    times = h.get("time", [])
+    n = min(hours, len(times))
+    out = {}
+    for model in WAVE_MODELS:
+        wh_key = f"wave_height_{model}"
+        wp_key = f"wave_period_{model}"
+        wd_key = f"wave_direction_{model}"
+        sh_key = f"swell_wave_height_{model}"
+        sp_key = f"swell_wave_period_{model}"
+        wh_list = h.get(wh_key)
+        # თუ სვეტი საერთოდ არ არსებობს ან სულ null-ია — მოდელი შავ ზღვას არ ფარავს
+        if not wh_list or all(v is None for v in wh_list[:n]):
+            log.info(f"Wave model [{model}] — მონაცემი არ არის (grid არ ფარავს)")
+            continue
+        series = []
+        for i in range(n):
+            series.append({
+                "time":              times[i],
+                "wave_height":       _safe(wh_list, i),
+                "wave_period":       _safe(h.get(wp_key, []), i),
+                "wave_direction":    _safe(h.get(wd_key, []), i),
+                "swell_wave_height": _safe(h.get(sh_key, []), i),
+                "swell_wave_period": _safe(h.get(sp_key, []), i),
+            })
+        out[model] = series
+    return out
 
 
 def parse_stormglass(raw, hours=FORECAST_HOURS):
@@ -1440,7 +1517,8 @@ def _current_hour_index(consensus):
     return idx
 
 
-def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, stormglass, idx):
+def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, stormglass, idx,
+                    wave_models=None):
     """მიმდინარე საათის ნედლი მნიშვნელობები თითო მოდელზე ცალკე.
 
     დანიშნულება: ისტორიული ვალიდაცია. data.json ყოველ საათს git-ში
@@ -1448,6 +1526,8 @@ def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, s
     ბაზას. როცა რეალური დაკვირვება გვექნება (ამწის ანემომეტრი), შევძლებთ
     დავითვალოთ თითო მოდელის ცდომილება ცალკე და BASE_WEIGHTS გადავაწონოთ
     ფოთის კონკრეტული პირობებისთვის.
+
+    wave_models — DWD EWAM/GWAM snapshot (observation-only, კონსენსუსში არ მონაწილეობს).
 
     კონსენსუსის ლოგიკაზე გავლენას არ ახდენს — მხოლოდ ჩანაწერია.
     """
@@ -1475,7 +1555,22 @@ def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, s
                                         "ww": "wind_wave_height"}),
         "stormglass": grab(stormglass, {"wave": "wave_height", "w": "wind_speed"}),
     }
-    return {k: v for k, v in snap.items() if v is not None}
+    snap = {k: v for k, v in snap.items() if v is not None}
+
+    # ─── DWD wave მოდელები (observation-only) → ცალკე ქვე-ბლოკი ───
+    wave_fields = {"wave": "wave_height", "per": "wave_period",
+                   "dir": "wave_direction", "sw": "swell_wave_height",
+                   "sw_p": "swell_wave_period"}
+    if wave_models:
+        wm_snap = {}
+        for model, series in wave_models.items():
+            grabbed = grab(series, wave_fields)
+            if grabbed is not None:
+                wm_snap[model] = grabbed
+        if wm_snap:
+            snap["wave_models"] = wm_snap
+
+    return snap
 
 
 def build_output(consensus, sources_used, daily=None, models_now=None):
@@ -1584,6 +1679,12 @@ def main():
         marine     = parse_open_meteo_marine(raw_marine) if raw_marine else None
         if marine:     sources_used.append("Open-Meteo/Marine")
 
+        # ── DWD wave მოდელები (observation-only, კონსენსუსში არ მონაწილეობს) ──
+        raw_wave_models = fetch_wave_models()
+        wave_models     = parse_wave_models(raw_wave_models) if raw_wave_models else {}
+        if wave_models:
+            sources_used.append(f"WaveModels/{'+'.join(wave_models.keys())} (obs)")
+
         # ── დამოუკიდებელი წყაროები (სხვა domain-ები — ვარდება ცალ-ცალკე) ──
         raw_yr     = fetch_yr_no()
         yr_no      = parse_yr_no(raw_yr) if raw_yr else None
@@ -1636,7 +1737,8 @@ def main():
             snap_idx  = _current_hour_index(consensus)
             models_now = _model_snapshot(
                 atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf,
-                yr_no, marine, stormglass, snap_idx
+                yr_no, marine, stormglass, snap_idx,
+                wave_models=wave_models
             )
         except Exception as e:
             log.warning(f"models_now snapshot ✗ — {e}")
