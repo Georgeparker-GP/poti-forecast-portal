@@ -45,14 +45,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.json
-          for f in stormglass_cache.json yr_cache.json status_cache.json sos_cache.json shift_cache.json squall_cache.json; do
-            [ -f "$f" ] && git add "$f"
-          done
-          # MTA observation-only ფაილები (ცალკე კალაპოტი)
-          [ -f mta_log.json ] && git add mta_log.json
-          # წაშლილი/დამატებული PDF-ები mta_bulletins/-ში (ingest-ის შემდეგ)
-          [ -d mta_bulletins ] && git add -A mta_bulletins
+          # git add -A — ყველა ცვლილება ერთ ბრძანებით:
+          #   data.json, *_cache.json, mta_log.json, mta_bulletins/ (წაშლა/დამატება).
+          # კონდიციური `&&` ხაზები მოშორებულია — bash-ში ისინი მყიფე იყო
+          # (non-zero exit მთელ ბიჯს ჩააგდებდა). -A საიმედოა ამ repo-სთვის,
+          # რადგან ყველა ცვალებადი ფაილი სწორედ commit-ის ღირსია.
+          git add -A
           git commit -m "Update weather data - $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
           git pull --rebase --autostash || true
           git push
