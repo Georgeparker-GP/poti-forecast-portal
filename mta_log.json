@@ -1,0 +1,26 @@
+{
+  "entries": [
+    {
+      "ingested_at": "2026-07-27 14:11",
+      "source_file": "ამინდის პროგნოზი ფოთი WF 15.5966  27.07.26  10.00 სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "6-11",
+          "wave_cm": "125-220/90-160",
+          "sea_state": "4/3-4",
+          "vis_miles": "5-10/1-2"
+        },
+        "night": {
+          "wind_speed": "3-8",
+          "wave_cm": "70-135/50-100",
+          "sea_state": "3-4/3",
+          "vis_miles": "5-10"
+        }
+      },
+      "bulletin_no": "WF14/5966",
+      "valid": "27/07/ 2026 წ. 10:00 სთ-დან Poti Kulevi დღე ღამე დღე ღამე 28/07/ 2026 წ. 10:00 სთ-მდე"
+    }
+  ],
+  "last_ingest": "2026-07-27 14:11"
+}
