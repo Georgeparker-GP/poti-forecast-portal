@@ -21,7 +21,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt python-dotenv requests
+        run: pip install -r requirements.txt python-dotenv requests pdfplumber
 
       - name: Run fetch script
         env:
@@ -33,14 +33,26 @@ jobs:
           FORCE_REFRESH: ${{ github.event_name == 'workflow_dispatch' }}
         run: python fetch.py
 
+      # ── MTA ბიულეტენების ingest (observation-only) ──
+      # ცალკე კალაპოტი — data.json-ს / კონსენსუსს არ ეხება.
+      # continue-on-error: MTA-ს ნებისმიერი პრობლემა (ცუდი PDF, ფორმატის
+      # ცვლილება) იზოლირებულია და პორტალის განახლებას არ აზიანებს.
+      - name: Ingest MTA bulletins (observation-only)
+        run: python mta_ingest.py
+        continue-on-error: true
+
       - name: Commit updated data.json
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data.json
-          for f in stormglass_cache.json yr_cache.json status_cache.json sos_cache.json shift_cache.json; do
+          for f in stormglass_cache.json yr_cache.json status_cache.json sos_cache.json shift_cache.json squall_cache.json; do
             [ -f "$f" ] && git add "$f"
           done
+          # MTA observation-only ფაილები (ცალკე კალაპოტი)
+          [ -f mta_log.json ] && git add mta_log.json
+          # წაშლილი/დამატებული PDF-ები mta_bulletins/-ში (ingest-ის შემდეგ)
+          [ -d mta_bulletins ] && git add -A mta_bulletins
           git commit -m "Update weather data - $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
           git pull --rebase --autostash || true
           git push
