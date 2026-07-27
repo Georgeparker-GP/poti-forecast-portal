@@ -1,0 +1,9 @@
+# Python ქეშ-ფაილები (git add -A-ს რომ არ დაეჭიროს)
+__pycache__/
+*.pyc
+*.pyo
+
+# დროებითი / ლოკალური
+.env
+*.log
+.DS_Store
