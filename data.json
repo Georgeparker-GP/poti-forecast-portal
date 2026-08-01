@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-08-02 00:07",
-    "next_update": "2026-08-02 01:07",
+    "last_update": "2026-08-02 01:07",
+    "next_update": "2026-08-02 02:07",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
@@ -18,26 +18,26 @@
     "forecast_hours": 48
   },
   "current": {
-    "time": "2026-08-02T00:00",
-    "wind_speed": 2.39,
+    "time": "2026-08-02T01:00",
+    "wind_speed": 2.2,
     "wind_gusts": 3.8,
-    "wind_direction": 212.0,
+    "wind_direction": 203.0,
     "wave_height": 0.29,
     "precipitation": 0.0,
-    "visibility_km": 25.63,
+    "visibility_km": 28.3,
     "wave_period": 4.6,
     "wave_direction": 286.0,
     "swell_height": 0.28,
     "swell_period": 3.87,
     "swell_direction": 286.0,
     "wind_wave_height": 0.0,
-    "water_temp": 26.52,
+    "water_temp": 26.5,
     "current_speed": 0.12,
     "air_temp": 24.3,
-    "feels_like": 28.0,
+    "feels_like": 27.5,
     "status": "operational",
     "alerts": [],
-    "wind_spread": 0.52,
+    "wind_spread": 0.21,
     "confidence": "high",
     "source_count": 3,
     "dir_agreement": 1.0,
@@ -1438,37 +1438,37 @@
   ],
   "models_now": {
     "best": {
-      "w": 1.5,
-      "g": 2.6,
-      "d": 217.0,
+      "w": 1.84,
+      "g": 3.0,
+      "d": 209.0,
       "p": 0.0,
       "t": 24.3
     },
     "gfs": {
-      "w": 1.82,
-      "g": 2.9,
-      "d": 189.0,
+      "w": 0.95,
+      "g": 2.2,
+      "d": 162.0,
       "p": 0.0,
-      "t": 23.8
+      "t": 23.4
     },
     "icon_eu": {
-      "w": 1.5,
-      "g": 2.6,
-      "d": 217.0,
+      "w": 1.84,
+      "g": 3.0,
+      "d": 209.0,
       "p": 0.0,
       "t": 24.3
     },
     "ecmwf": {
-      "w": 2.61,
+      "w": 2.28,
       "g": 3.8,
-      "d": 212.0,
+      "d": 203.0,
       "p": 0.0,
-      "t": 24.7
+      "t": 24.5
     },
     "yr_no": {
-      "w": 2.6,
-      "g": 3.25,
-      "d": 206.7,
+      "w": 2.3,
+      "g": 2.88,
+      "d": 198.7,
       "p": 0.0
     },
     "marine": {
@@ -1479,21 +1479,21 @@
       "ww": 0.0
     },
     "stormglass": {
-      "wave": 0.33,
+      "wave": 0.32,
       "w": 0.81
     },
     "wave_models": {
       "ewam": {
         "wave": 0.18,
-        "per": 3.5,
+        "per": 3.55,
         "dir": 269.0,
         "sw": 0.18,
-        "sw_p": 3.5
+        "sw_p": 3.55
       },
       "gwam": {
         "wave": 0.28,
         "per": 3.8,
-        "dir": 273.0,
+        "dir": 271.0,
         "sw": 0.28,
         "sw_p": 3.8
       }
