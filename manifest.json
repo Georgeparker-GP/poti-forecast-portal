@@ -1,0 +1,36 @@
+{
+  "id": "apmt-poti-weather",
+  "name": "APMT Poti — ამინდის კონსენსუს-პორტალი",
+  "short_name": "APMT ამინდი",
+  "description": "ფოთის პორტის მრავალმოდელური ამინდის კონსენსუს-პორტალი — ქარი, ტალღა, ნალექი და საოპერაციო სტატუსი.",
+  "lang": "ka",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#0d1821",
+  "theme_color": "#0d1821",
+  "categories": ["weather", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
