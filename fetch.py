@@ -724,13 +724,22 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # 1 წყარო  → სიგნალი ჩანს, მაგრამ label-ში "შესაძლებელია" (ნაკლებად სანდო)
         # 2+ წყარო → სანდო სიგნალი, ჩვეულებრივი label
         # ასე ლოკალურ კონვექციას არ ვკარგავთ, მაგრამ გაურკვევლობა გამჭვირვალეა.
-        precip_all = [
-            src[i].get("precipitation")
-            for src, _ in atmo_pool
+        precip_pool = [
+            (src[i].get("precipitation"), w)
+            for src, w in atmo_pool
             if i < len(src) and src[i].get("precipitation") is not None
         ]
+        precip_all = [v for v, _ in precip_pool]
         precip = max(precip_all) if precip_all else 0.0
         precip_sources = sum(1 for v in precip_all if v >= 0.1)
+
+        # თანხმობის ხარისხი: რამდენი "წონა" ხედავს ნალექს მთლიანი წონიდან.
+        # ეს არ არის წვიმის ალბათობა (PoP) — ეს მოდელთა შეთანხმების ზომაა.
+        # BASE_WEIGHTS-ს ეყრდნობა, ამიტომ ოქტომბრის რეკალიბრაციასთან ერთად
+        # ავტომატურად დაზუსტდება.
+        _w_total = sum(w for _, w in precip_pool)
+        _w_wet   = sum(w for v, w in precip_pool if v >= 0.1)
+        precip_agreement = int(round(100.0 * _w_wet / _w_total)) if _w_total else 0
         visibility = _wavg(atmo_pool, i, "visibility_km", total_w)
 
         # ტალღა (Marine, Stormglass — Windy აქ აღარ მონაწილეობს)
@@ -785,6 +794,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "wind_direction": _r(wind_direction, 0),
             "precipitation": _r(precip),
             "precip_sources": precip_sources,
+            "precip_agreement": precip_agreement,
             "visibility_km": _r(visibility),
             "wave_height": _r(wave_h),
             "wave_period": _r(wave_p),
@@ -1036,12 +1046,16 @@ DIGEST_HOURS          = {2, 5, 11, 14, 17, 23}   # 08:00/20:00 ცვლის �
 DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პროგნოზის ფანჯარა
 
 
-def _precip_label(mm: float, sources: int = None) -> str:
+def _precip_label(mm: float, sources: int = None, agreement: int = None) -> str:
     """მმ/სთ მნიშვნელობას ადამიანისთვის გასაგებ აღწერად გარდაქმნის.
 
-    sources — რამდენი მოდელი "ხედავს" ამ ნალექს (≥0.1 მმ).
-    თუ მხოლოდ 1 წყარო ხედავს, სიგნალი ნაკლებად სანდოა და ემატება
-    "შესაძლებელია" — მენეჯერი ხედავს გაურკვევლობას, სიგნალი კი არ იკარგება.
+    sources   — რამდენი მოდელი "ხედავს" ამ ნალექს (≥0.1 მმ).
+    agreement — მოდელთა შეთანხმება პროცენტში (BASE_WEIGHTS-ით შეწონილი).
+
+    ყურადღება: agreement ≠ წვიმის ალბათობა. ეს არის მოდელთა თანხმობის ზომა.
+    დაბალი პროცენტი ნიშნავს, რომ სიგნალი ერთეულ წყაროს ეყრდნობა და
+    დამოუკიდებელ დადასტურებას საჭიროებს, და არა იმას, რომ წვიმა "16%-ითაა"
+    მოსალოდნელი. სიგნალი არ იკარგება — ის უბრალოდ სწორად ფასდება.
     """
     if mm is None: return "—"
     if mm < 0.1:     return "მოსალოდნელი არ არის"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
@@ -1052,9 +1066,11 @@ def _precip_label(mm: float, sources: int = None) -> str:
     elif mm < 20.0:  desc = "ძლიერი წვიმა"
     else:            desc = "ინტენსიური წვიმა ⚠️"
 
+    pct = f" · თანხმობა {agreement}%" if agreement is not None else ""
+
     if sources is not None and sources <= 1:
-        return f"{mm} მმ — შესაძლებელია {desc}"
-    return f"{mm} მმ — {desc}"
+        return f"{mm} მმ — შესაძლებელია {desc}{pct}"
+    return f"{mm} მმ — {desc}{pct}"
 
 
 def send_digest_telegram(output: dict):
@@ -1086,7 +1102,7 @@ def send_digest_telegram(output: dict):
            if c.get('feels_like') is not None and c.get('air_temp') is not None
            and abs(c['feels_like'] - c['air_temp']) >= 2 else "")
         + "\n"
-        f"🌧 ნალექი: <b>{_precip_label(c['precipitation'], c.get('precip_sources'))}</b>\n"
+        f"🌧 ნალექი: <b>{_precip_label(c['precipitation'], c.get('precip_sources'), c.get('precip_agreement'))}</b>\n"
         f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
         f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
     )
@@ -1100,7 +1116,7 @@ def send_digest_telegram(output: dict):
             t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
             hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
             temp_str = f"{h['air_temp']}°C, " if h.get("air_temp") is not None else ""
-            rain_str = _precip_label(h.get("precipitation", 0), h.get("precip_sources"))
+            rain_str = _precip_label(h.get("precipitation", 0), h.get("precip_sources"), h.get("precip_agreement"))
             text += (
                 f"{hem} {t_label} — {temp_str}ქარი {h['wind_speed']} მ/წმ, "
                 f"ტალღა {h['wave_height']} მ\n"
@@ -1599,6 +1615,7 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "wind_spread": 0, "confidence": "unknown", "source_count": 0,
             "dir_agreement": 1.0, "dir_fallback": False,
             "precip_sources": 0,
+            "precip_agreement": 0,
         }.items()},
         "summary_24h": {
             "max_wave_height":   _r(max((h["wave_height"] for h in consensus), default=0)),
