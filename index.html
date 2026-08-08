@@ -506,6 +506,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div class="card-unit">მმ/სთ</div>
       </div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-rain" style="width:0%"></div></div>
+      <div id="c-rain-note" style="font-size:.66rem;line-height:1.25;margin-top:4px;color:var(--sb);min-height:.9rem"></div>
     </div>
 
     <!-- <span data-i18n="lbl_vis">ხილვადობა</span> -->
@@ -936,10 +937,36 @@ function render(d) {
     vis<=THR.fog?'danger': vis<=1?'warn':'ok');
   setBar('bar-vis', Math.min(vis/15,1), vis<=THR.fog?'rd': vis<=1?'yw':'gn');
 
-  setCard('card-rain','c-rain', c.precipitation,
-    (c.precipitation||0)>=5?'danger': (c.precipitation||0)>=2?'warn':'ok');
-  setBar('bar-rain', Math.min((c.precipitation||0)/10,1),
-    (c.precipitation||0)>=5?'rd': (c.precipitation||0)>=2?'yw':'gn');
+  // ─── ნალექი: სიმძიმე თანხმობის ხარისხით იზღუდება ───
+  // პრინციპი: ერთი წყაროს სიგნალი კრიტიკულ (წითელ) მაჩვენებლად არ ითვლება —
+  // წინააღმდეგ შემთხვევაში კონსენსუსის აზრი იკარგება. სიგნალი ჩანს, მაგრამ
+  // მისი წონა გამჭვირვალეა.
+  const rn   = c.precipitation || 0;
+  const rAgr = (c.precip_agreement != null) ? c.precip_agreement : null;
+  const rSrc = (c.precip_sources   != null) ? c.precip_sources   : null;
+
+  let rLvl = rn >= 5 ? 'danger' : rn >= 2 ? 'warn' : 'ok';
+  // სუსტი თანხმობა (<50%) → კრიტიკულამდე არ ადის
+  if (rLvl === 'danger' && rAgr !== null && rAgr < 50) rLvl = 'warn';
+
+  setCard('card-rain','c-rain', c.precipitation, rLvl);
+  setBar('bar-rain', Math.min(rn/10,1),
+    rLvl==='danger' ? 'rd' : rLvl==='warn' ? 'yw' : 'gn');
+
+  const rNote = document.getElementById('c-rain-note');
+  if (rNote) {
+    const ENG = currentLang === 'eng';
+    if (rn < 0.1 || rAgr === null) {
+      rNote.textContent = '';
+    } else if (rAgr < 50) {
+      rNote.textContent = (ENG ? 'possible \u00b7 model agreement ' : '\u10e8\u10d4\u10e1\u10d0\u10eb\u10da\u10d4\u10d1\u10d4\u10da\u10d8\u00a0\u00b7 \u10db\u10dd\u10d3\u10d4\u10da\u10d7\u10d0 \u10d7\u10d0\u10dc\u10ee\u10db\u10dd\u10d1\u10d0 ')
+                        + rAgr + '%' + (rSrc ? (ENG ? ' (' + rSrc + ' src)' : ' (' + rSrc + ' \u10ec\u10e7\u10d0\u10e0\u10dd)') : '');
+      rNote.style.color = 'var(--txt-warn)';
+    } else {
+      rNote.textContent = (ENG ? 'model agreement ' : '\u10db\u10dd\u10d3\u10d4\u10da\u10d7\u10d0 \u10d7\u10d0\u10dc\u10ee\u10db\u10dd\u10d1\u10d0 ') + rAgr + '%';
+      rNote.style.color = 'var(--sb)';
+    }
+  }
 
   // ჰაერის ტემპ. ბარათი
   const airT = c.air_temp != null ? c.air_temp : null;
