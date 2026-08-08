@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title> APMT Poti  — ამინდის კონსენსუს-პორტალი</title>
+
+<!-- ═══ PWA ═══ -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1821">
+<meta name="description" content="ფოთის პორტის მრავალმოდელური ამინდის კონსენსუს-პორტალი">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="APMT ამინდი">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -779,17 +790,64 @@ const PILL = {
 };
 
 // ═══ LOAD ═══
-async function loadData() {
+// ორი წყარო: (1) Pages-ით მიწოდებული data.json,
+// (2) fallback — დირექტორია raw.githubusercontent.com-იდან.
+// მიზეზი: GitHub Pages-ის დეპლოი დამოუკიდებლად ცდება (timeout, incident),
+// ამ დროს რეპოზიტორიაში უკვე ახალი მონაცემებია. raw ამ რგოლს გვერდს უვლის.
+const RAW_URL = 'https://raw.githubusercontent.com/georgeparker-gp/poti-forecast-portal/main/data.json';
+const STALE_H = 1.5;   // ამაზე ძველი Pages-ვერსია საეჭვოდ ითვლება
+
+// მონაცემთა ასაცი საათებში. last_update ყოველთვის თბილისის
+// დროითაა (UTC+4, DST არ აქვს) — იხ. TBILISI_TZ fetch.py-ში.
+function _ageH(d) {
   try {
-    const r = await fetch('data.json?t='+Date.now());
-    if(!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    // recompute status with new thresholds
-    if(d.forecast) d.forecast.forEach(h => { h.status = computeStatus(h); });
-    render(d);
-  } catch(e) {
-    document.getElementById('status-text').textContent = 'data.json ვერ ჩაიტვირთა';
-    document.getElementById('status-text').style.color = 'var(--txt-warn)';
+    const t = Date.parse(d.meta.last_update.replace(' ', 'T') + '+04:00');
+    if (isNaN(t)) return Infinity;
+    return (Date.now() - t) / 36e5;
+  } catch (e) { return Infinity; }
+}
+
+async function _grab(url) {
+  const sep = url.includes('?') ? '&' : '?';
+  const r = await fetch(url + sep + 't=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) throw new Error(r.status);
+  const j = await r.json();
+  // service worker-ი ამაცებს ამ თავს, როცა პასუხი ქეშიდან მოდის
+  if (r.headers.get('X-SW-Cache')) j._offline = true;
+  return j;
+}
+
+async function loadData() {
+  let d = null;
+  try { d = await _grab('data.json'); } catch (e) { }
+
+  // Pages ჩამორჩა ან საერთოდ არ მიწვდომა — ვცდით პირდაპირ წყაროს
+  if (!d || _ageH(d) > STALE_H) {
+    try {
+      const raw = await _grab(RAW_URL);
+      // ბრმად არ ვენდობით raw-ს: ვირჩევთ უბრალოდ ახალს
+      if (!d || _ageH(raw) < _ageH(d)) { raw._fallback = true; d = raw; }
+    } catch (e) { }
+  }
+
+  const el = document.getElementById('status-text');
+  if (!d) {
+    el.textContent = 'data.json ვერ ჩაიტვირთა';
+    el.style.color = 'var(--txt-warn)';
+    return;
+  }
+
+  // recompute status with new thresholds
+  if (d.forecast) d.forecast.forEach(h => { h.status = computeStatus(h); });
+  render(d);
+
+  if (el) {
+    if (d._offline) {
+      el.textContent = (el.textContent || '') + ' · ოფლაინი';
+      el.style.color = 'var(--txt-warn)';
+    } else if (d._fallback) {
+      el.textContent = (el.textContent || '') + ' · პირდაპირი წყარო';
+    }
   }
 }
 
@@ -1700,6 +1758,33 @@ loadData();
     document.addEventListener('keydown',e=>{ if(e.key==='Escape'||e.key===' ') finishIntro(); });
   }
 })();
+</script>
+
+<!-- ═══ SERVICE WORKER ═══ -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').then(function (reg) {
+      // ახალი ვერსიის აღმოჩენისას — დაუყონებლივ გადართვა
+      reg.addEventListener('updatefound', function () {
+        var nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', function () {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            nw.postMessage('SKIP_WAITING');
+          }
+        });
+      });
+    }).catch(function () { /* SW არასოდეს არ აღეკვეთებს პორტალს */ });
+  });
+  // ახალი SW აიღო საწე — გვერდის ერთჯერადი გადათვირთვა
+  var _reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (_reloaded) return;
+    _reloaded = true;
+    location.reload();
+  });
+}
 </script>
 </body>
 </html>
