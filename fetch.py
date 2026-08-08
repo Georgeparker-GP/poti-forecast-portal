@@ -587,7 +587,10 @@ def parse_openweathermap(raw, hours=FORECAST_HOURS):
         rain   = entry.get("rain", {}).get("3h", 0.0) / 3.0
         vis    = entry.get("visibility", 10000) / 1000.0
         for offset in range(3):
-            dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S") + timedelta(hours=offset)
+            # OWM-იც UTC-ს აბრუნებს — იგივე გასწორება
+            dt = (datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+                  .replace(tzinfo=timezone.utc)
+                  .astimezone(TBILISI_TZ) + timedelta(hours=offset))
             result.append({
                 "time":           dt.strftime("%Y-%m-%dT%H:%M"),
                 "wind_speed":     round(wind["speed"], 2),
@@ -617,7 +620,15 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
     timeseries = raw.get("properties", {}).get("timeseries", [])
 
     for entry in timeseries[:hours]:
-        time_str = entry.get("time", "")[:16]   # "2026-06-11T10:00"
+        # yr.no დროს UTC-ში აბრუნებს ("...Z") — გადავიყვანოთ თბილისის დროზე,
+        # რომ Open-Meteo-ს ლოკალურ ღერძს დაემთხვეს.
+        _t_raw = entry.get("time", "")
+        try:
+            _dt = datetime.strptime(_t_raw[:19], "%Y-%m-%dT%H:%M:%S").replace(
+                tzinfo=timezone.utc).astimezone(TBILISI_TZ)
+            time_str = _dt.strftime("%Y-%m-%dT%H:%M")
+        except Exception:
+            time_str = _t_raw[:16]
         instant  = entry.get("data", {}).get("instant", {}).get("details", {})
         next1h   = entry.get("data", {}).get("next_1_hours", {}).get("details", {})
 
@@ -885,13 +896,41 @@ def _direction_agreement(pool, i, field):
     return R, n
 
 
-def _wavg(pool, i, field, total_w):
-    if not pool or total_w == 0: return 0.0
-    return sum(
-        src[i].get(field, 0) * w
+def _align_to(reference, source):
+    """source-ს reference-ის დროის ღერძზე ასწორებს — დროის შტამპით, არა ინდექსით.
+
+    კრიტიკული: Open-Meteo-ს საათობრივი მასივები იწყება დღეს 00:00-ზე
+    (timezone=Asia/Tbilisi), yr.no და OWM კი — მიმდინარე საათიდან. ინდექსით
+    გასწორება (src[i]) იმას ნიშნავდა, რომ yr.no-ს მონაცემი გაშვების საათის
+    ტოლი სიდიდით ინაცვლებდა წინ. 14:07-ის გაშვებაზე ეს 14 საათია.
+
+    დაუფარავი საათები ივსება ცარიელი dict-ით — არსებული `is not None`
+    შემოწმებები მათ ავტომატურად ტოვებს გამოთვლის მიღმა.
+    """
+    if not reference or not source:
+        return source
+    by_hour = {}
+    for e in source:
+        t = (e.get("time") or "")[:13]     # "YYYY-MM-DDTHH"
+        if t and t not in by_hour:
+            by_hour[t] = e
+    return [by_hour.get((r.get("time") or "")[:13], {}) for r in reference]
+
+
+def _wavg(pool, i, field, total_w=None):
+    """შეწონილი საშუალო. ნორმალიზაცია ხდება მხოლოდ იმ წყაროების წონებზე,
+    რომლებმაც ამ საათზე მართლა მოგვცეს მნიშვნელობა — წინააღმდეგ შემთხვევაში
+    დაკარგული წყარო შედეგს ხელოვნურად ამცირებდა."""
+    if not pool: return 0.0
+    vals = [
+        (src[i].get(field), w)
         for src, w in pool
-        if i < len(src) and src[i].get(field) is not None
-    ) / total_w
+        if i < len(src) and src[i] and src[i].get(field) is not None
+    ]
+    if not vals: return 0.0
+    w_sum = sum(w for _, w in vals)
+    if w_sum == 0: return 0.0
+    return sum(v * w for v, w in vals) / w_sum
 
 
 def _estimate_wave_from_wind(v, direction=None):
@@ -1730,6 +1769,25 @@ def main():
         effective_ecmwf = atmo_ecmwf if atmo_ecmwf else None
         effective_gfs   = atmo_gfs   if atmo_gfs   else None
         effective_icon  = atmo_icon  if atmo_icon  else None
+
+        # ─── დროის ღერძის გასწორება (კრიტიკული) ───
+        # ყველა წყარო ერთსა და იმავე დროის ღერძზე გადმოგვაქვს — ინდექსით
+        # გასწორება yr.no-სა და OWM-ს გაშვების საათის ტოლი სიდიდით ანაცვლებდა.
+        _ref = effective_best
+        effective_best  = _align_to(_ref, effective_best)
+        effective_gfs   = _align_to(_ref, effective_gfs)
+        effective_icon  = _align_to(_ref, effective_icon)
+        effective_ecmwf = _align_to(_ref, effective_ecmwf)
+        yr_no       = _align_to(_ref, yr_no)
+        marine      = _align_to(_ref, marine)
+        stormglass  = _align_to(_ref, stormglass)
+        owm         = _align_to(_ref, owm)
+        # models_now-იც იმავე გასწორებულ სიებს იყენებს
+        atmo_best   = _align_to(_ref, atmo_best)
+        atmo_gfs    = _align_to(_ref, atmo_gfs)
+        atmo_icon   = _align_to(_ref, atmo_icon)
+        atmo_ecmwf  = _align_to(_ref, atmo_ecmwf)
+        log.info("დროის ღერძი გასწორებულია (timestamp-based alignment) ✓")
 
         om_down = all(x is None for x in [atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf])
         if om_down:
