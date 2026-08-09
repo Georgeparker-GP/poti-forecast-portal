@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-08-09 18:07",
-    "next_update": "2026-08-09 19:07",
+    "last_update": "2026-08-09 19:07",
+    "next_update": "2026-08-09 20:07",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
@@ -18,32 +18,32 @@
     "forecast_hours": 48
   },
   "current": {
-    "time": "2026-08-09T18:00",
-    "wind_speed": 3.93,
-    "wind_gusts": 6.9,
-    "wind_direction": 252.0,
+    "time": "2026-08-09T19:00",
+    "wind_speed": 4.22,
+    "wind_gusts": 6.3,
+    "wind_direction": 238.0,
     "wave_height": 0.27,
-    "precipitation": 0.1,
-    "visibility_km": 22.91,
-    "wave_period": 2.95,
-    "wave_direction": 278.0,
+    "precipitation": 0.2,
+    "visibility_km": 25.51,
+    "wave_period": 2.9,
+    "wave_direction": 276.0,
     "swell_height": 0.16,
-    "swell_period": 2.5,
-    "swell_direction": 283.0,
-    "wind_wave_height": 0.12,
-    "water_temp": 27.8,
-    "current_speed": 0.02,
-    "air_temp": 26.0,
-    "feels_like": 28.5,
+    "swell_period": 2.45,
+    "swell_direction": 279.0,
+    "wind_wave_height": 0.1,
+    "water_temp": 27.78,
+    "current_speed": 0.03,
+    "air_temp": 25.5,
+    "feels_like": 28.4,
     "status": "operational",
     "alerts": [],
-    "wind_spread": 0.26,
+    "wind_spread": 0.49,
     "confidence": "high",
     "source_count": 3,
-    "dir_agreement": 0.97,
+    "dir_agreement": 0.98,
     "dir_fallback": false,
-    "precip_sources": 3,
-    "precip_agreement": 57
+    "precip_sources": 2,
+    "precip_agreement": 31
   },
   "summary_24h": {
     "max_wave_height": 0.31,
@@ -560,13 +560,13 @@
     },
     {
       "time": "2026-08-09T18:00",
-      "wind_speed": 3.93,
+      "wind_speed": 3.79,
       "wind_gusts": 6.9,
-      "wind_direction": 252.0,
+      "wind_direction": 251.0,
       "precipitation": 0.1,
       "precip_sources": 3,
-      "precip_agreement": 57,
-      "visibility_km": 22.91,
+      "precip_agreement": 65,
+      "visibility_km": 24.86,
       "wave_height": 0.27,
       "wave_period": 2.95,
       "wave_direction": 278.0,
@@ -580,11 +580,11 @@
       "feels_like": 28.5,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.26,
+      "wind_spread": 0.06,
       "dir_agreement": 0.97,
       "dir_fallback": false,
       "confidence": "high",
-      "source_count": 3
+      "source_count": 2
     },
     {
       "time": "2026-08-09T19:00",
@@ -1487,63 +1487,63 @@
   ],
   "models_now": {
     "best": {
-      "w": 3.69,
-      "g": 6.9,
-      "d": 229.0,
-      "p": 0.1,
-      "t": 26.0
+      "w": 3.75,
+      "g": 6.3,
+      "d": 222.0,
+      "p": 0.2,
+      "t": 25.5
     },
     "gfs": {
-      "w": 5.3,
-      "g": 5.8,
-      "d": 238.0,
+      "w": 4.91,
+      "g": 5.6,
+      "d": 237.0,
       "p": 0.0,
       "t": 25.7
     },
     "icon_eu": {
-      "w": 3.69,
-      "g": 6.9,
-      "d": 229.0,
-      "p": 0.1,
-      "t": 26.0
+      "w": 3.75,
+      "g": 6.3,
+      "d": 222.0,
+      "p": 0.2,
+      "t": 25.5
     },
     "ecmwf": {
-      "w": 3.82,
-      "g": 5.8,
-      "d": 259.0,
-      "p": 0.1,
-      "t": 26.1
+      "w": 4.03,
+      "g": 5.4,
+      "d": 240.0,
+      "p": 0.0,
+      "t": 26.3
     },
     "yr_no": {
-      "w": 4.3,
-      "g": 5.38,
-      "d": 255.4,
+      "w": 4.9,
+      "g": 6.12,
+      "d": 246.2,
       "p": 0.0
     },
     "marine": {
       "wave": 0.26,
-      "per": 2.95,
+      "per": 2.9,
       "sw": 0.24,
-      "sw_p": 2.75,
-      "ww": 0.12
+      "sw_p": 2.6,
+      "ww": 0.1
     },
     "stormglass": {
-      "wave": 0.29,
-      "w": 0.45
+      "wave": 0.28,
+      "w": 0.76
     },
     "wave_models": {
       "ewam": {
         "wave": 0.22,
-        "per": 2.3,
-        "dir": 239.0,
-        "sw": 0.16,
+        "per": 2.25,
+        "dir": 240.0,
+        "sw": 0.14,
         "sw_p": 2.8
       },
       "gwam": {
         "wave": 0.28,
         "per": 2.7,
-        "dir": 254.0,
-        "sw": 0.22,
+        "dir": 255.0,
+        "sw": 0.2,
         "sw_p": 3.05
       }
     }
