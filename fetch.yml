@@ -12,6 +12,17 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # ── დუმილის დეტექტორი: გაშვების დაწყების აღნიშვნა ──
+      # საშუალებას აძლევს healthchecks.io-ს გაშვების ხანგრძლივობა გაზომოს.
+      # `|| true` — ping-ის ჩავარდნამ პორტალის განახლება არ უნდა შეაფერხოს.
+      - name: Healthcheck — start
+        env:
+          HC_URL: ${{ secrets.HEALTHCHECK_URL }}
+        run: |
+          if [ -n "$HC_URL" ]; then
+            curl -fsS -m 10 --retry 3 "$HC_URL/start" || true
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -54,6 +65,32 @@ jobs:
           git commit -m "Update weather data - $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
           git pull --rebase --autostash || true
           git push
+
+      # ── დუმილის დეტექტორი: წარმატების დადასტურება ──
+      # კრიტიკულია, რომ ეს ბოლო ბიჯია — push-ის შემდეგ. ანუ ping ადასტურებს
+      # მთელ ჯაჭვს: fetch → commit → push, და არა უბრალოდ სკრიპტის გაშვებას.
+      #
+      # ლოგიკის შებრუნება: აქამდე ჩავარდნას თავად უნდა ეცნობებინა თავის თავზე,
+      # რაც შეუძლებელია, თუ job-მა runner საერთოდ ვერ მიიღო. ახლა სიგნალი
+      # თავად სიჩუმეა — ping-ის არარსებობა.
+      - name: Healthcheck — success
+        if: success()
+        env:
+          HC_URL: ${{ secrets.HEALTHCHECK_URL }}
+        run: |
+          if [ -n "$HC_URL" ]; then
+            curl -fsS -m 10 --retry 3 "$HC_URL" || true
+          fi
+
+      # ჩავარდნის დაუყოვნებლივი სიგნალი — grace-პერიოდის ლოდინის გარეშე
+      - name: Healthcheck — failure
+        if: failure()
+        env:
+          HC_URL: ${{ secrets.HEALTHCHECK_URL }}
+        run: |
+          if [ -n "$HC_URL" ]; then
+            curl -fsS -m 10 "$HC_URL/fail" || true
+          fi
 
       - name: Notify on failure (backstop)
         if: failure()
