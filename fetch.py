@@ -1380,11 +1380,16 @@ def send_shift_handover_telegram(output: dict):
     # რამდენი წყარო ხედავს ნალექს იმ საათებში, სადაც ნალექია
     peak_src   = max((h.get("precip_sources", 0) or 0
                       for h in next_hours if (h["precipitation"] or 0) >= 0.1), default=0)
+    peak_agr   = max((h.get("precip_agreement", 0) or 0
+                      for h in next_hours if (h["precipitation"] or 0) >= 0.1), default=0)
     if rain_hours == 0 or total_rain < 0.1:
         rain_line = "მოსალოდნელი არ არის"
     else:
-        peak_desc = _precip_label(max(peak_rain, 0.1), peak_src).split(" — ", 1)[-1]
-        rain_line = f"~{total_rain} მმ ცვლის განმავლობაში — მაქს. {peak_desc}"
+        # ყურადღება: total_rain არის ჯამი (მმ), peak_rain კი სიჩქარე (მმ/სთ).
+        # აღწერა ყოველთვის სიჩქარეს უნდა ეყრდნობოდეს — _precip_label-ის
+        # ზღურბლები (ჟინჟლი/მსუბუქი/ზომიერი) მმ/სთ-შია განსაზღვრული.
+        peak_desc = _precip_label(max(peak_rain, 0.1), peak_src, peak_agr).split(" — ", 1)[-1]
+        rain_line = f"~{total_rain} მმ ჯამში ({rain_hours} სთ) — მაქს. {peak_desc}"
 
     worst       = max(next_hours, key=lambda h: STATUS_SEVERITY.get(h.get("status"), 0))
     worst_status = worst.get("status")
@@ -1420,13 +1425,20 @@ def send_shift_handover_telegram(output: dict):
         seg_gust    = max(h["wind_gusts"]  for h in seg)
         seg_wave    = max(h["wave_height"] for h in seg)
         seg_rain    = round(sum(h["precipitation"] for h in seg), 1)
+        # BUGFIX: ადრე seg_rain (4-საათიანი ჯამი) გადაეცემოდა _precip_label-ს,
+        # რომლის ზღურბლებიც მმ/სთ-შია. ამიტომ 4 სთ-ში დაგროვილი 1.2 მმ
+        # "მსუბუქ წვიმად" ფასდებოდა, თავად ცვლის სათაური კი — "ჟინჟლად".
+        # აღწერა ახლა პიკურ საათობრივ სიჩქარეს ეყრდნობა, როგორც სათაურში.
+        seg_peak    = max((h["precipitation"] or 0 for h in seg), default=0)
         seg_src     = max((h.get("precip_sources", 0) or 0
+                           for h in seg if (h["precipitation"] or 0) >= 0.1), default=0)
+        seg_agr     = max((h.get("precip_agreement", 0) or 0
                            for h in seg if (h["precipitation"] or 0) >= 0.1), default=0)
         if seg_rain < 0.1:
             rain_str = "🌧 ნალექი: მოსალოდნელი არ არის"
         else:
-            rain_desc = _precip_label(seg_rain, seg_src).split(" — ", 1)[-1]
-            rain_str  = f"🌧 ნალექი: {seg_rain} მმ — {rain_desc}"
+            rain_desc = _precip_label(max(seg_peak, 0.1), seg_src, seg_agr).split(" — ", 1)[-1]
+            rain_str  = f"🌧 ნალექი: {seg_rain} მმ ჯამში — მაქს. {rain_desc}"
         text += (
             f"{sem} {seg_start_h:02d}:00–{seg_end_h:02d}:00 — დაქროლვა ≤{seg_gust} მ/წმ, "
             f"ტალღა ≤{seg_wave} მ\n"
