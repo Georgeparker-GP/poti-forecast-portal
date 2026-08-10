@@ -644,7 +644,12 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
         result.append({
             "time":           time_str,
             "wind_speed":     wind_speed,
+            # yr.no-ს compact API დაქროლვებს არ აბრუნებს — ეს შეფასებაა.
+            # `gust_estimated` აღნიშნავს, რომ მნიშვნელობა სინთეზურია და
+            # კონსენსუსის veto-მაქსიმუმში არ უნდა მონაწილეობდეს, სანამ
+            # ერთი რეალური წყაროც კი არსებობს.
             "wind_gusts":     round(wind_speed * 1.25, 2),  # კონსერვ. შეფასება
+            "gust_estimated": True,
             "wind_direction": wind_dir,
             "precipitation":  precip,
             "visibility_km":  vis_km,
@@ -695,12 +700,29 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         wind_speed = _wavg(active_wind_pool, i, "wind_speed", active_wind_w)
 
         # 2. ქარის დაქროლვები (GUSTS) — Veto პრინციპი: ვიღებთ აბსოლუტურ მაქსიმუმს!
-        active_gusts = [
-            src[i].get("wind_gusts", 0) 
-            for src, _ in active_wind_pool 
-            if i < len(src) and src[i].get("wind_gusts") is not None
-        ]
-        wind_gusts = max(active_gusts) if active_gusts else wind_speed
+        #
+        # ოღონდ სინთეზური მნიშვნელობები (yr.no: wind_speed × 1.25) veto-ში
+        # არ მონაწილეობს. ისინი ახალ ინფორმაციას არ ატარებენ — მხოლოდ
+        # დაბინძურება შეუძლიათ. გამონაკლისი: თუ ერთი რეალური წყაროც არ
+        # დარჩა (მაგ. Open-Meteo მიუწვდომელია), შეფასება არაფერს სჯობს.
+        _gusts_real, _gusts_est = [], []
+        for src, _ in active_wind_pool:
+            if i >= len(src) or not src[i]:
+                continue
+            g = src[i].get("wind_gusts")
+            if g is None:
+                continue
+            (_gusts_est if src[i].get("gust_estimated") else _gusts_real).append(g)
+
+        if _gusts_real:
+            wind_gusts    = max(_gusts_real)
+            gust_estimated = False
+        elif _gusts_est:
+            wind_gusts    = max(_gusts_est)
+            gust_estimated = True
+        else:
+            wind_gusts    = wind_speed
+            gust_estimated = True
 
         # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
         wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
@@ -763,8 +785,13 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         if wave_src:
             ww = sum(w for _, w in wave_src)
             wave_h = sum(v * w for v, w in wave_src) / ww
+            wave_estimated = False
         else:
+            # ორივე საზღვაო წყარო მიუწვდომელია — ქარიდან უხეში შეფასება.
+            # კრიტიკულია, რომ შედეგი მოინიშნოს: გაზომილი და გამოთვლილი
+            # ტალღა ერთნაირი სანდოობით არ უნდა ჩანდეს (26 ივლისის გაკვეთილი).
             wave_h = _estimate_wave_from_wind(wind_speed, wind_direction)
+            wave_estimated = True
 
         wave_p = marine[i].get("wave_period", 0) if marine and i < len(marine) else 0
         wave_d = marine[i].get("wave_direction", 0) if marine and i < len(marine) else 0
@@ -808,6 +835,8 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "precip_agreement": precip_agreement,
             "visibility_km": _r(visibility),
             "wave_height": _r(wave_h),
+            "wave_estimated": wave_estimated,
+            "gust_estimated": gust_estimated,
             "wave_period": _r(wave_p),
             "wave_direction": _r(wave_d),
             "swell_height": _r(swell),
@@ -1055,7 +1084,9 @@ def send_telegram(output: dict):
         f"🕐 {now}\n"
         f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
         f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
-        f"🌊 ტალღა: <b>{c['wave_height']} მ</b> | პერიოდი: {c['wave_period']} წმ\n"
+        f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
+        f"{' <i>(შეფასება — საზღვაო წყარო მიუწვდომელია)</i>' if c.get('wave_estimated') else ''}"
+        f" | პერიოდი: {c['wave_period']} წმ\n"
         f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
         f"─────────────────\n"
         f"⏱ შეჩერება 48h: <b>{s['suspended_hours']}სთ</b> | "
@@ -1135,7 +1166,8 @@ def send_digest_telegram(output: dict):
         f"─────────────────\n"
         f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
         f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
-        f"🌊 ტალღა: <b>{c['wave_height']} მ</b>\n"
+        f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
+        f"{' <i>(შეფასება)</i>' if c.get('wave_estimated') else ''}\n"
         f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>"
         + (f" <i>(იგრძნობა {c['feels_like']}°C)</i>"
            if c.get('feels_like') is not None and c.get('air_temp') is not None
@@ -1667,6 +1699,7 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "dir_agreement": 1.0, "dir_fallback": False,
             "precip_sources": 0,
             "precip_agreement": 0,
+            "wave_estimated": False, "gust_estimated": False,
         }.items()},
         "summary_24h": {
             "max_wave_height":   _r(max((h["wave_height"] for h in consensus), default=0)),
