@@ -162,6 +162,30 @@ header{
   background:rgba(91,156,245,0.1);
   box-shadow:0 0 16px rgba(91,156,245,0.15);
 }
+.logo-icon{
+  cursor:pointer;
+  user-select:none;-webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .12s ease, background .2s ease, border-color .2s ease;
+}
+.logo-icon:active{transform:scale(0.90);}
+.logo-icon.busy{
+  animation:spin-anchor .8s linear infinite;
+  border-color:rgba(91,156,245,0.9);
+  background:rgba(91,156,245,0.22);
+}
+.logo-icon.done{
+  border-color:rgba(45,212,160,0.9);
+  background:rgba(45,212,160,0.20);
+}
+.logo-icon.fail{
+  border-color:rgba(245,110,110,0.9);
+  background:rgba(245,110,110,0.20);
+}
+@keyframes spin-anchor{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@media (prefers-reduced-motion:reduce){
+  .logo-icon.busy{animation:none;opacity:.55;}
+}
 .logo h1{font-size:15px;font-weight:700;color:var(--text-strong);letter-spacing:0.02em;}
 .logo p{font-size:11px;color:var(--sb);margin-top:2px;}
 
@@ -404,7 +428,8 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 
 <header>
   <div class="logo">
-    <div class="logo-icon">⚓</div>
+    <div class="logo-icon" id="btn-refresh" role="button" tabindex="0"
+         aria-label="განახლება / Refresh" title="განახლება · Refresh">⚓</div>
     <div>
       <h1 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span data-i18n="title">APMT Poti — ამინდის კონსენსუს-პორტალი</span>
         <span id="hdr-confidence" style="display:none;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;"></span>
@@ -835,7 +860,7 @@ async function loadData() {
   if (!d) {
     el.textContent = 'data.json ვერ ჩაიტვირთა';
     el.style.color = 'var(--txt-warn)';
-    return;
+    return null;
   }
 
   // recompute status with new thresholds
@@ -850,7 +875,59 @@ async function loadData() {
       el.textContent = (el.textContent || '') + ' · პირდაპირი წყარო';
     }
   }
+
+  return d;
 }
+
+// ═══ ხელით განახლება (ღუზის ღილაკი) ═══
+// შენიშვნა: ღილაკი ხელახლა კითხულობს data.json-ს — ის არ უშვებს fetch.py-ს.
+// ახალ პროგნოზს ბექენდი საათში ერთხელ აწარმოებს; ღილაკი უზრუნველყოფს, რომ
+// ეკრანზე ზუსტად ის იყოს, რაც ამ წუთში სერვერზეა.
+let _refreshing  = false;
+let _lastRefresh = 0;
+
+async function refreshNow() {
+  const icon = document.getElementById('btn-refresh');
+  if (!icon || _refreshing) return;
+  if (Date.now() - _lastRefresh < 2500) return;      // ორმაგი დაჭერისგან
+
+  _refreshing  = true;
+  _lastRefresh = Date.now();
+  icon.classList.remove('done', 'fail');
+  icon.classList.add('busy');
+
+  const started = Date.now();
+  let ok = false;
+  try { ok = !!(await loadData()); } catch (e) { ok = false; }
+
+  // მინიმუმ 450 მწმ, რომ ანიმაციამ არ "აციმციმდეს"
+  setTimeout(() => {
+    icon.classList.remove('busy');
+    icon.classList.add(ok ? 'done' : 'fail');
+    icon.textContent = ok ? '✓' : '!';
+    setTimeout(() => {
+      icon.classList.remove('done', 'fail');
+      icon.textContent = '⚓';
+      _refreshing = false;
+    }, 1100);
+  }, Math.max(0, 450 - (Date.now() - started)));
+}
+
+(function initRefresh() {
+  const icon = document.getElementById('btn-refresh');
+  if (!icon) return;
+  icon.addEventListener('click', refreshNow);
+  icon.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); refreshNow(); }
+  });
+  // აპში დაბრუნებისას ჩუმი განახლება — PWA-ში ყველაზე ხშირი სცენარია
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !_refreshing && Date.now() - _lastRefresh > 60000) {
+      _lastRefresh = Date.now();
+      loadData();
+    }
+  });
+})();
 
 // ═══ RENDER ═══
 function render(d) {
