@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-08-14 17:07",
-    "next_update": "2026-08-14 18:07",
+    "last_update": "2026-08-14 18:07",
+    "next_update": "2026-08-14 19:07",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
@@ -18,29 +18,29 @@
     "forecast_hours": 48
   },
   "current": {
-    "time": "2026-08-14T17:00",
-    "wind_speed": 4.04,
-    "wind_gusts": 8.9,
-    "wind_direction": 224.0,
-    "wave_height": 0.75,
+    "time": "2026-08-14T18:00",
+    "wind_speed": 4.08,
+    "wind_gusts": 7.7,
+    "wind_direction": 238.0,
+    "wave_height": 0.74,
     "precipitation": 0.0,
-    "visibility_km": 31.6,
-    "wave_period": 5.1,
+    "visibility_km": 32.0,
+    "wave_period": 5.05,
     "wave_direction": 259.0,
-    "swell_height": 0.51,
-    "swell_period": 5.26,
-    "swell_direction": 238.0,
+    "swell_height": 0.48,
+    "swell_period": 5.21,
+    "swell_direction": 236.0,
     "wind_wave_height": 0.28,
-    "water_temp": 27.95,
-    "current_speed": 0.12,
-    "air_temp": 27.5,
-    "feels_like": 27.4,
+    "water_temp": 27.93,
+    "current_speed": 0.11,
+    "air_temp": 27.0,
+    "feels_like": 28.0,
     "status": "operational",
     "alerts": [],
-    "wind_spread": 0.88,
+    "wind_spread": 0.64,
     "confidence": "high",
     "source_count": 3,
-    "dir_agreement": 0.95,
+    "dir_agreement": 0.99,
     "dir_fallback": false,
     "precip_sources": 0,
     "precip_agreement": 0,
@@ -1585,64 +1585,64 @@
   ],
   "models_now": {
     "best": {
-      "w": 4.62,
-      "g": 8.9,
-      "d": 248.0,
+      "w": 3.89,
+      "g": 7.7,
+      "d": 241.0,
       "p": 0.0,
-      "t": 27.5
+      "t": 27.0
     },
     "gfs": {
-      "w": 5.73,
-      "g": 5.5,
-      "d": 223.0,
+      "w": 5.19,
+      "g": 5.1,
+      "d": 220.0,
       "p": 0.0,
       "t": 25.9
     },
     "icon_eu": {
-      "w": 4.62,
-      "g": 8.9,
-      "d": 248.0,
+      "w": 3.89,
+      "g": 7.7,
+      "d": 241.0,
       "p": 0.0,
-      "t": 27.5
+      "t": 27.0
     },
     "ecmwf": {
-      "w": 3.18,
-      "g": 4.6,
-      "d": 225.0,
+      "w": 3.62,
+      "g": 4.7,
+      "d": 244.0,
       "p": 0.0,
-      "t": 26.3
+      "t": 26.9
     },
     "yr_no": {
-      "w": 5.3,
-      "g": 6.62,
-      "d": 205.5,
+      "w": 5.1,
+      "g": 6.38,
+      "d": 223.9,
       "p": 0.0
     },
     "marine": {
       "wave": 0.8,
-      "per": 5.1,
-      "sw": 0.54,
-      "sw_p": 4.2,
+      "per": 5.05,
+      "sw": 0.56,
+      "sw_p": 4.15,
       "ww": 0.28
     },
     "stormglass": {
-      "wave": 0.69,
-      "w": 1.61
+      "wave": 0.66,
+      "w": 1.14
     },
     "wave_models": {
       "ewam": {
-        "wave": 0.62,
+        "wave": 0.58,
         "per": 4.65,
-        "dir": 241.0,
+        "dir": 243.0,
         "sw": 0.52,
-        "sw_p": 5.3
+        "sw_p": 5.1
       },
       "gwam": {
         "wave": 0.76,
         "per": 4.8,
-        "dir": 257.0,
-        "sw": 0.68,
-        "sw_p": 5.25
+        "dir": 258.0,
+        "sw": 0.7,
+        "sw_p": 5.1
       }
     }
   }
