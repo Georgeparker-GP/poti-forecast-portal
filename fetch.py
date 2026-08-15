@@ -662,7 +662,8 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
 #  4.  კონსენსუსი
 # ═══════════════════════════════════════════════════════════════
 
-def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormglass, yr_no, owm):
+def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormglass, yr_no, owm,
+                      wave_models=None):
     # 1. ძირითადი სრული აუზი (ნალექისთვის, ხილვადობისთვის და ფოლბექისთვის)
     atmo_pool = []
     for src, key in [
@@ -782,6 +783,19 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         if stormglass and i < len(stormglass) and stormglass[i].get("wave_height", 0) > 0:
             wave_src.append((stormglass[i]["wave_height"], WAVE_WEIGHTS["stormglass"]))
 
+        # ─── დიაგნოსტიკა: ყველა წყაროს დიაპაზონი ───
+        # EWAM/GWAM observation-only რჩება — კონსენსუსში არ შედის, მაგრამ
+        # დიაპაზონის შეფასებაში მონაწილეობს. მიზეზი: შეწონილი საშუალო
+        # არითმეტიკულად ყოველთვის ანაკლებს ყველაზე მაღალ წყაროს, ტალღა კი
+        # უსაფრთხოებრივად კრიტიკული პარამეტრია (26 ივლისის ცრუ-ნეგატივი).
+        _wave_all = [v for v, _ in wave_src]
+        for _m in (WAVE_MODELS if wave_models else []):
+            _series = wave_models.get(_m) or []
+            if i < len(_series) and _series[i]:
+                _v = _series[i].get("wave_height")
+                if _v and _v > 0:
+                    _wave_all.append(_v)
+
         if wave_src:
             ww = sum(w for _, w in wave_src)
             wave_h = sum(v * w for v, w in wave_src) / ww
@@ -792,6 +806,11 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             # ტალღა ერთნაირი სანდოობით არ უნდა ჩანდეს (26 ივლისის გაკვეთილი).
             wave_h = _estimate_wave_from_wind(wind_speed, wind_direction)
             wave_estimated = True
+
+        # დიაპაზონი და გაფანტვა — მხოლოდ ინფორმაციული, სტატუსზე გავლენა არ აქვს
+        wave_max    = max(_wave_all) if _wave_all else wave_h
+        wave_min    = min(_wave_all) if _wave_all else wave_h
+        wave_spread = (wave_max - wave_h) / wave_h if wave_h > 0.05 else 0.0
 
         wave_p = marine[i].get("wave_period", 0) if marine and i < len(marine) else 0
         wave_d = marine[i].get("wave_direction", 0) if marine and i < len(marine) else 0
@@ -836,6 +855,9 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "visibility_km": _r(visibility),
             "wave_height": _r(wave_h),
             "wave_estimated": wave_estimated,
+            "wave_max": _r(wave_max),
+            "wave_min": _r(wave_min),
+            "wave_sources": len(_wave_all),
             "gust_estimated": gust_estimated,
             "wave_period": _r(wave_p),
             "wave_direction": _r(wave_d),
@@ -1085,6 +1107,7 @@ def send_telegram(output: dict):
         f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
         f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
+        f"{_wave_range_str(c)}"
         f"{' <i>(შეფასება — საზღვაო წყარო მიუწვდომელია)</i>' if c.get('wave_estimated') else ''}"
         f" | პერიოდი: {c['wave_period']} წმ\n"
         f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
@@ -1114,6 +1137,23 @@ def send_telegram(output: dict):
 
 DIGEST_HOURS          = {2, 5, 11, 14, 17, 23}   # 08:00/20:00 ცვლის რეპორტს ეთმობა
 DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პროგნოზის ფანჯარა
+
+
+def _wave_range_str(c: dict) -> str:
+    """ტალღის დიაპაზონი, როცა წყაროები საგრძნობლად არ თანხმდებიან.
+
+    კონსენსუსი შეწონილი საშუალოა, რაც არითმეტიკულად ყოველთვის ანაკლებს
+    ყველაზე მაღალ წყაროს. ტალღა კი უსაფრთხოებრივად კრიტიკულია (26 ივლისის
+    ცრუ-ნეგატივი), ამიტომ ცვლის მიმღებმა ზედა ზღვარიც უნდა დაინახოს.
+
+    დიაპაზონში EWAM/GWAM-იც შედის — ისინი კონსენსუსზე გავლენას არ ახდენენ,
+    მაგრამ ინფორმაციას ატარებენ.
+    """
+    h  = c.get("wave_height") or 0
+    mx = c.get("wave_max") or 0
+    if h < 0.3 or mx <= h * 1.2:      # უმნიშვნელო ან თანხმობა კარგია
+        return ""
+    return f" <i>(მაქს. {mx} მ)</i>"
 
 
 def _precip_label(mm: float, sources: int = None, agreement: int = None) -> str:
@@ -1167,6 +1207,7 @@ def send_digest_telegram(output: dict):
         f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
         f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
+        f"{_wave_range_str(c)}"
         f"{' <i>(შეფასება)</i>' if c.get('wave_estimated') else ''}\n"
         f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>"
         + (f" <i>(იგრძნობა {c['feels_like']}°C)</i>"
@@ -1700,6 +1741,7 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "precip_sources": 0,
             "precip_agreement": 0,
             "wave_estimated": False, "gust_estimated": False,
+            "wave_max": 0, "wave_min": 0, "wave_sources": 0,
         }.items()},
         "summary_24h": {
             "max_wave_height":   _r(max((h["wave_height"] for h in consensus), default=0)),
@@ -1840,7 +1882,8 @@ def main():
 
         log.info(f"კონსენსუსი: {len(sources_used)} წყარო — {sources_used}")
         consensus = compute_consensus(effective_best, effective_gfs, effective_icon, effective_ecmwf,
-                                      marine, stormglass, yr_no, owm)
+                                      marine, stormglass, yr_no, owm,
+                                      wave_models=wave_models)
 
         raw_daily        = fetch_open_meteo_daily()
         daily_atmo       = parse_open_meteo_daily(raw_daily) if raw_daily else []
