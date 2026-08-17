@@ -547,6 +547,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       </div>
       <div class="card-sub"><span data-i18n="vis_sub">ნისლის ზღვარი: 0.1 კმ</span></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
+      <div id="c-vis-note" style="font-size:.66rem;line-height:1.25;margin-top:4px;color:var(--sb);min-height:.9rem"></div>
     </div>
   </div>
 
@@ -1022,6 +1023,25 @@ function render(d) {
   setCard('card-vis','c-vis', c.visibility_km,
     vis<=THR.fog?'danger': vis<=1?'warn':'ok');
   setBar('bar-vis', Math.min(vis/15,1), vis<=THR.fog?'rd': vis<=1?'yw':'gn');
+
+  // ხილვადობა მინიმუმის ტიპის სიდიდეა — შეწონილი საშუალო რისკს ანაკლებს,
+  // ამიტომ უარესი წყარო ცალკე ჩანს.
+  const visMin  = c.visibility_min != null ? Number(c.visibility_min) : null;
+  const visNote = document.getElementById('c-vis-note');
+  if (visNote) {
+    const ENG = currentLang === 'eng';
+    if (c.vis_estimated) {
+      visNote.textContent = ENG ? '⚠ estimated — no direct source'
+                                : '⚠ შეფასება — პირდაპირი წყარო არ არის';
+      visNote.style.color = 'var(--txt-warn)';
+    } else if (visMin !== null && vis > 0 && visMin < vis * 0.7 && visMin < 10) {
+      visNote.textContent = (ENG ? '△ worst source ' : '△ უარესი წყარო ')
+                          + fmt(visMin) + (ENG ? ' km' : ' კმ');
+      visNote.style.color = 'var(--txt-warn)';
+    } else {
+      visNote.textContent = '';
+    }
+  }
 
   // ─── ნალექი: სიმძიმე თანხმობის ხარისხით იზღუდება ───
   // პრინციპი: ერთი წყაროს სიგნალი კრიტიკულ (წითელ) მაჩვენებლად არ ითვლება —
