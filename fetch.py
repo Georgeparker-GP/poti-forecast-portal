@@ -637,6 +637,11 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
         precip     = round(float(next1h.get("precipitation_amount", 0) or 0), 2)
 
         # ნისლი → ხილვადობა: fog_area_fraction 0-100%
+        # ⚠ ეს ხილვადობა НЕ არის: fog_area_fraction მხოლოდ ნისლს ზომავს.
+        # ძლიერი წვიმისას ნისლი 0%-ია და შედეგი მუდმივად 10.0 კმ გამოდის,
+        # რაც შეწონილ საშუალოს ხელოვნურად ზემოთ სწევს (2026-08-17).
+        # ამიტომ `vis_estimated`-ით ინიშნება და კონსენსუსიდან გამოირიცხება,
+        # სანამ რეალური წყარო არსებობს.
         fog = float(instant.get("fog_area_fraction", 0) or 0)
         # 0% ნისლი → 10კმ, 100% ნისლი → 0.1კმ (ლოგარითმული)
         vis_km = round(max(0.1, 10.0 * (1.0 - fog / 100.0)), 2)
@@ -653,6 +658,7 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
             "wind_direction": wind_dir,
             "precipitation":  precip,
             "visibility_km":  vis_km,
+            "vis_estimated":  True,
         })
 
     return result[:hours]
@@ -774,7 +780,32 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         _w_total = sum(w for _, w in precip_pool)
         _w_wet   = sum(w for v, w in precip_pool if v >= 0.1)
         precip_agreement = int(round(100.0 * _w_wet / _w_total)) if _w_total else 0
-        visibility = _wavg(atmo_pool, i, "visibility_km", total_w)
+        # ─── ხილვადობა ───
+        # იგივე პრინციპი, რაც დაქროლვებზე: სინთეზური მნიშვნელობა (yr.no,
+        # fog_area_fraction-იდან) კონსენსუსში არ მონაწილეობს, სანამ ერთი
+        # რეალური წყაროც კი არსებობს.
+        _vis_real, _vis_est = [], []
+        for src, w in atmo_pool:
+            if i >= len(src) or not src[i]:
+                continue
+            v = src[i].get("visibility_km")
+            if v is None:
+                continue
+            (_vis_est if src[i].get("vis_estimated") else _vis_real).append((v, w))
+
+        _vis_pool = _vis_real if _vis_real else _vis_est
+        if _vis_pool:
+            _vw = sum(w for _, w in _vis_pool)
+            visibility = sum(v * w for v, w in _vis_pool) / _vw if _vw else 10.0
+            vis_estimated = not _vis_real
+        else:
+            visibility = 10.0
+            vis_estimated = True
+
+        # დიაგნოსტიკა: უარესი წყარო. ხილვადობა მინიმუმის ტიპის სიდიდეა
+        # (≤1.0 კმ → suspended), ამიტომ საშუალო რისკს ანაკლებს.
+        _vis_all = [v for v, _ in _vis_pool]
+        visibility_min = min(_vis_all) if _vis_all else visibility
 
         # ტალღა (Marine, Stormglass — Windy აქ აღარ მონაწილეობს)
         wave_src = []
@@ -853,6 +884,8 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "precip_sources": precip_sources,
             "precip_agreement": precip_agreement,
             "visibility_km": _r(visibility),
+            "visibility_min": _r(visibility_min),
+            "vis_estimated": vis_estimated,
             "wave_height": _r(wave_h),
             "wave_estimated": wave_estimated,
             "wave_max": _r(wave_max),
@@ -1110,7 +1143,7 @@ def send_telegram(output: dict):
         f"{_wave_range_str(c)}"
         f"{' <i>(შეფასება — საზღვაო წყარო მიუწვდომელია)</i>' if c.get('wave_estimated') else ''}"
         f" | პერიოდი: {c['wave_period']} წმ\n"
-        f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
+        f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>{_vis_range_str(c)}\n"
         f"─────────────────\n"
         f"⏱ შეჩერება 48h: <b>{s['suspended_hours']}სთ</b> | "
         f"სიფრთხილე: <b>{s['warning_hours']}სთ</b>\n"
@@ -1137,6 +1170,21 @@ def send_telegram(output: dict):
 
 DIGEST_HOURS          = {2, 5, 11, 14, 17, 23}   # 08:00/20:00 ცვლის რეპორტს ეთმობა
 DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პროგნოზის ფანჯარა
+
+
+def _vis_range_str(c: dict) -> str:
+    """ხილვადობის უარესი წყარო, როცა კონსენსუსს საგრძნობლად ჩამორჩება.
+
+    ხილვადობა მინიმუმის ტიპის სიდიდეა (≤1.0 კმ → suspended), შეწონილი
+    საშუალო კი მას ყოველთვის ზემოთ სწევს — ანუ რისკს ანაკლებს.
+    """
+    v  = c.get("visibility_km")
+    mn = c.get("visibility_min")
+    if v is None or mn is None or v <= 0:
+        return ""
+    if mn >= v * 0.7 or mn >= 10:      # თანხმობა კარგია
+        return ""
+    return f" <i>(მინ. {mn} კმ)</i>"
 
 
 def _wave_range_str(c: dict) -> str:
@@ -1215,7 +1263,13 @@ def send_digest_telegram(output: dict):
            and abs(c['feels_like'] - c['air_temp']) >= 2 else "")
         + "\n"
         f"🌧 ნალექი: <b>{_precip_label(c['precipitation'], c.get('precip_sources'), c.get('precip_agreement'))}</b>\n"
-        f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>\n"
+        # 24სთ ჯამი — ეზოს დატბორვისა და დრენაჟისთვის პიკურ სიჩქარეზე
+        # მნიშვნელოვანია; ჩნდება მხოლოდ როცა ნალექი ოპერაციულად საგრძნობია.
+        + (f"💧 24სთ ჯამი: <b>{output['summary_24h']['total_precip_24h']} მმ</b>"
+           f" ({output['summary_24h']['rain_hours']}სთ, "
+           f"პიკი {output['summary_24h']['max_precip_rate']} მმ/სთ)\n"
+           if (output.get('summary_24h', {}).get('total_precip_24h') or 0) >= 5 else "")
+        + f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>{_vis_range_str(c)}\n"
         f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
     )
     if c.get("alerts"):
@@ -1682,8 +1736,11 @@ def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, s
                 out[short] = round(float(v), 2)
         return out or None
 
+    # "v" (ხილვადობა) დაემატა 2026-08-17: წვიმისას ხილვადობის გადაჭარბება
+    # per-model მონაცემის გარეშე ისტორიულად ვერ დიაგნოსტირდებოდა.
     atmo_fields = {"w": "wind_speed", "g": "wind_gusts",
-                   "d": "wind_direction", "p": "precipitation", "t": "air_temp"}
+                   "d": "wind_direction", "p": "precipitation", "t": "air_temp",
+                   "v": "visibility_km"}
     snap = {
         "best":       grab(atmo_best,  atmo_fields),
         "gfs":        grab(atmo_gfs,   atmo_fields),
@@ -1693,7 +1750,8 @@ def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, s
         "marine":     grab(marine,     {"wave": "wave_height", "per": "wave_period",
                                         "sw": "swell_wave_height", "sw_p": "swell_wave_period",
                                         "ww": "wind_wave_height"}),
-        "stormglass": grab(stormglass, {"wave": "wave_height", "w": "wind_speed"}),
+        "stormglass": grab(stormglass, {"wave": "wave_height", "w": "wind_speed",
+                                        "v": "visibility_km"}),
     }
     snap = {k: v for k, v in snap.items() if v is not None}
 
@@ -1742,10 +1800,20 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "precip_agreement": 0,
             "wave_estimated": False, "gust_estimated": False,
             "wave_max": 0, "wave_min": 0, "wave_sources": 0,
+            "visibility_min": 10, "vis_estimated": False,
         }.items()},
         "summary_24h": {
             "max_wave_height":   _r(max((h["wave_height"] for h in consensus), default=0)),
             "max_wind_gusts":    _r(max((h["wind_gusts"]  for h in consensus), default=0)),
+            # ─── ნალექი (დაემატა 2026-08-17) ───
+            # აქამდე დღიური შეჯამება ნალექს საერთოდ არ ასახავდა: 22 მმ ღამის
+            # განმავლობაში სრულიად უხილავი რჩებოდა. ეზოს დატბორვისა და
+            # დრენაჟისთვის ჯამი უფრო მნიშვნელოვანია, ვიდრე პიკური სიჩქარე,
+            # თან მოდელები ჯამს უკეთ იჭერენ, ვიდრე მყისიერ ინტენსივობას.
+            "total_precip_24h":  _r(sum((h.get("precipitation") or 0) for h in consensus[:24])),
+            "max_precip_rate":   _r(max((h.get("precipitation") or 0 for h in consensus), default=0)),
+            "rain_hours":        sum(1 for h in consensus[:24] if (h.get("precipitation") or 0) >= 0.1),
+            "min_visibility":    _r(min((h.get("visibility_km") or 99 for h in consensus), default=99)),
             "suspended_hours":   susp,
             "warning_hours":     warn,
             "operational_hours": len(consensus) - susp - warn,
@@ -1924,6 +1992,9 @@ def main():
         log.info(f"  წყაროები:    {', '.join(sources_used)}")
         log.info(f"  ტალღა მაქს:  {s['max_wave_height']} მ")
         log.info(f"  დაქროლვა მაქს: {s['max_wind_gusts']} მ/წმ")
+        log.info(f"  ნალექი 24სთ: {s['total_precip_24h']} მმ "
+                 f"({s['rain_hours']}სთ, პიკი {s['max_precip_rate']} მმ/სთ)")
+        log.info(f"  ხილვადობა მინ: {s['min_visibility']} კმ")
         log.info(f"  შეჩერება:    {s['suspended_hours']}h / {len(consensus)}h")
         log.info(f"  სტატუსი:     {s['overall_status'].upper()}")
         log.info(f"  ✓ {OUTPUT_FILE}")
