@@ -25,7 +25,7 @@
   TELEGRAM_CHAT_ID     ← შენი chat ID
 """
 
-import json, math, os, logging, time, sys
+import json, math, os, logging, time, sys, pathlib
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -669,7 +669,7 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
 # ═══════════════════════════════════════════════════════════════
 
 def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormglass, yr_no, owm,
-                      wave_models=None):
+                      wave_models=None, copernicus=None):
     # 1. ძირითადი სრული აუზი (ნალექისთვის, ხილვადობისთვის და ფოლბექისთვის)
     atmo_pool = []
     for src, key in [
@@ -820,6 +820,13 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # არითმეტიკულად ყოველთვის ანაკლებს ყველაზე მაღალ წყაროს, ტალღა კი
         # უსაფრთხოებრივად კრიტიკული პარამეტრია (26 ივლისის ცრუ-ნეგატივი).
         _wave_all = [v for v, _ in wave_src]
+        # Copernicus BLKSEA — დაკვირვების რეჟიმი: დიაპაზონში მონაწილეობს,
+        # კონსენსუსის მნიშვნელობაზე გავლენას არ ახდენს (ოქტომბრამდე).
+        _cop_h = None
+        if copernicus and i < len(copernicus) and copernicus[i]:
+            _cop_h = copernicus[i].get("wave_height")
+            if _cop_h and _cop_h > 0:
+                _wave_all.append(_cop_h)
         for _m in (WAVE_MODELS if wave_models else []):
             _series = wave_models.get(_m) or []
             if i < len(_series) and _series[i]:
@@ -889,6 +896,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "wave_height": _r(wave_h),
             "wave_estimated": wave_estimated,
             "wave_max": _r(wave_max),
+            "wave_copernicus": _r(_cop_h) if _cop_h else None,
             "wave_min": _r(wave_min),
             "wave_sources": len(_wave_all),
             "gust_estimated": gust_estimated,
@@ -978,6 +986,55 @@ def _direction_agreement(pool, i, field):
         return 1.0, 0
     R = math.sqrt(sin_sum**2 + cos_sum**2) / n
     return R, n
+
+
+COPERNICUS_FILE = "wave_copernicus.json"
+COPERNICUS_MAX_AGE_H = 18       # ამაზე ძველი აღარ ითვლება სანდოდ
+
+
+def load_copernicus():
+    """wave_copernicus.json — ცალკე workflow-ის შედეგი (fetch_wave.py).
+
+    Copernicus BLKSEA 2.5 კმ, არაღრმა წყლის ფიზიკით. ეს ფაილი დღეში 4-ჯერ
+    ახლდება ცალკე pipeline-ით; აქ მხოლოდ იკითხება, რომ მძიმე
+    დამოკიდებულებები (xarray/netCDF4) საათობრივ გაშვებაში არ მოხვდეს.
+
+    ჩართვისას **დაკვირვების რეჟიმშია** — კონსენსუსზე გავლენას არ ახდენს,
+    მხოლოდ wave_max/wave_min დიაპაზონსა და models_now-ს კვებავს.
+    ეს იცავს "ოქტომბრამდე პარამეტრები არ იცვლება" წესს.
+
+    აბრუნებს საათობრივ სიას ან None.
+    """
+    try:
+        path = pathlib.Path(COPERNICUS_FILE)
+        if not path.exists():
+            log.info("Copernicus: ფაილი არ არსებობს — გამოტოვება")
+            return None
+
+        data = json.loads(path.read_text(encoding="utf-8"))
+        hourly = data.get("hourly") or []
+        if not hourly:
+            log.info("Copernicus: ცარიელი ფაილი")
+            return None
+
+        # სიახლის შემოწმება — ძველი ტალღის მონაცემი მავნეა
+        gen = (data.get("meta") or {}).get("generated_utc")
+        if gen:
+            try:
+                gdt = datetime.fromisoformat(gen)
+                if gdt.tzinfo is None:
+                    gdt = gdt.replace(tzinfo=timezone.utc)
+                age = (datetime.now(timezone.utc) - gdt).total_seconds() / 3600
+                if age > COPERNICUS_MAX_AGE_H:
+                    log.warning(f"Copernicus: მონაცემი {age:.1f} სთ ძველია — გამოტოვება")
+                    return None
+                log.info(f"Copernicus: {len(hourly)} საათი, ასაკი {age:.1f} სთ ✓")
+            except Exception:
+                log.info(f"Copernicus: {len(hourly)} საათი (ასაკი უცნობია)")
+        return hourly
+    except Exception as exc:
+        log.warning(f"Copernicus: წაკითხვა ჩავარდა ({exc}) — გამოტოვება")
+        return None
 
 
 def _align_to(reference, source):
@@ -1712,7 +1769,7 @@ def _current_hour_index(consensus):
 
 
 def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, stormglass, idx,
-                    wave_models=None):
+                    wave_models=None, copernicus=None):
     """მიმდინარე საათის ნედლი მნიშვნელობები თითო მოდელზე ცალკე.
 
     დანიშნულება: ისტორიული ვალიდაცია. data.json ყოველ საათს git-ში
@@ -1752,6 +1809,14 @@ def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, s
                                         "ww": "wind_wave_height"}),
         "stormglass": grab(stormglass, {"wave": "wave_height", "w": "wind_speed",
                                         "v": "visibility_km"}),
+        # Copernicus BLKSEA 2.5 კმ — ოქტომბრის კალიბრაციისთვის.
+        # ეს ის წყაროა, რომელიც არაღრმა წყლის ფიზიკას ითვალისწინებს;
+        # მისი RMSE-ს შედარება დანარჩენებთან მთავარი კითხვაა.
+        "copernicus": grab(copernicus, {"wave": "wave_height", "per": "wave_period",
+                                        "dir": "wave_direction", "sw": "swell_height",
+                                        "sw2": "swell2_height",
+                                        "max": "wave_max_height",     # VCMX — სრული ტალღა
+                                        "crest": "wave_crest_height"}),
     }
     snap = {k: v for k, v in snap.items() if v is not None}
 
@@ -1800,6 +1865,7 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "precip_agreement": 0,
             "wave_estimated": False, "gust_estimated": False,
             "wave_max": 0, "wave_min": 0, "wave_sources": 0,
+            "wave_copernicus": None,
             "visibility_min": 10, "vis_estimated": False,
         }.items()},
         "summary_24h": {
@@ -1942,6 +2008,8 @@ def main():
         atmo_gfs    = _align_to(_ref, atmo_gfs)
         atmo_icon   = _align_to(_ref, atmo_icon)
         atmo_ecmwf  = _align_to(_ref, atmo_ecmwf)
+        # Copernicus — ცალკე pipeline-ის შედეგი; იმავე ღერძზე გასწორება
+        copernicus = _align_to(_ref, load_copernicus())
         log.info("დროის ღერძი გასწორებულია (timestamp-based alignment) ✓")
 
         om_down = all(x is None for x in [atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf])
@@ -1951,7 +2019,8 @@ def main():
         log.info(f"კონსენსუსი: {len(sources_used)} წყარო — {sources_used}")
         consensus = compute_consensus(effective_best, effective_gfs, effective_icon, effective_ecmwf,
                                       marine, stormglass, yr_no, owm,
-                                      wave_models=wave_models)
+                                      wave_models=wave_models,
+                                      copernicus=copernicus)
 
         raw_daily        = fetch_open_meteo_daily()
         daily_atmo       = parse_open_meteo_daily(raw_daily) if raw_daily else []
@@ -1969,7 +2038,7 @@ def main():
             models_now = _model_snapshot(
                 atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf,
                 yr_no, marine, stormglass, snap_idx,
-                wave_models=wave_models
+                wave_models=wave_models, copernicus=copernicus
             )
         except Exception as e:
             log.warning(f"models_now snapshot ✗ — {e}")
