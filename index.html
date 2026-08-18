@@ -1515,6 +1515,22 @@ function renderWaveSplit(c){
       + '</div>'
     : '';
 
+  // ─── Copernicus BLKSEA (2.5 კმ) ───
+  // კონსენსუსში არ მონაწილეობს, მაგრამ მისი ბადე ფოთიდან 0.4 კმ-შია, ხოლო
+  // დანარჩენი წყაროები 9–50 კმ-ზე ღრმა წყლის მნიშვნელობას იძლევიან.
+  // ორივე ციფრი ჩანს, რომ გადაწყვეტილება ცვლის მიმღებმა მიიღოს.
+  const cop = c.wave_copernicus != null ? Number(c.wave_copernicus) : null;
+  let copNote = '';
+  if (cop && wvH > 0) {
+    const diff = ((cop - wvH) / wvH) * 100;
+    const sign = diff >= 0 ? '+' : '';
+    const col  = Math.abs(diff) >= 25 ? 'var(--txt-warn)' : 'var(--mu)';
+    copNote = '<div style="font-size:.66rem;line-height:1.3;color:' + col + ';margin-bottom:4px;">'
+            + 'Copernicus 2.5' + (isEng ? ' km: ' : ' კმ: ') + '<b>' + fmt(cop)
+            + (isEng ? ' m' : ' მ') + '</b> <span style="color:var(--mu)">('
+            + sign + diff.toFixed(0) + '%)</span></div>';
+  }
+
   const estNote = c.wave_estimated
     ? '<div style="font-size:.66rem;line-height:1.3;color:var(--txt-warn);margin-bottom:4px;">⚠ '
       + (isEng ? 'estimated from wind — marine sources unavailable'
@@ -1523,7 +1539,7 @@ function renderWaveSplit(c){
     : '';
 
   // თუ ბექენდი ჯერ არ აბრუნებს ამ ველებს — ბლოკს საერთოდ არ ვაჩვენებთ
-  if(sw <= 0 && ww <= 0){ el.innerHTML = estNote + rangeNote; return; }
+  if(sw <= 0 && ww <= 0){ el.innerHTML = estNote + copNote + rangeNote; return; }
 
   const mU  = isEng ? 'm'  : 'მ';
   const sU  = isEng ? 's'  : 'წმ';
@@ -1562,7 +1578,7 @@ function renderWaveSplit(c){
           + `</div>`;
   }
 
-  el.innerHTML = estNote + rangeNote + html;
+  el.innerHTML = estNote + copNote + rangeNote + html;
 }
 
 function setCard(cardId,valId,val,level){
