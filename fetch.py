@@ -1017,6 +1017,17 @@ def load_copernicus():
             log.info("Copernicus: ცარიელი ფაილი")
             return None
 
+        # ყულევი — საკონტროლო წერტილი (ფოთიდან ~13.8 კმ). ჩნდება იმავე
+        # ფაილში, ცალკე ბლოკში. ეს არ არის მეორე პროგნოზი — ეს შემოწმებაა,
+        # განასხვავებს თუ არა 2.5 კმ ბადე ორ ტერმინალს.
+        kv = (data.get("kulevi") or {}).get("hourly") or []
+        if kv:
+            by_t = {r.get("time"): r for r in kv}
+            for r in hourly:
+                k = by_t.get(r.get("time"))
+                if k:
+                    r["kulevi_wave_height"] = k.get("wave_height")
+
         # სიახლის შემოწმება — ძველი ტალღის მონაცემი მავნეა
         gen = (data.get("meta") or {}).get("generated_utc")
         if gen:
@@ -1199,7 +1210,8 @@ def send_telegram(output: dict):
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
         f"{_wave_range_str(c)}"
         f"{' <i>(შეფასება — საზღვაო წყარო მიუწვდომელია)</i>' if c.get('wave_estimated') else ''}"
-        f" | პერიოდი: {c['wave_period']} წმ\n"
+        f" | პერიოდი: {c['wave_period']} წმ"
+        f"{_cop_str(c)}\n"
         f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>{_vis_range_str(c)}\n"
         f"─────────────────\n"
         f"⏱ შეჩერება 48h: <b>{s['suspended_hours']}სთ</b> | "
@@ -1242,6 +1254,29 @@ def _vis_range_str(c: dict) -> str:
     if mn >= v * 0.7 or mn >= 10:      # თანხმობა კარგია
         return ""
     return f" <i>(მინ. {mn} კმ)</i>"
+
+
+def _cop_str(c: dict) -> str:
+    """Copernicus BLKSEA-ის მნიშვნელობა კონსენსუსის გვერდით.
+
+    Copernicus კონსენსუსში НЕ მონაწილეობს (WAVE_WEIGHTS ოქტომბრამდე
+    გაყინულია), მაგრამ მისი ბადე 2.5 კმ-ია და ფოთიდან 0.4 კმ-ში ზის —
+    დანარჩენი წყაროები 9–50 კმ-ზეა და ღრმა წყლის მნიშვნელობას იძლევიან.
+
+    ჩვენების მიზანი: ცვლის მიმღებმა ორივე ციფრი დაინახოს და გადაწყვეტილება
+    თავად მიიღოს. ეს ადამიანური რგოლი ამ ეტაპზე ავტომატიკას სჯობს —
+    კონსენსუსში ჩართვა ოქტომბრის შედარებას გააუქმებდა (წრიული ლოგიკა).
+
+    ჩნდება მხოლოდ მაშინ, როცა სხვაობა ოპერაციულად საგრძნობია.
+    """
+    h = c.get("wave_height")
+    cop = c.get("wave_copernicus")
+    if not cop or not h or h <= 0:
+        return ""
+    # <10% სხვაობა ხმაურია; ძალიან დაბალ ზღვაზე უაზროა
+    if max(cop, h) < 0.3 or abs(cop - h) / h < 0.10:
+        return ""
+    return f"\n   └ Copernicus (2.5 კმ): <b>{cop} მ</b>"
 
 
 def _wave_range_str(c: dict) -> str:
@@ -1313,7 +1348,8 @@ def send_digest_telegram(output: dict):
         f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
         f"{_wave_range_str(c)}"
-        f"{' <i>(შეფასება)</i>' if c.get('wave_estimated') else ''}\n"
+        f"{' <i>(შეფასება)</i>' if c.get('wave_estimated') else ''}"
+        f"{_cop_str(c)}\n"
         f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>"
         + (f" <i>(იგრძნობა {c['feels_like']}°C)</i>"
            if c.get('feels_like') is not None and c.get('air_temp') is not None
@@ -1816,7 +1852,8 @@ def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, s
                                         "dir": "wave_direction", "sw": "swell_height",
                                         "sw2": "swell2_height",
                                         "max": "wave_max_height",     # VCMX — სრული ტალღა
-                                        "crest": "wave_crest_height"}),
+                                        "crest": "wave_crest_height",
+                                        "kul": "kulevi_wave_height"}),   # საკონტროლო წერტილი
     }
     snap = {k: v for k, v in snap.items() if v is not None}
 
