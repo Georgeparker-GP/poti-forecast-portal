@@ -421,11 +421,11 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     <div class="i-bracket i-br"></div>
     <div id="intro-hud-title">
       <div class="kicker">APMT Terminals</div>
-      <div class="main">ფოთის პორტი</div>
+      <div class="main" data-i18n="intro_main">ფოთის პორტი</div>
       <div class="coords">42°09′N &nbsp;·&nbsp; 41°40′E</div>
     </div>
   </div>
-  <button id="intro-skip" onclick="finishIntro()">გამოტოვება ▶</button>
+  <button id="intro-skip" onclick="finishIntro()" data-i18n="skip_btn">გამოტოვება ▶</button>
 </div>
 <div class="bg-photo"></div>
 <div class="bg-overlay"></div>
@@ -445,20 +445,20 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     <div style="text-align:right;flex-shrink:0">
       <div style="font-size:10px;color:var(--sb)"><span data-i18n="last_updated">ბოლო განახლება</span></div>
       <div id="update-time" class="mono" style="font-size:14px;color:var(--bl);margin-top:2px;font-weight:600">--:--</div>
-      <div id="next-time" style="font-size:10px;color:var(--mu);margin-top:1px">შემდეგი: ---</div>
+      <div id="next-time" style="font-size:10px;color:var(--mu);margin-top:1px"><span data-i18n="next_lbl">შემდეგი:</span> ---</div>
       <div style="display:none">განახლება: <span id="cd" style="color:var(--tl)">60</span>წმ</div>
       <div class="local-time-line">
         <span>📅</span><span id="local-date" class="mono">--</span>
         <span style="margin-left:2px">🕐</span><span id="local-clock" class="mono">--:--:--</span>
       </div>
     </div>
-    <button class="tg-share-btn" onclick="shareToTelegram()" title="გაუგზავნე მიმდინარე ამინდი Telegram-ში">
+    <button class="tg-share-btn" onclick="shareToTelegram()" title="Share to Telegram / გაუგზავნე Telegram-ში">
       <svg viewBox="0 0 240 240" width="20" height="20">
         <path fill="#fff" d="M180.7 62.3 156 178.4c-1.9 8.6-6.9 10.7-14 6.7l-38.7-28.6-18.7 18c-2.1 2.1-3.8 3.8-7.8 3.8l2.8-39.7 72.3-65.3c3.1-2.8-.7-4.4-4.8-1.6l-89.4 56.3-38.5-12c-8.4-2.6-8.5-8.4 1.8-12.4l150.7-58.1c7-2.6 13.1 1.7 10.7 12.8z"/>
       </svg>
     </button>
     <button class="theme-toggle-btn" id="lang-btn" onclick="toggleLang()" title="Switch language / ენის შეცვლა" style="width:auto;border-radius:20px;padding:0 12px;font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--text-strong);">ENG</button>
-    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="თემის შეცვლა">
+    <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Switch theme / თემის შეცვლა">
       <span id="theme-toggle-icon">🌙</span>
     </button>
   </div>
@@ -471,7 +471,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 
 <div id="status-bar" class="status-bar operational">
   <div class="pulse"></div>
-  <span id="status-text"><span data-i18n="th_status">სტატუსი</span> იტვირთება...</span>
+  <span id="status-text"><span data-i18n="th_status">სტატუსი</span> <span data-i18n="loading">იტვირთება...</span></span>
   <div id="alert-items" style="margin-left:8px;display:flex;gap:10px;flex-wrap:wrap;font-weight:400;font-size:12px;"></div>
 </div>
 
@@ -502,9 +502,9 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="card-label"><span data-i18n="lbl_wind">ქარის სიჩქარე</span></div>
       <div class="card-value-row">
         <div class="card-value" id="c-wind">--</div>
-        <div class="card-unit">მ/წმ</div>
+        <div class="card-unit" data-i18n="u_ms">მ/წმ</div>
       </div>
-      <div class="card-sub"><span data-i18n="gusts_lbl">დაქროლვა:</span> <span id="c-gusts" class="mono">--</span> მ/წმ</div>
+      <div class="card-sub"><span data-i18n="gusts_lbl">დაქროლვა:</span> <span id="c-gusts" class="mono">--</span> <span data-i18n="u_ms">მ/წმ</span></div>
       <div class="card-sub" id="c-confidence" style="margin-top:4px;display:flex;align-items:center;gap:5px;"></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-wind" style="width:0%"></div></div>
     </div>
@@ -512,7 +512,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="card-label"><span data-i18n="lbl_wave">ტალღის სიმაღლე</span></div>
       <div class="card-value-row">
         <div class="card-value" id="c-wave">--</div>
-        <div class="card-unit">მეტრი</div>
+        <div class="card-unit" data-i18n="u_m_full">მეტრი</div>
       </div>
       <!-- swell / ქარის ტალღის ჩაშლა — JS-იდან ივსება -->
       <div class="wave-split" id="c-wave-split"></div>
@@ -532,7 +532,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="card-label"><span data-i18n="lbl_rain">ნალექი</span></div>
       <div class="card-value-row">
         <div class="card-value" id="c-rain">--</div>
-        <div class="card-unit">მმ/სთ</div>
+        <div class="card-unit" data-i18n="u_mmh">მმ/სთ</div>
       </div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-rain" style="width:0%"></div></div>
       <div id="c-rain-note" style="font-size:.66rem;line-height:1.25;margin-top:4px;color:var(--sb);min-height:.9rem"></div>
@@ -543,7 +543,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div class="card-label"><span data-i18n="lbl_vis">ხილვადობა</span></div>
       <div class="card-value-row">
         <div class="card-value" id="c-vis">--</div>
-        <div class="card-unit">კმ</div>
+        <div class="card-unit" data-i18n="u_km">კმ</div>
       </div>
       <div class="card-sub"><span data-i18n="vis_sub">ნისლის ზღვარი: 0.1 კმ</span></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
@@ -557,7 +557,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     <div class="card teal" style="grid-column:span 2">
       <div class="card-label"><span data-i18n="recap_title">მომდევნო 6 საათის რეკაპი</span></div>
       <div id="recap-6h" style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
-        <div style="font-size:11px;color:var(--mu)">იტვირთება...</div>
+        <div style="font-size:11px;color:var(--mu)" data-i18n="loading">იტვირთება...</div>
       </div>
     </div>
 
@@ -674,7 +674,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <div class="panel rel">
     <div class="panel-head">
       <h3 id="tbl-title"><span data-i18n="tbl_title">საათობრივი პროგნოზი</span></h3>
-      <p id="tbl-sources">წყაროები: იტვირთება...</p>
+      <p id="tbl-sources"><span data-i18n="sources_lbl">წყაროები:</span> <span data-i18n="loading">იტვირთება...</span></p>
     </div>
     <div class="tabs">
       <div class="tab active" onclick="switchTab(24,this)"><span data-i18n="tab_24">24 საათი</span></div>
@@ -685,7 +685,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <table class="tbl">
         <thead id="tbl-thead">
           <tr>
-            <th>დრო</th>
+            <th data-i18n="th_time">დრო</th>
             <th><span data-i18n="th_temp">ტემპ. °C</span></th>
             <th><span data-i18n="th_wind">ქარი მ/წმ</span></th>
             <th><span data-i18n="th_gusts">დაქროლვა</span></th>
@@ -697,7 +697,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           </tr>
         </thead>
         <tbody id="tbl-body">
-          <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)">იტვირთება...</td></tr>
+          <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)" data-i18n="loading">იტვირთება...</td></tr>
         </tbody>
       </table>
     </div>
@@ -705,13 +705,13 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 
   <!-- meta -->
   <div class="meta-strip rel">
-    <span style="color:var(--mu)">წყაროები:</span>
+    <span style="color:var(--mu)" data-i18n="sources_lbl">წყაროები:</span>
     <div id="source-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     <span style="margin-left:auto;font-size:10px;color:var(--mu)" id="coords-lbl"></span>
   </div>
 </main>
 
-<footer>ფოთის პორტის შიდა საოპერაციო მონიტორინგის სისტემა © 2026 &nbsp;·&nbsp; 48h კონსენსუს-პროგნოზი</footer>
+<footer><span data-i18n="footer_text">ფოთის პორტის შიდა საოპერაციო მონიტორინგის სისტემა © 2026 &nbsp;·&nbsp; 48h კონსენსუს-პროგნოზი</span></footer>
 
 <script>
 // ═══ CONSTANTS ═══
@@ -863,7 +863,7 @@ async function loadData() {
 
   const el = document.getElementById('status-text');
   if (!d) {
-    el.textContent = 'data.json ვერ ჩაიტვირთა';
+    el.textContent = _t('load_fail');
     el.style.color = 'var(--txt-warn)';
     return null;
   }
@@ -874,10 +874,10 @@ async function loadData() {
 
   if (el) {
     if (d._offline) {
-      el.textContent = (el.textContent || '') + ' · ოფლაინი';
+      el.textContent = (el.textContent || '') + ' · ' + _t('offline');
       el.style.color = 'var(--txt-warn)';
     } else if (d._fallback) {
-      el.textContent = (el.textContent || '') + ' · პირდაპირი წყარო';
+      el.textContent = (el.textContent || '') + ' · ' + _t('direct_src');
     }
   }
 
@@ -946,11 +946,11 @@ function render(d) {
   const src = m.sources_used || m.sources || [];
 
   document.getElementById('update-time').textContent  = m.last_update||'--';
-  document.getElementById('next-time').textContent    = 'შემდეგი: '+(m.next_update||'--');
+  document.getElementById('next-time').textContent    = _t('next_lbl')+' '+(m.next_update||'--');
   lastUpdateStr = m.last_update || null;
   checkStale();
   document.getElementById('sources-line').textContent = src.join(' · ');
-  document.getElementById('tbl-sources').textContent  = 'წყაროები: '+src.join(', ');
+  document.getElementById('tbl-sources').textContent  = _t('sources_lbl')+' '+src.join(', ');
   document.getElementById('coords-lbl').textContent   = (m.lat||'')+'°N '+(m.lon||'')+'°E · '+(m.forecast_hours||fc.length)+'h';
 
   const chips = document.getElementById('source-chips');
@@ -1184,7 +1184,7 @@ function render(d) {
   const next6 = fcFuture.slice(1, 7);
   if (recapEl) {
     if (!next6.length) {
-      recapEl.innerHTML = `<div style="font-size:11px;color:var(--mu)">მონაცემები მიუწვდომელია</div>`;
+      recapEl.innerHTML = `<div style="font-size:11px;color:var(--mu)">${_t('no_data')}</div>`;
     } else {
       recapEl.innerHTML = next6.map(h=>{
         const t = (h.time||'').slice(11,16) || '--:--';
@@ -1345,8 +1345,8 @@ function renderWeekMini(daily){
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;${isToday?'background:var(--ov2);':''}font-size:13px;">
       <span style="min-width:74px;font-weight:${isToday?'700':'500'};color:${isToday?'var(--tl)':'var(--tx)'}">${wd} ${dm}${isToday?(currentLang==='eng'?' •':' •'):''}</span>
       <span style="font-size:15px;min-width:24px;text-align:center">${weekEmoji(d)}</span>
-      <span style="min-width:58px;text-align:right;color:${wc};font-weight:600">${fmt(d.wind_max)} <span style="font-size:10px;color:var(--mu)">მ/წ</span></span>
-      <span style="min-width:44px;text-align:right;color:var(--tl)">${fmt(d.wave_max)}<span style="font-size:10px;color:var(--mu)">მ</span></span>
+      <span style="min-width:58px;text-align:right;color:${wc};font-weight:600">${fmt(d.wind_max)} <span style="font-size:10px;color:var(--mu)">${currentLang==='eng'?'m/s':'მ/წ'}</span></span>
+      <span style="min-width:44px;text-align:right;color:var(--tl)">${fmt(d.wave_max)}<span style="font-size:10px;color:var(--mu)">${currentLang==='eng'?'m':'მ'}</span></span>
       <span style="min-width:56px;text-align:right;"><span style="color:var(--txt-cold)">${tmin}°</span><span style="color:var(--mu)">/</span><span style="color:var(--txt-hot)">${tmax}°</span></span>
     </div>`;
   }).join('');
@@ -1355,10 +1355,12 @@ function renderWeekMini(daily){
 function buildWeekTable(daily) {
   const body = document.getElementById('tbl-body');
   if (!daily || !daily.length) {
-    body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)">კვირის მონაცემები მიუწვდომელია</td></tr>`;
+    body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)">${_t('no_week_data')}</td></tr>`;
     return;
   }
-  const WD = ['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
+  const WD = currentLang==='eng'
+    ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    : ['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
   body.innerHTML = daily.map((d,i)=>{
     const st  = d.status || 'operational';
     const rc  = st==='suspended'?'row-suspended':'';
@@ -1571,7 +1573,9 @@ function setCard(cardId,valId,val,level){
   if(level!=='ok'){
     const b=document.createElement('div');
     b.className='card-badge badge-'+level;
-    b.textContent=level==='danger'?'კრიტ.': level==='alert'?'შეზღ.':'ყურ.';
+    b.textContent = currentLang==='eng'
+      ? (level==='danger'?'CRIT.': level==='alert'?'RESTR.':'WATCH')
+      : (level==='danger'?'კრიტ.': level==='alert'?'შეზღ.':'ყურ.');
     card.appendChild(b);
   }
 }
@@ -1595,7 +1599,9 @@ function checkStale(){
   const ageMin = (Date.now() - lastMs) / 60000;
   if(ageMin >= STALE_HOURS*60){
     const h = Math.floor(ageMin/60), mi = Math.round(ageMin%60);
-    txt.textContent = `⚠️ მონაცემები არ განახლებულა ${h} სთ ${mi} წთ — შესაძლოა არაა აქტუალური. გადაამოწმეთ ოფიციალური წყაროთი.`;
+    txt.textContent = currentLang==='eng'
+      ? `⚠️ Data not updated for ${h} h ${mi} min — may not be current. Verify with official sources.`
+      : `⚠️ მონაცემები არ განახლებულა ${h} სთ ${mi} წთ — შესაძლოა არაა აქტუალური. გადაამოწმეთ ოფიციალური წყაროთი.`;
     banner.style.display='flex';
   } else {
     banner.style.display='none';
@@ -1621,13 +1627,21 @@ function shareToTelegram(){
   const c = lastData.current || allForecast[nowIndex] || {};
   const m = lastData.meta || {};
   const text =
-`⚓ ფოთის პორტი — ამინდის ვითარება
+(currentLang==='eng'
+    ? `⚓ Poti Port — Weather Conditions
+🕐 ${m.last_update || '--'}
+💨 Wind: ${fmt(c.wind_speed)} m/s | Gusts: ${fmt(c.wind_gusts)} m/s
+🌊 Wave: ${fmt(c.wave_height)} m
+🌡 Air: ${c.air_temp!=null?fmt(c.air_temp,1):'--'}°C
+🌧 Precipitation: ${fmt(c.precipitation)} mm/h
+👁 Visibility: ${fmt(c.visibility_km)} km`
+    : `⚓ ფოთის პორტი — ამინდის ვითარება
 🕐 ${m.last_update || '--'}
 💨 ქარი: ${fmt(c.wind_speed)} მ/წმ | დაქროლვა: ${fmt(c.wind_gusts)} მ/წმ
 🌊 ტალღა: ${fmt(c.wave_height)} მ
 🌡 ჰაერი: ${c.air_temp!=null?fmt(c.air_temp,1):'--'}°C
 🌧 ნალექი: ${fmt(c.precipitation)} მმ/სთ
-👁 ხილვადობა: ${fmt(c.visibility_km)} კმ`;
+👁 ხილვადობა: ${fmt(c.visibility_km)} კმ`);
   const pageUrl = window.location.href.split('?')[0];
   const shareUrl = 'https://t.me/share/url?url=' + encodeURIComponent(pageUrl) + '&text=' + encodeURIComponent(text);
   window.open(shareUrl, '_blank');
@@ -1692,6 +1706,24 @@ const I18N = {
   chart_vessel:  {geo:'გემ. 17', eng:'Vsl. 17'},
   footer_text:   {geo:'ფოთის პორტის შიდა საოპერაციო მონიტორინგის სისტემა © 2026 \xa0·\xa0 48h კონსენსუს-პროგნოზი', eng:'Poti Port Internal Operational Monitoring System © 2026 \xa0·\xa0 48h Consensus Forecast'},
   stale_text:    {geo:'მონაცემები დიდი ხანია არ განახლებულა', eng:'Data not updated for a long time'},
+  // ─── ერთეულები და დამხმარე წარწერები (დაემატა 2026-08-18) ───
+  u_ms:          {geo:'მ/წმ', eng:'m/s'},
+  u_m_full:      {geo:'მეტრი', eng:'metres'},
+  u_mmh:         {geo:'მმ/სთ', eng:'mm/h'},
+  u_km:          {geo:'კმ', eng:'km'},
+  th_time:       {geo:'დრო', eng:'Time'},
+  sources_lbl:   {geo:'წყაროები:', eng:'Sources:'},
+  loading:       {geo:'იტვირთება...', eng:'Loading...'},
+  next_lbl:      {geo:'შემდეგი:', eng:'Next:'},
+  skip_btn:      {geo:'გამოტოვება ▶', eng:'Skip ▶'},
+  tg_share_ttl:  {geo:'გაუგზავნე მიმდინარე ამინდი Telegram-ში', eng:'Share current weather to Telegram'},
+  theme_ttl:     {geo:'თემის შეცვლა', eng:'Switch theme'},
+  no_data:       {geo:'მონაცემები მიუწვდომელია', eng:'Data unavailable'},
+  no_week_data:  {geo:'კვირის მონაცემები მიუწვდომელია', eng:'Weekly data unavailable'},
+  intro_main:    {geo:'ფოთის პორტი', eng:'Port of Poti'},
+  load_fail:     {geo:'data.json ვერ ჩაიტვირთა', eng:'Failed to load data.json'},
+  offline:       {geo:'ოფლაინი', eng:'offline'},
+  direct_src:    {geo:'პირდაპირი წყარო', eng:'direct source'},
 };
 
 // Dynamic JS strings
@@ -1710,6 +1742,13 @@ const CONF_LABEL_GEO = {high:'მაღალი ნდობა',medium:'სა
 const WD_ENG = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS_ENG = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+// მოკლე დამხმარე: i18n-ის მნიშვნელობა მიმდინარე ენაზე
+function _t(key){
+  const e = I18N[key];
+  if(!e) return '';
+  return e[currentLang] || e.geo;
+}
+
 function applyLang(lang){
   currentLang = lang;
   try { localStorage.setItem('poti-lang', lang); } catch(e){}
@@ -1726,6 +1765,16 @@ function applyLang(lang){
 
   // re-render dynamic content
   if(lastData) render(lastData);
+  // ენაზე დამოკიდებული ელემენტები, რომლებიც render()-ს გარეთაა
+  try { checkStale(); } catch(e){}
+  try { updateLocalClock(); } catch(e){}
+  // რადარის დაფარვის ღილაკი — მდგომარეობა _covLayer-ით დგინდება.
+  // markup-ის data-i18n="radar_cov_off" ჩართულ მდგომარეობას გადააწერდა,
+  // ამიტომ ტექსტი აქ ხელახლა ისმება.
+  const cov = document.getElementById('radar-cov');
+  if(cov) cov.textContent = window._covLayer
+    ? (lang==='eng' ? 'Coverage: on'  : 'დაფარვა: ჩართ.')
+    : (lang==='eng' ? 'Coverage: off' : 'დაფარვა: გამორთ.');
 }
 
 function toggleLang(){
@@ -1787,7 +1836,7 @@ loadData();
         maxZoom: 10, subdomains: 'abcd'
       }).addTo(radarMap);
       L.circleMarker(POTI, {radius:6, color:'#00dca0', fillColor:'#00dca0', fillOpacity:0.9, weight:2})
-        .addTo(radarMap).bindTooltip('ფოთი');
+        .addTo(radarMap).bindTooltip(currentLang==='eng' ? 'Poti' : 'ფოთი');
 
       // Coverage mask — აჩვენებს სად არის ნამდვილი რადარი (გამჭვირვალე) vs არა (შავი)
       // ეს გვეხმარება გავიგოთ ფოთის მონაცემი ნამდვილი რადარია თუ არა
