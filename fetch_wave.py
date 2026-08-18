@@ -65,17 +65,31 @@ TBILISI_TZ = timezone(timedelta(hours=4))   # UTC+4, DST არ აქვს
 
 # CMEMS-ის ცვლადების სტანდარტული მოკლე სახელები.
 # ჩვენს შიდა სახელებზე რუკა — მხოლოდ ის აიღება, რაც dataset-ში მართლა არსებობს.
+# ⚠ ყურადღება ორ ცვლადზე — მათი სახელები ინტუიციის საწინააღმდეგოა:
+#   VCMX = "Maximum crest trough wave height (Hc,max)"
+#          → standard_name: sea_surface_wave_maximum_height
+#          → სრული ტალღა ღრმულიდან მწვერვალამდე. ᲝᲞᲔᲠᲐᲪᲘᲣᲚᲐᲓ ᲔᲡ ᲒᲕᲭᲘᲠᲓᲔᲑᲐ.
+#   VMXL = "Height of the highest crest"
+#          → standard_name: sea_surface_wave_maximum_crest_height
+#          → მხოლოდ მწვერვალი საშუალო დონიდან ზემოთ (≈ ნახევარი).
+# პირველ ვერსიაში VMXL შეცდომით "wave_max_height"-ად იყო მონიშნული, რის
+# გამოც მაქსიმუმი Hs-ზე ნაკლები გამოდიოდა (0.16 vs 0.28) — ფიზიკურად შეუძლებელი.
 VAR_MAP = {
-    "VHM0":     "wave_height",      # მნიშვნელოვანი სიმაღლე Hs
-    "VTM10":    "wave_period",      # საშუალო პერიოდი (m-1/m0)
-    "VTPK":     "peak_period",      # პიკური პერიოდი
-    "VMDR":     "wave_direction",   # საიდან მოდის
-    "VHM0_SW1": "swell_height",     # პირველადი swell
+    "VHM0":      "wave_height",       # მნიშვნელოვანი სიმაღლე Hs
+    "VTM10":     "wave_period",       # საშუალო პერიოდი (m-1/m0)
+    "VTPK":      "peak_period",       # პიკური პერიოდი
+    "VMDR":      "wave_direction",    # საიდან მოდის
+    "VHM0_SW1":  "swell_height",      # პირველადი swell
     "VTM01_SW1": "swell_period",
-    "VMDR_SW1": "swell_direction",
-    "VHM0_WW":  "wind_wave_height", # ქარის ტალღა
-    "VTM01_WW": "wind_wave_period",
-    "VMXL":     "wave_max_height",  # მაქსიმალური ცალკეული ტალღა
+    "VMDR_SW1":  "swell_direction",
+    "VHM0_SW2":  "swell2_height",     # მეორეული swell — შავ ზღვაზე ხშირია
+    "VTM01_SW2": "swell2_period",
+    "VMDR_SW2":  "swell2_direction",
+    "VHM0_WW":   "wind_wave_height",  # ქარის ტალღა
+    "VTM01_WW":  "wind_wave_period",
+    "VMDR_WW":   "wind_wave_direction",
+    "VCMX":      "wave_max_height",   # Hc,max — სრული ტალღა (ოპერაციული)
+    "VMXL":      "wave_crest_height", # უმაღლესი მწვერვალი
 }
 
 # ─────────────────────────── დამხმარეები ───────────────────────────
@@ -258,6 +272,21 @@ def main() -> None:
     if max(heights) > 15.0:
         _keep_existing(f"არარეალური ტალღა ({max(heights)} მ) — უარვყოფთ")
         return
+
+    # ფიზიკური თანმიმდევრობა: Hmax ყოველთვის Hs-ზე დიდია (ტიპურად 1.5–2.0×).
+    # თუ ეს ირღვევა, სავარაუდოდ ცვლადი არასწორადაა მიბმული — გავაფრთხილოთ,
+    # მაგრამ ფაილი მაინც ჩავწეროთ (Hs თავისთავად სწორია).
+    pairs = [(h["wave_height"], h["wave_max_height"]) for h in payload["hourly"]
+             if h.get("wave_height") and h.get("wave_max_height")]
+    if pairs:
+        ratios = [mx / hs for hs, mx in pairs if hs > 0.05]
+        if ratios:
+            avg = sum(ratios) / len(ratios)
+            if avg < 1.2:
+                log.warning(f"⚠ Hmax/Hs = {avg:.2f} — მოსალოდნელია 1.5–2.0. "
+                            f"შესაძლოა ცვლადი არასწორადაა მიბმული.")
+            else:
+                log.info(f"Hmax/Hs = {avg:.2f} ✓")
 
     _write(payload)
     log.info(f"ტალღა: {min(heights)}–{max(heights)} მ ({len(heights)} საათი)")
