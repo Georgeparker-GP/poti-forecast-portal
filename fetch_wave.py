@@ -53,10 +53,30 @@ DATASET_ID = "cmems_mod_blk_wav_anfc_2.5km_PT1H-i"
 POTI_LAT = 42.15
 POTI_LON = 41.67
 
-# ბადე 0.025° — ±0.15° დაახლოებით ±12 კმ, ანუ ~12×12 უჯრა.
-# საკმარისად პატარაა სწრაფი წამოღებისთვის და საკმარისად დიდი,
-# რომ ხმელეთის ნიღბის შემთხვევაში ზღვის უჯრა მოიძებნოს.
+# ─── საკონტროლო წერტილი: ყულევი ───
+# ფოთიდან ~13.8 კმ ჩრდილოეთით, ანუ 2.5 კმ ბადეზე 5-6 უჯრით დაშორებული.
+#
+# ორი მიზეზი:
+#  1. ფოთის უჯრა პორტიდან 0.4 კმ-შია — მდინარის შესართავთან, ძალიან
+#     არაღრმა წყალში. ყულევის წერტილი "სუფთაა" და საკონტროლოდ გამოდგება:
+#     თუ ორივე თანხმდება, ფოთის მნიშვნელობა სანდოა.
+#  2. დაკვირვებით MTA-ს საშტორმო გაფრთხილებები ფოთსა და ყულევზე
+#     ფაქტობრივად იდენტურია. Copernicus-ის 2.5 კმ ბადე გვეტყვის, ეს
+#     ნამდვილი ფიზიკური მსგავსებაა თუ ბიულეტენის ზონირების სიმსხვილე.
+KULEVI_LAT = 42.2726
+KULEVI_LON = 41.6413
+
+SITES = {
+    "poti":   (POTI_LAT, POTI_LON),
+    "kulevi": (KULEVI_LAT, KULEVI_LON),
+}
+
+# ბადე 0.025°. bbox ორივე წერტილს უნდა ფარავდეს მარაგით — 42.00–42.42.
 BBOX = 0.15
+BBOX_LAT_MIN = min(POTI_LAT, KULEVI_LAT) - BBOX
+BBOX_LAT_MAX = max(POTI_LAT, KULEVI_LAT) + BBOX
+BBOX_LON_MIN = min(POTI_LON, KULEVI_LON) - BBOX
+BBOX_LON_MAX = max(POTI_LON, KULEVI_LON) + BBOX
 
 FORECAST_HOURS = 48
 OUTPUT_FILE = pathlib.Path("wave_copernicus.json")
@@ -129,7 +149,7 @@ def _keep_existing(reason: str) -> None:
 # ─────────────────────────── ძირითადი ლოგიკა ───────────────────────────
 
 
-def pick_sea_point(ds, varname: str):
+def pick_sea_point(ds, varname: str, tgt_lat: float, tgt_lon: float, label: str = ""):
     """ფოთთან უახლოესი *ზღვის* უჯრის კოორდინატები.
 
     ხმელეთზე მოდელი NaN-ს აბრუნებს. უბრალო `sel(method="nearest")` შეიძლება
@@ -151,8 +171,8 @@ def pick_sea_point(ds, varname: str):
     lo = lons[None, :] if vals.ndim == 2 else lons
 
     # კოსინუს-კორექცია გრძედზე (42° განედზე ≈ 0.74)
-    dlat = (la - POTI_LAT)
-    dlon = (lo - POTI_LON) * np.cos(np.deg2rad(POTI_LAT))
+    dlat = (la - tgt_lat)
+    dlon = (lo - tgt_lon) * np.cos(np.deg2rad(tgt_lat))
     dist = np.sqrt(dlat ** 2 + dlon ** 2)
     dist = np.where(valid, dist, np.inf)
 
@@ -160,22 +180,20 @@ def pick_sea_point(ds, varname: str):
     p_lat = float(lats[idx[0]])
     p_lon = float(lons[idx[1]])
     km = float(np.min(dist)) * 111.0
-    log.info(f"ზღვის უჯრა: {p_lat:.4f}N {p_lon:.4f}E (ფოთიდან ~{km:.1f} კმ)")
+    log.info(f"ზღვის უჯრა [{label}]: {p_lat:.4f}N {p_lon:.4f}E (~{km:.1f} კმ)")
     return p_lat, p_lon, km
 
 
-def build_payload(ds, wanted: dict) -> dict:
-    """xarray dataset → პორტალის ფორმატის JSON."""
+def extract_site(ds, wanted: dict, tgt_lat: float, tgt_lon: float, label: str):
+    """ერთი წერტილის საათობრივი სერია."""
     import numpy as np
     import pandas as pd
 
-    p_lat, p_lon, km = pick_sea_point(ds, "VHM0")
-
+    p_lat, p_lon, km = pick_sea_point(ds, "VHM0", tgt_lat, tgt_lon, label)
     point = ds.sel(latitude=p_lat, longitude=p_lon, method="nearest")
 
     times = pd.to_datetime(point["time"].values)
-    now_utc = datetime.now(timezone.utc)
-    cutoff = now_utc + timedelta(hours=FORECAST_HOURS)
+    cutoff = datetime.now(timezone.utc) + timedelta(hours=FORECAST_HOURS)
 
     series = {ours: np.asarray(point[cm].values, dtype="float64")
               for cm, ours in wanted.items()}
@@ -193,21 +211,63 @@ def build_payload(ds, wanted: dict) -> dict:
             row[name] = _r(arr[i]) if i < len(arr) else None
         hourly.append(row)
 
-    return {
+    info = {"grid_lat": round(p_lat, 4), "grid_lon": round(p_lon, 4),
+            "grid_dist_km": round(km, 1), "hours": len(hourly)}
+    return hourly, info
+
+
+def build_payload(ds, wanted: dict) -> dict:
+    """xarray dataset → პორტალის ფორმატის JSON.
+
+    სტრუქტურა უკუთავსებადია: `hourly` კვლავ ფოთია, ამიტომ fetch.py-ის
+    წამკითხავს ცვლილება არ სჭირდება. ყულევი ცალკე ბლოკშია.
+    """
+    now_utc = datetime.now(timezone.utc)
+
+    poti_h, poti_i = extract_site(ds, wanted, POTI_LAT, POTI_LON, "ფოთი")
+
+    # ყულევი — საკონტროლო წერტილი. მისი ჩავარდნა ფოთს არ უნდა შეეხოს.
+    kulevi_h, kulevi_i = [], {}
+    try:
+        kulevi_h, kulevi_i = extract_site(ds, wanted, KULEVI_LAT, KULEVI_LON, "ყულევი")
+    except Exception as exc:
+        log.warning(f"ყულევის წერტილი ვერ ამოიღო: {exc}")
+
+    payload = {
         "meta": {
             "source": "Copernicus Marine BLKSEA_ANALYSISFORECAST_WAV_007_003",
             "dataset_id": DATASET_ID,
             "model": "WAM Cycle 6 · 2.5 km · shallow-water",
             "generated": datetime.now(TBILISI_TZ).strftime("%Y-%m-%d %H:%M"),
             "generated_utc": now_utc.isoformat(timespec="seconds"),
-            "grid_lat": round(p_lat, 4),
-            "grid_lon": round(p_lon, 4),
-            "grid_dist_km": round(km, 1),
             "timezone": "Asia/Tbilisi (UTC+4)",
-            "hours": len(hourly),
+            "site": "poti",
+            **poti_i,
         },
-        "hourly": hourly,
+        "hourly": poti_h,
     }
+
+    if kulevi_h:
+        payload["kulevi"] = {"meta": {"site": "kulevi", **kulevi_i}, "hourly": kulevi_h}
+
+        # ორი წერტილის შედარება — ეს არის მთელი მიზანი.
+        # თუ სხვაობა მცირეა, MTA-ს ერთიანი ზონა ფიზიკურად გამართლებულია.
+        pairs = [(p.get("wave_height"), k.get("wave_height"))
+                 for p, k in zip(poti_h, kulevi_h)
+                 if p.get("wave_height") and k.get("wave_height")]
+        if pairs:
+            diffs = [abs(kv - pv) for pv, kv in pairs]
+            rels = [abs(kv - pv) / pv * 100 for pv, kv in pairs if pv > 0.05]
+            payload["meta"]["kulevi_vs_poti"] = {
+                "mean_abs_diff_m": round(sum(diffs) / len(diffs), 3),
+                "max_abs_diff_m": round(max(diffs), 3),
+                "mean_rel_diff_pct": round(sum(rels) / len(rels), 1) if rels else None,
+            }
+            log.info(f"ყულევი vs ფოთი: საშ. სხვაობა {sum(diffs)/len(diffs):.3f} მ "
+                     f"({(sum(rels)/len(rels) if rels else 0):.1f}%), "
+                     f"მაქს {max(diffs):.3f} მ")
+
+    return payload
 
 
 def main() -> None:
@@ -231,10 +291,10 @@ def main() -> None:
             dataset_id=DATASET_ID,
             username=user,
             password=pwd,
-            minimum_latitude=POTI_LAT - BBOX,
-            maximum_latitude=POTI_LAT + BBOX,
-            minimum_longitude=POTI_LON - BBOX,
-            maximum_longitude=POTI_LON + BBOX,
+            minimum_latitude=BBOX_LAT_MIN,
+            maximum_latitude=BBOX_LAT_MAX,
+            minimum_longitude=BBOX_LON_MIN,
+            maximum_longitude=BBOX_LON_MAX,
             start_datetime=(now_utc - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%S"),
             end_datetime=(now_utc + timedelta(hours=FORECAST_HOURS + 2)).strftime("%Y-%m-%dT%H:%M:%S"),
         )
