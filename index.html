@@ -117,16 +117,16 @@ body {
   inset:0;
   z-index:0;
   pointer-events:none;
-  opacity:0.55;
-  background-image:
-    repeating-radial-gradient(
-      ellipse 150% 100% at 12% 42%,
-      transparent 0 46px,
-      var(--chart-ink) 46px 47px,
-      transparent 47px 94px);
-  -webkit-mask-image: linear-gradient(160deg, #000 0%, rgba(0,0,0,.55) 38%, transparent 78%);
-          mask-image: linear-gradient(160deg, #000 0%, rgba(0,0,0,.55) 38%, transparent 78%);
+  opacity:0.22;
+  background-image:url('main-image-poti.webp');
+  background-size:cover;
+  background-position:center 30%;
+  transition:opacity .4s ease;
 }
+/* light თემაზე მუქი ინდუსტრიული ფოტო არ ჯდება — პანელებს შორის
+   ღრეჩოებში ბუნდოვან ლაქებად გამოსჭვივის. სუფთა UI-სთვის ვირჩევთ
+   მხოლოდ ამბიენტურ ტონს, ფოტოს გარეშე. */
+[data-theme="light"] .bg-photo { opacity:0; }
 /* ამბიენტური ტონი: სტატუსის ფერი ძალიან სუსტად. მდგომარეობას
    პერიფერიული მხედველობით ხვდები, სანამ წაიკითხავ — ნავსადგურის
    სასიგნალო შუქების ლოგიკა. */
