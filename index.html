@@ -630,7 +630,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div class="card-value" id="c-vis">--</div>
         <div class="card-unit" data-i18n="u_km">კმ</div>
       </div>
-      <div class="card-sub"><span data-i18n="vis_sub">ნისლის ზღვარი: 0.1 კმ</span></div>
+      <div class="card-sub"><span data-i18n="vis_sub">ნისლის ზღვარი: 1.0 კმ</span></div>
       <div id="c-vis-note" style="font-size:.66rem;line-height:1.25;margin-top:6px;color:var(--sb);min-height:.9rem"></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
     </div>
@@ -800,12 +800,17 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 
 <script>
 // ═══ CONSTANTS ═══
+// ⚠ ეს მნიშვნელობები ᲖᲣᲡᲢᲐᲓ უნდა ემთხვეოდეს fetch.py-ის THRESHOLDS-ს.
+// 2026-08-22-მდე ორი მხარე განსხვავებულ ცხრილს იყენებდა და ერთსა და იმავე
+// საათზე ორი სხვადასხვა ვერდიქტი გამოდიოდა.
 const THR = {
-  barge:     10.0,   // ბორნის შეზღუდვა
-  vessel:    17.0,   // გემების მანევრირება
-  suspended: 21.5,   // ამწე + გემების გასვლა
-  wave:       2.0,   // ტალღა → გემების გასვლა
-  fog:        0.1,   // ხილვადობა → გასვლა
+  barge:     10.0,   // ბორნის მანევრირება შეზღუდულია   (MTA)
+  vessel:    17.0,   // გემების მანევრირება შეზღუდულია  (MTA)
+  suspended: 21.5,   // ამწეები + გემების გასვლა        (MTA)
+  // ტალღა განზრახ დაწეულია 2.0-დან: დადასტურებულია, რომ ტალღის კონსენსუსი
+  // სისტემატურად ანაკლებს (26 ივლ: 1.09 მ vs რეალური 1.55–2.50 მ).
+  wave:       1.50,
+  fog:        1.0,   // ხილვადობა ≤1 კმ — საოპერაციო ზღვარი
 };
 
 const COMPASS = ['N','NE','E','SE','S','SW','W','NW'];
@@ -1125,9 +1130,13 @@ function render(d) {
   if (wvCard) wvCard.classList.toggle('estimated', wvEst);
   renderWaveSplit(c);
 
+  // THR.fog ახლა 1.0-ია (backend-თან შესაბამისობისთვის). ძველი 'warn' შტო
+  // `vis<=1` იყო, რაც ახლა danger-ს ემთხვევა და მიუწვდომელი გახდებოდა —
+  // ამიტომ გაფრთხილების საფეხური 3 კმ-ზეა: ნისლი ახლოვდება.
+  const VIS_WARN = 3.0;
   setCard('card-vis','c-vis', c.visibility_km,
-    vis<=THR.fog?'danger': vis<=1?'warn':'ok');
-  setBar('bar-vis', Math.min(vis/15,1), vis<=THR.fog?'rd': vis<=1?'yw':'gn');
+    vis<=THR.fog?'danger': vis<=VIS_WARN?'warn':'ok');
+  setBar('bar-vis', Math.min(vis/15,1), vis<=THR.fog?'rd': vis<=VIS_WARN?'yw':'gn');
 
   // ხილვადობა მინიმუმის ტიპის სიდიდეა — შეწონილი საშუალო რისკს ანაკლებს,
   // ამიტომ უარესი წყარო ცალკე ჩანს.
@@ -1784,7 +1793,7 @@ const I18N = {
   lbl_temp:      {geo:'ჰაერის ტემპ.', eng:'Air Temp.'},
   lbl_rain:      {geo:'ნალექი', eng:'Precipitation'},
   lbl_vis:       {geo:'ხილვადობა', eng:'Visibility'},
-  vis_sub:       {geo:'ნისლის ზღვარი: 0.1 კმ', eng:'Fog threshold: 0.1 km'},
+  vis_sub:       {geo:'ნისლის ზღვარი: 1.0 კმ', eng:'Fog threshold: 1.0 km'},
   gusts_lbl:     {geo:'დაქროლვა:', eng:'Gusts:'},
   lbl_compass:   {geo:'ქარის მიმართულება', eng:'Wind Direction'},
   compass_conv:  {geo:'მეტეოროლ. კონვ.', eng:'Meteorol. conv.'},
