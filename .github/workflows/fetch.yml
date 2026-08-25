@@ -33,6 +33,17 @@ jobs:
           FORCE_REFRESH: ${{ github.event_name == 'workflow_dispatch' }}
         run: python fetch.py
 
+      # ── MTA ბიულეტენების მიღება Gmail-იდან ──
+      # Power Automate MTA-ს წერილს Gmail-ზე გადმოაგზავნის დანართით;
+      # ეს ბიჯი IMAP-ით იღებს PDF-ებს mta_bulletins/-ში.
+      # credentials-ის გარეშე ჩუმად გამოტოვდება.
+      - name: Fetch MTA bulletins from Gmail
+        continue-on-error: true
+        env:
+          GMAIL_USER:         ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python fetch_mta.py
+
       # ── MTA ბიულეტენების ingest (observation-only) ──
       # ცალკე კალაპოტი — data.json-ს / კონსენსუსს არ ეხება.
       # continue-on-error: MTA-ს ნებისმიერი პრობლემა (ცუდი PDF, ფორმატის
