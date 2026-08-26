@@ -423,9 +423,19 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 .compass-row span{color:var(--text-strong);font-weight:600;}
 .recap-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--ov1);}
 .recap-row:last-child{border-bottom:none;}
-.recap-time{flex:0 0 44px;color:var(--sb);font-family:'JetBrains Mono',monospace;}
-.recap-metrics{flex:1;display:flex;gap:12px;color:var(--tx);font-family:'JetBrains Mono',monospace;flex-wrap:wrap;}
-.recap-metrics b{color:var(--tl);font-weight:600;}
+/* საათი გამოკვეთილია — რიგებს ერთმანეთისგან მკვეთრად მიჯნავს */
+.recap-time{flex:0 0 48px;color:var(--tx);font-family:'JetBrains Mono',monospace;
+  font-size:13px;font-weight:700;letter-spacing:-0.02em;}
+.recap-metrics{flex:1;display:flex;gap:11px;color:var(--sb);font-family:'JetBrains Mono',monospace;flex-wrap:wrap;}
+/* ეტიკეტები და ერთეულები მკრთალდება — ციფრები წინ გამოდის */
+.recap-metrics .rl{font-size:10px;color:var(--mu);}
+.recap-metrics .ru{font-size:10px;color:var(--mu);}
+.recap-metrics b{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;}
+/* ზღვრებთან მიმართებაში — 1.33 და 15.0 ვიზუალურად აღარ ერთია */
+.recap-metrics b.v-ok  {color:var(--tl);}
+.recap-metrics b.v-warn{color:var(--yw);}
+.recap-metrics b.v-alert{color:var(--or);}
+.recap-metrics b.v-crit{color:var(--rd);}
 </style>
 </head>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -622,7 +632,6 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div class="card-unit">°C</div>
       </div>
       <div class="card-sub" id="c-feelslike"></div>
-      <div class="card-sub" id="c-humidity" style="margin-top:2px"></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-airtemp" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-rain">
@@ -650,16 +659,10 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 
   <!-- დეტალური ბარათები (ქვედა რიგი) -->
   <div class="cards-grid rel">
-    <!-- <span data-i18n="recap_title_full">მომდევნო 6 საათის კონსენსუს რეკაპი</span> -->
-    <div class="card teal" style="grid-column:span 2">
-      <div class="card-label"><span data-i18n="recap_title">მომდევნო 6 საათის რეკაპი</span></div>
-      <div id="recap-6h" style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
-        <div style="font-size:11px;color:var(--mu)" data-i18n="loading">იტვირთება...</div>
-      </div>
-    </div>
-
-    <!-- ქარის ვარდი -->
-    <div class="card teal" style="grid-column:span 2">
+    <!-- ქარის ვარდი + ტენიანობა (გადაადგილდა მარცხნივ 2026-08-26).
+         კომპასის ქვემოთ აქამდე მკვდარი ადგილი იყო — ეხლა ტენიანობის
+         ბლოკია. -->
+    <div class="card teal" style="grid-column:span 2;display:flex;flex-direction:column;">
       <div class="card-label"><span data-i18n="lbl_compass">ქარის მიმართულება</span></div>
       <div class="wind-rose-wrap" style="justify-content:center;gap:24px;">
         <svg id="compass-svg" width="130" height="130" viewBox="0 0 110 110">
@@ -689,6 +692,39 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           <div class="compass-row" id="c-onshore" style="font-size:13px;"></div>
           <div class="compass-row" id="c-trend" style="font-size:12px;"></div>
         </div>
+      </div>
+
+      <!-- ტენიანობა — კომპასის ქვემოთ გათავისუფლებულ ადგილში.
+           ინფორმაციულია — ზღვარი არ აქვს, რადგან ჰიგროსკოპული
+           ტვირთისთვის კრიტერიუმი ტვირთის დოკუმენტაციიდან მოდის. -->
+      <!-- margin-top:auto — ბლოკი პანელის ბოლოში ეკვრის, რაც კომპასის
+           ქვემოთ არსებულ ცარიელ ადგილს ავსებს -->
+      <div style="height:1px;background:var(--br);margin-top:auto;"></div>
+      <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;padding-top:14px;">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--mu);font-weight:600;"
+               data-i18n="lbl_humidity">ტენიანობა</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;
+                      color:var(--text-strong);line-height:1.1;margin-top:3px;">
+            <span id="c-hum-val">--</span><span style="font-size:14px;color:var(--mu)">%</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--mu);font-weight:600;"
+               data-i18n="lbl_dewpoint">ნამის წერტილი</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;
+                      color:var(--tl);line-height:1.1;margin-top:3px;">
+            <span id="c-dew-val">--</span><span style="font-size:14px;color:var(--mu)">°C</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- მომდევნო 6 საათი — ცენტრში -->
+    <div class="card teal" style="grid-column:span 2">
+      <div class="card-label"><span data-i18n="recap_title">მომდევნო 6 საათის რეკაპი</span></div>
+      <div id="recap-6h" style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
+        <div style="font-size:11px;color:var(--mu)" data-i18n="loading">იტვირთება...</div>
       </div>
     </div>
 
@@ -1249,18 +1285,12 @@ function render(d) {
   // ჰიგროსკოპული ტვირთისთვის (კარბამიდი და სხვ.) კრიტიკული ფარდობითი
   // ტენიანობა ტვირთის დოკუმენტაციიდან და IMSBC კოდექსიდან მოდის,
   // გადაწყვეტილება კი კაპიტნისაა — პორტალი მხოლოდ მონაცემს აწვდის.
-  const humEl = document.getElementById('c-humidity');
-  if (humEl) {
-    const hv = c.humidity, dp = c.dew_point;
-    const ENG = currentLang === 'eng';
-    if (hv != null) {
-      let t = (ENG ? 'Humidity: ' : 'ტენიანობა: ') + Math.round(hv) + '%';
-      if (dp != null) t += (ENG ? '  ·  dew pt ' : '  ·  ნამის წ. ') + fmt(dp, 1) + '°C';
-      humEl.textContent = t;
-    } else {
-      humEl.textContent = '';
-    }
-  }
+  // კომპასის პანელის ტენიანობა
+  const hvEl = document.getElementById('c-hum-val');
+  const dvEl = document.getElementById('c-dew-val');
+  if (hvEl) hvEl.textContent = c.humidity != null ? Math.round(c.humidity) : '--';
+  if (dvEl) dvEl.textContent = c.dew_point != null ? fmt(c.dew_point, 1) : '--';
+
 
 
   // compass
@@ -1351,17 +1381,28 @@ function render(d) {
     if (!next6.length) {
       recapEl.innerHTML = `<div style="font-size:11px;color:var(--mu)">${_t('no_data')}</div>`;
     } else {
+      // ქარის მნიშვნელობა იღებება ზღვრებთან მიმართებაში — ოპერატორი
+      // ერთი შეხედვით ხედავს, რომელი საათი უახლოვდება ლიმიტს.
+      const wLvl = v => v >= THR.suspended ? 'v-crit'
+                      : v >= THR.vessel    ? 'v-alert'
+                      : v >= THR.barge     ? 'v-warn' : 'v-ok';
+      const vLvl = v => v >= THR.wave ? 'v-crit' : v >= THR.wave*0.7 ? 'v-warn' : 'v-ok';
+      const rLvl = v => v >= 5 ? 'v-alert' : v >= 2 ? 'v-warn' : 'v-ok';
+      const ENG = currentLang==='eng';
+
       recapEl.innerHTML = next6.map(h=>{
         const t = (h.time||'').slice(11,16) || '--:--';
-        const pills = currentLang==='eng' ? PILL_ENG : PILL;
+        const pills = ENG ? PILL_ENG : PILL;
         const pill = pills[h.status] || '';
+        const ws = h.wind_speed||0, wg = h.wind_gusts||0;
+        const wv = h.wave_height||0, rn = h.precipitation||0;
         return `<div class="recap-row">
           <span class="recap-time">${t}</span>
           <span class="recap-metrics">
-            <span>${currentLang==='eng'?'Wind':'ქარი'} <b>${fmt(h.wind_speed)}</b></span>
-            <span>${currentLang==='eng'?'Gust':'დაქრ.'} <b>${fmt(h.wind_gusts)}</b></span>
-            <span>${currentLang==='eng'?'Wave':'ტალღა'} <b>${fmt(h.wave_height)}</b>${currentLang==='eng'?'m':'მ'}</span>
-            <span>${currentLang==='eng'?'Rain':'ნალ.'} <b>${fmt(h.precipitation)}</b></span>
+            <span><span class="rl">${ENG?'wind':'ქარი'}</span> <b class="${wLvl(ws)}">${fmt(ws)}</b></span>
+            <span><span class="rl">${ENG?'gust':'დაქრ.'}</span> <b class="${wLvl(wg)}">${fmt(wg)}</b></span>
+            <span><span class="rl">${ENG?'wave':'ტალღა'}</span> <b class="${vLvl(wv)}">${fmt(wv)}</b><span class="ru">${ENG?'m':'მ'}</span></span>
+            <span><span class="rl">${ENG?'rain':'ნალ.'}</span> <b class="${rLvl(rn)}">${fmt(rn)}</b></span>
           </span>
           ${pill}
         </div>`;
@@ -1901,6 +1942,8 @@ const I18N = {
   theme_ttl:     {geo:'თემის შეცვლა', eng:'Switch theme'},
   no_data:       {geo:'მონაცემები მიუწვდომელია', eng:'Data unavailable'},
   no_week_data:  {geo:'კვირის მონაცემები მიუწვდომელია', eng:'Weekly data unavailable'},
+  lbl_humidity:  {geo:'ტენიანობა', eng:'Humidity'},
+  lbl_dewpoint:  {geo:'ნამის წერტილი', eng:'Dew point'},
   intro_main:    {geo:'ფოთის პორტი', eng:'Port of Poti'},
   load_fail:     {geo:'data.json ვერ ჩაიტვირთა', eng:'Failed to load data.json'},
   offline:       {geo:'ოფლაინი', eng:'offline'},
