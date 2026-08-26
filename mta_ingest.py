@@ -92,10 +92,14 @@ def _portal_at(parsed: dict):
         parts = [x.strip() for x in date_s.split("/")]
         if len(parts) == 3:
             day = int(parts[0])
+            # ორი ფორმატი: "26 / აგვისტო / 2026" (ფაქტიური/პროგნოზი)
+            # და "26/08/2026" (საშტორმოს გაუქმება).
             mon = GEO_MONTHS.get(parts[1])
+            if mon is None and parts[1].isdigit():
+                mon = int(parts[1])
             year = int(parts[2].replace("წ.", "").strip())
             hh = int(time_s.split(":")[0])
-            if mon:
+            if mon and 1 <= mon <= 12:
                 target = f"{year:04d}-{mon:02d}-{day:02d}T{hh:02d}:00"
     except Exception:
         target = None
@@ -466,7 +470,9 @@ def main():
             if fc_cmp:
                 entry["vs_portal_forecast"] = fc_cmp
 
-        if parsed.get("type") in ("actual", "storm_warning"):
+        # storm_cancel შეიცავს ფაქტიურ ამინდს — დამატებითი ground truth
+        # წერტილი ორ რეგულარულ ფაქტიურ ბიულეტენს გარდა.
+        if parsed.get("type") in ("actual", "storm_warning", "storm_cancel"):
             portal, portal_time, exact = _portal_at(parsed)
             if portal:
                 entry["vs_portal"] = _compare_to_portal(parsed, portal)
