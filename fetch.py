@@ -25,7 +25,7 @@
   TELEGRAM_CHAT_ID     ← შენი chat ID
 """
 
-import json, math, os, logging, time, sys, pathlib
+import json, math, os, logging, time, sys, pathlib, re
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -67,19 +67,37 @@ SQUALL_GUST_FACTOR   = 8.0   # WMO: gusts − wind_speed ≥ 8 მ/წმ
 SQUALL_DELTA         = 6.0   # Delta T: gusts[next] − gusts[now] ≥ 6 მ/წმ
 SQUALL_ABS           = 12.0  # Absolute: gusts[next] ≥ 12 მ/წმ (warning ზღვარი)
 SQUALL_PRECIP        = 2.0   # Convective: precip[next] ≥ 2 მმ/სთ
+# წნევის ვარდნა — შკვალის კლასიკური მაუწყებელი.
+# მნიშვნელოვანია ტენდენცია, არა აბსოლუტური მნიშვნელობა:
+# საპორტო ოპერაციებზე თავად წნევა გავლენას არ ახდენს.
+SQUALL_PRESSURE_DROP = 1.5   # წნევის ვარდნა ≥ 1.5 hPa ერთ საათში
 STORMGLASS_CACHE    = "stormglass_cache.json"
 YR_NO_CACHE         = "yr_cache.json"
 STORMGLASS_INTERVAL = 3
 YR_NO_INTERVAL      = 1   # yr.no ყოველ საათში განახლდება
 
+# ═══ საოპერაციო ზღვრები — MTA-ს ნამდვილი ლიმიტები ═══
+#
+# 2026-08-22 ცვლილება. აქამდე ზღვრები "კალიბრირებული" იყო 0.82 კოეფიციენტით
+# (21.5 × 0.82 = 17.5), რაც კონსენსუსის ანაკლებას უნდა დაებალანსებინა.
+# ორი პრობლემა:
+#   1. backend-ს `vessel` საფეხური საერთოდ არ ჰქონდა — 17.5-ს ზემოთ ყველაფერი
+#      პირდაპირ `suspended`-ში ვარდებოდა. 17.7 მ/წმ დაქროლვა "საოპერაციო
+#      შეჩერებად" ცხადდებოდა, მაშინ როცა MTA-ს მიხედვით ეს გემების
+#      მანევრირების შეზღუდვაა.
+#   2. დაფარული ზღვარი გაუმჭვირვალეა: პორტალზე ეწერა "≥21.5", ირთვებოდა 17.7-ზე.
+#
+# ახალი პრინციპი: ზღვრები = MTA-ს ოფიციალური ლიმიტები, უცვლელად.
+# ანაკლების პრობლემა უნდა გადაწყდეს გაზომვის დონეზე (მოდელების კალიბრაცია),
+# და არა ზღვრების ჩუმი დაწევით.
 THRESHOLDS = {
-    # cell_selection="sea"-ის შემდეგ ჩვენი კონსენსუსი პიკ-გასტებს ~80-85%-ზე "ხედავს"
-    # (MTA 27-28 ივნ: real gusts ~17-18, ჩვენი peak: 14.2 → კოეფ. ~0.82).
-    # ამიტომ ზღვრები კალიბრირებულია:  actual_limit × 0.82 ≈ our_threshold
-    "wind_speed":  12.0,   # 15.0 × 0.82 ≈ 12.3 — ყვითელი ზონა (ბორანი ≥10 MTA)
-    "wind_gusts":  17.5,   # 21.5 × 0.82 ≈ 17.6 — წითელი ზონა (გემ.გასვლა ≥21.5 MTA)
-    "wave_height":  1.50,  # უცვლელი — Marine API კარგად ახდენს ტალღის კალიბრაციას
-    "visibility":   1.0,   # უცვლელი
+    "wind_barge":     10.0,   # ბორნის მანევრირება შეზღუდულია
+    "wind_vessel":    17.0,   # გემების მანევრირება შეზღუდულია
+    "wind_suspended": 21.5,   # ამწეები + გემების გასვლა შეჩერებულია
+    "wave_height":     1.50,  # ტალღა → შეჩერება. დაწეულია 2.0-დან განზრახ:
+                              # დადასტურებულია, რომ ტალღის კონსენსუსი
+                              # სისტემატურად ანაკლებს (იხ. observations.md).
+    "visibility":      1.0,   # კრიტიკული ნისლი
 }
 
 BASE_WEIGHTS = {
@@ -155,8 +173,14 @@ def fetch_open_meteo_marine_daily():
 def fetch_open_meteo_atmosphere(model: str):
     params = {
         "latitude": LOCATION["lat"], "longitude": LOCATION["lon"],
+        # relative_humidity_2m / dew_point_2m — ჰიგროსკოპული ტვირთისთვის
+        # (კარბამიდი და სხვა სასუქები). ზღვარი განზრახვედ არ არის
+        # დაძებნილი: კონკრეტული მნიშვნელობა ტვირთის დოკუმენტაციიდან
+        # და IMSBC კოდექსიდან მოდის, გადაწყვეტილება კი კაპიტნისაა.
+        # surface_pressure — შკვალის დეტექტორისთვის (ტენდენცია, არა აბს.).
         "hourly": "wind_speed_10m,wind_gusts_10m,wind_direction_10m,"
-                  "temperature_2m,apparent_temperature,precipitation,visibility,weather_code",
+                  "temperature_2m,apparent_temperature,precipitation,visibility,weather_code,"
+                  "relative_humidity_2m,dew_point_2m,surface_pressure",
         "wind_speed_unit": "ms",
         "forecast_days": 3,           # 72h ქაჩავს, 48h გამოვიყენებთ
         "timezone": LOCATION["timezone"],
@@ -455,6 +479,9 @@ def parse_open_meteo_atmosphere(raw, hours=FORECAST_HOURS):
             "precipitation":  _safe(h["precipitation"], i),
             "visibility_km":  _safe(h["visibility"], i, scale=0.001),
             "weather_code":   _safe(h.get("weather_code", []), i, default=0),
+            "humidity":       _safe(h.get("relative_humidity_2m", []), i),
+            "dew_point":      _safe(h.get("dew_point_2m", []), i),
+            "pressure":       _safe(h.get("surface_pressure", []), i),
             "air_temp":       _safe(h.get("temperature_2m", []), i, default=None),
             "feels_like":     _safe(h.get("apparent_temperature", []), i, default=None),
         }
@@ -807,6 +834,24 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         _vis_all = [v for v, _ in _vis_pool]
         visibility_min = min(_vis_all) if _vis_all else visibility
 
+        # ── ტენიანობა / ნამის წერტილი / წნევა ──
+        # მხოლოდ ინფორმაციულია — სტატუსს არ ცვლის.
+        humidity   = _wavg(atmo_pool, i, "humidity")
+        dew_point  = _wavg(atmo_pool, i, "dew_point")
+        pressure   = _wavg(atmo_pool, i, "pressure")
+
+        # ჭექა-ქუხილი: WMO-ს კოდები 95 (ჭექა-ქუხილი),
+        # 96 და 99 (სეტყვით). წესი: რომელიმე წყარომაც დააფიქსიროს,
+        # ვაღიარებთ — ამწესთან დაკავშირებული რისკი ძალიან მაღალია
+        # და გამოტოვება უფრო ძვირია, ვიდრე ცრუ გაფრთხილება.
+        _tstorm = False
+        for src, _w in atmo_pool:
+            if i < len(src) and src[i]:
+                wc = src[i].get("weather_code")
+                if wc in (95, 96, 99):
+                    _tstorm = True
+                    break
+
         # ტალღა (Marine, Stormglass — Windy აქ აღარ მონაწილეობს)
         wave_src = []
         if marine and i < len(marine) and marine[i].get("wave_height", 0) > 0:
@@ -892,6 +937,10 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "precip_agreement": precip_agreement,
             "visibility_km": _r(visibility),
             "visibility_min": _r(visibility_min),
+            "humidity":       _r(humidity, 0) if humidity else None,
+            "dew_point":      _r(dew_point, 1) if dew_point else None,
+            "pressure":       _r(pressure, 1) if pressure else None,
+            "thunderstorm":   _tstorm,
             "vis_estimated": vis_estimated,
             "wave_height": _r(wave_h),
             "wave_estimated": wave_estimated,
@@ -1048,6 +1097,77 @@ def load_copernicus():
         return None
 
 
+MTA_LOG_FILE = "mta_log.json"
+
+
+def load_mta_advisory():
+    """MTA-ს სინოპტიკოსის შენიშვნა — მოქმედი ფანჯრით.
+
+    არის ერთადერთი რამ, რაც მოდელს პრინციპში ვერ აწარმოებს:
+    სინოპტიკოსის თვისებრივი შეფასება ("მოსალოდნელია ელჭექა",
+    "ადგილობრივი გაძლიერება" და სხვ.). კონვექციურ მოვლენებზე,
+    სადაც ჩვენს სისტემას სტრუქტურული ხარვეზი აქვს, ეს განსაკუთრებით
+    ძვირფასიანია.
+
+    ⚠ ეს პროგნოზია, არა გაზომვა. 2026-08-25-ის ღამის პროგნოზმა
+    ჭექა-ქუხილი იწინასწარმეტყველა, რომელიც არ მოვიდა. ამიტომ
+    პორტალზე ის სტატუსს არ ცვლის — მხოლოდ ინფორმაციულად აისახება.
+
+    აბრუნებს dict-ს ან None-ს.
+    """
+    try:
+        path = pathlib.Path(MTA_LOG_FILE)
+        if not path.exists():
+            return None
+        data = json.loads(path.read_text(encoding="utf-8"))
+        entries = data.get("entries") if isinstance(data, dict) else data
+        if not entries:
+            return None
+
+        now = datetime.now(TBILISI_TZ)
+
+        # ბოლოდან დაწყებული — პირველი ვალიდური შენიშვნა გვინდა
+        for e in reversed(entries):
+            if e.get("type") != "forecast":
+                continue
+
+            # მოქმედის ფანჯარა valid-იდან: "...26/08/ 2026 წ. 10:00 სთ-მდე"
+            valid = e.get("valid") or ""
+            ends = re.findall(r"(\d{1,2})/\s*(\d{1,2})/\s*(\d{4}).{0,14}?(\d{1,2})[:.](\d{2})", valid)
+            if not ends:
+                continue
+            d, mo, y, hh, mm = ends[-1]
+            try:
+                until = datetime(int(y), int(mo), int(d), int(hh), int(mm), tzinfo=TBILISI_TZ)
+            except Exception:
+                continue
+            if until <= now:
+                continue   # ვადაგასულია
+
+            poti = e.get("poti") or {}
+            notes = []
+            for period in ("day", "night"):
+                blk = poti.get(period) or {}
+                for k, v in blk.items():
+                    if k.endswith("_note") and v:
+                        txt = str(v).strip()
+                        if txt and txt not in notes:
+                            notes.append(txt)
+            if not notes:
+                continue
+
+            return {
+                "notes": notes,
+                "bulletin": e.get("bulletin_no"),
+                "valid_until": until.strftime("%Y-%m-%d %H:%M"),
+                "source": "MTA",
+            }
+        return None
+    except Exception as exc:
+        log.warning(f"MTA advisory წაკითხვა ჩავარდა ({exc})")
+        return None
+
+
 def _align_to(reference, source):
     """source-ს reference-ის დროის ღერძზე ასწორებს — დროის შტამპით, არა ინდექსით.
 
@@ -1115,42 +1235,72 @@ def _estimate_wave_from_wind(v, direction=None):
     return round(base * factor, 2)
 
 
+# სიმძიმის რიგი — შედარებისთვის. ყოველთვის ყველაზე მკაცრი პირობა იმარჯვებს.
+STATUS_RANK = {"operational": 0, "barge": 1, "vessel": 2, "suspended": 3}
+
+
 def _compute_status(wind, gusts, wave, vis):
-    alerts, crit, warn = [], False, False
-    if gusts >= THRESHOLDS["wind_gusts"] or wind >= THRESHOLDS["wind_gusts"]:
-        alerts.append(f"ქარის აფეთქება: {gusts} მ/წმ (ლიმიტი: {THRESHOLDS['wind_gusts']})")
-        crit = True
-    elif wind >= THRESHOLDS["wind_speed"] or gusts >= THRESHOLDS["wind_speed"]:
-        alerts.append(f"ქარის სიჩქარე: {wind} მ/წმ (ყვითელი ზონა)")
-        warn = True
-    if wave >= THRESHOLDS["wave_height"]:
+    """საოპერაციო სტატუსი — იდენტური index.html-ის computeStatus()-ისა.
+
+    კრიტიკული: ორივე მხარემ ერთი და იგივე ვერდიქტი უნდა გამოიტანოს.
+    აქამდე backend სამსაფეხურიან კიბეს იყენებდა, frontend — ოთხს, რის გამოც
+    ერთსა და იმავე საათზე ორი სხვადასხვა პასუხი ჩნდებოდა.
+
+    ქარისთვის აღებულია max(სიჩქარე, დაქროლვა) — დაქროლვა თითქმის ყოველთვის
+    მაღალია და სწორედ ის განსაზღვრავს ოპერაციულ რისკს.
+    """
+    alerts = []
+    max_wind = max(wind or 0, gusts or 0)
+    st = "operational"
+
+    def esc(new):
+        nonlocal st
+        if STATUS_RANK[new] > STATUS_RANK[st]:
+            st = new
+
+    if max_wind >= THRESHOLDS["wind_suspended"]:
+        alerts.append(f"ქარის აფეთქება: {gusts} მ/წმ (ლიმიტი: {THRESHOLDS['wind_suspended']})")
+        esc("suspended")
+    elif max_wind >= THRESHOLDS["wind_vessel"]:
+        alerts.append(f"ქარის აფეთქება: {gusts} მ/წმ (გემების ლიმიტი: {THRESHOLDS['wind_vessel']})")
+        esc("vessel")
+    elif max_wind >= THRESHOLDS["wind_barge"]:
+        alerts.append(f"ქარის სიჩქარე: {wind} მ/წმ (ბორნის ლიმიტი: {THRESHOLDS['wind_barge']})")
+        esc("barge")
+
+    if (wave or 0) >= THRESHOLDS["wave_height"]:
         alerts.append(f"ტალღის სიმაღლე: {wave} მ (ლიმიტი: {THRESHOLDS['wave_height']})")
-        crit = True
-    if vis <= THRESHOLDS["visibility"]:
+        esc("suspended")
+
+    if vis is not None and vis <= THRESHOLDS["visibility"]:
         alerts.append(f"ხილვადობა: {vis} კმ (კრიტიკული ნისლი)")
-        crit = True
-    if crit: return "suspended", alerts
-    if warn: return "warning",   alerts
-    return "operational", []
+        esc("suspended")
+
+    return st, alerts
 
 
 # ═══════════════════════════════════════════════════════════════
 #  5.  Telegram შეტყობინება
 # ═══════════════════════════════════════════════════════════════
 
-STATUS_EMOJI = {"operational": "✅", "warning": "⚠️", "suspended": "🚨"}
+STATUS_EMOJI = {"operational": "✅", "barge": "⚠️", "vessel": "🟠", "suspended": "🚨",
+                # უკუთავსებადობა: ძველი cache-ის ჩანაწერები
+                "warning": "⚠️"}
 STATUS_KA    = {"operational": "სტანდარტული რეჟიმი",
-                "warning":     "სიფრთხილე — ყვითელი ზონა",
-                "suspended":   "საოპერაციო შეჩერება"}
+                "barge":       "ბორნის მანევრირება შეზღუდულია",
+                "vessel":      "გემების მანევრირება შეზღუდულია",
+                "suspended":   "საოპერაციო შეჩერება",
+                "warning":     "სიფრთხილე — ყვითელი ზონა"}
 
 # რომელ გადასვლებზე ვაგზავნოთ
-NOTIFY_TRANSITIONS = {
-    ("operational", "warning"),
-    ("operational", "suspended"),
-    ("warning",     "suspended"),
-    ("suspended",   "warning"),
-    ("suspended",   "operational"),
-    ("warning",     "operational"),
+# ოთხსაფეხურიან კიბეზე ყველა გადასვლა მნიშვნელოვანია — როგორც გამკაცრება,
+# ისე შემსუბუქება. ცალკეული წყვილების ჩამოთვლის ნაცვლად: ნებისმიერი
+# ცვლილება, სადაც ორივე მდგომარეობა ცნობილია.
+_STATES = ("operational", "barge", "vessel", "suspended")
+NOTIFY_TRANSITIONS = {(a, b) for a in _STATES for b in _STATES if a != b} | {
+    # ძველი cache-იდან გადმოსვლა
+    ("warning", "operational"), ("warning", "barge"),
+    ("warning", "vessel"), ("warning", "suspended"),
 }
 
 
@@ -1218,6 +1368,8 @@ def send_telegram(output: dict):
         f"სიფრთხილე: <b>{s['warning_hours']}სთ</b>\n"
     )
 
+    text += _tstorm_str(c, output)
+
     if c["alerts"]:
         text += "⚡ " + " | ".join(c["alerts"]) + "\n"
 
@@ -1239,6 +1391,40 @@ def send_telegram(output: dict):
 
 DIGEST_HOURS          = {2, 5, 11, 14, 17, 23}   # 08:00/20:00 ცვლის რეპორტს ეთმობა
 DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პროგნოზის ფანჯარა
+
+
+# ნალექის “შესაძლებელია” პრეფიქსის ზღვარი.
+# → ზუსტად უნდა ემთხვეოდებოდეს index.html-ის `rAgr < 50` შემოწმებას.
+PRECIP_HEDGE_PCT = 50
+
+
+def _tstorm_str(c: dict, output: dict = None) -> str:
+    """ჭექა-ქუხილის გაფრთხილება — ორი დამოუკიდებელი წყაროდან.
+
+    ოპერაციული კონტექსტი: ამწე ეზოს ყველაზე მაღალი ლითონის კონსტრუქციაა.
+    გადაწყვეტილება ცვლის მიმღებისაა — პორტალი მხოლოდ სიგნალს აწვდის.
+
+    წყაროები:
+      1. მოდელები — WMO weather_code 95 / 96 / 99
+      2. MTA — სინოპტიკოსის შენიშვნა (mta_advisory)
+
+    ⚠ არცერთი მათგანი არ ამბობს, რომ ჭექა-ქუხილი ᲐᲮᲚᲝᲡᲐᲐ. სიახლოვეს
+    მხოლოდ რადარი ან ელჭექის დეტექტორი ადგენს. ეს გაფრთხილება
+    "მოემზადეთ"-ია, არა "შეაჩერეთ ახლა".
+    """
+    parts = []
+    if c.get("thunderstorm"):
+        parts.append("მოდელები")
+    if output:
+        adv = output.get("mta_advisory") or {}
+        for nt in (adv.get("notes") or []):
+            t = str(nt).lower()
+            if "thunder" in t or "ელჭ" in t or "ჭექ" in t:
+                parts.append("MTA")
+                break
+    if not parts:
+        return ""
+    return "⚡ <b>ჭექა-ქუხილი მოსალოდნელია</b> (" + " + ".join(parts) + ")\n"
 
 
 def _vis_range_str(c: dict) -> str:
@@ -1318,7 +1504,19 @@ def _precip_label(mm: float, sources: int = None, agreement: int = None) -> str:
 
     pct = f" · თანხმობა {agreement}%" if agreement is not None else ""
 
-    if sources is not None and sources <= 1:
+    # “შესაძლებელია” — შეწონილი თანხმობის მიხედვით, არა წყაროთა
+    # რაოდენობით (2026-08-22).
+    #
+    # აქამდე კრიტერიუმი იყო `sources <= 1`, პორტალზე კი `agreement < 50`.
+    # ორი სუსტი მოდელი (ICON 0.09 + OWM 0.08 = 19% თანხმობა) Telegram-ში
+    # კატეგორიულად ვლინდებოდა, პორტალზე — “შესაძლებელია”-დ.
+    # რაოდენობა წყაროს წონას არ ითვალისწინებს; თანხმობა — ითვალისწინებს.
+    if agreement is not None:
+        hedge = agreement < PRECIP_HEDGE_PCT
+    else:
+        hedge = sources is not None and sources <= 1
+
+    if hedge:
         return f"{mm} მმ — შესაძლებელია {desc}{pct}"
     return f"{mm} მმ — {desc}{pct}"
 
@@ -1382,6 +1580,7 @@ def send_digest_telegram(output: dict):
                 f"     🌧 {rain_str}\n"
             )
 
+    text += _tstorm_str(c, output)
     text += f"─────────────────\n{PORTAL_URL}"
     _send_telegram_text(text, label="Digest")
 
@@ -1394,7 +1593,9 @@ SHIFT_CATCHUP_HOURS  = 13        # თუ ამაზე მეტი გავ
 SHIFT_CACHE = "shift_cache.json"
 PORTAL_URL = "https://georgeparker-gp.github.io/poti-forecast-portal/"
 
-STATUS_SEVERITY = {"operational": 0, "warning": 1, "suspended": 2}
+# ოთხსაფეხურიანი კიბე. "warning" შენარჩუნებულია მხოლოდ ძველი cache-ის
+# ჩანაწერებთან თავსებადობისთვის და barge-ის ტოლფასია.
+STATUS_SEVERITY = {"operational": 0, "barge": 1, "warning": 1, "vessel": 2, "suspended": 3}
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1461,7 +1662,19 @@ def _detect_squall(fc: list, now_idx: int) -> dict | None:
     p_now  = cur.get("precipitation", 0) or 0
     crit4 = p_next >= SQUALL_PRECIP
 
-    if not (crit1 and crit3 and (crit2 or crit4)):
+    # კრიტ. 5 — წნევის ვარდნა (დაემატა 2026-08-26).
+    # არ არის სავალდებულო — crit2/crit4-ის ალტერნატივაა,
+    # რადგან შკვალი ხშირად წნევის ვარდნით იწყება, სანამ
+    # გასტები ან წვიმა გამოხატავდება — ეს დროში მოგებაა.
+    pr_now  = cur.get("pressure")
+    pr_next = nxt.get("pressure")
+    pr_drop = None
+    crit5 = False
+    if isinstance(pr_now, (int, float)) and isinstance(pr_next, (int, float)):
+        pr_drop = round(pr_now - pr_next, 2)
+        crit5 = pr_drop >= SQUALL_PRESSURE_DROP
+
+    if not (crit1 and crit3 and (crit2 or crit4 or crit5)):
         return None
 
     return {
@@ -1473,6 +1686,7 @@ def _detect_squall(fc: list, now_idx: int) -> dict | None:
         "delta":        round(delta, 2),
         "p_next":       round(p_next, 2),
         "crit1": crit1, "crit2": crit2, "crit3": crit3, "crit4": crit4,
+        "crit5": crit5, "pressure_drop": pr_drop,
         "direction":    _compass_full(nxt.get("wind_direction", 0)),
     }
 
@@ -1875,8 +2089,10 @@ def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, s
 
 def build_output(consensus, sources_used, daily=None, models_now=None):
     now  = consensus[_current_hour_index(consensus)] if consensus else {}
-    susp = sum(1 for h in consensus if h["status"] == "suspended")
-    warn = sum(1 for h in consensus if h["status"] == "warning")
+    susp   = sum(1 for h in consensus if h["status"] == "suspended")
+    vessel = sum(1 for h in consensus if h["status"] == "vessel")
+    barge  = sum(1 for h in consensus if h["status"] in ("barge", "warning"))
+    warn   = vessel + barge          # ნებისმიერი შეზღუდვა, შეჩერების გარდა
     return {
         "meta": {
             "location":       LOCATION["name"],
@@ -1904,6 +2120,8 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "wave_max": 0, "wave_min": 0, "wave_sources": 0,
             "wave_copernicus": None,
             "visibility_min": 10, "vis_estimated": False,
+            "humidity": None, "dew_point": None, "pressure": None,
+            "thunderstorm": False,
         }.items()},
         "summary_24h": {
             "max_wave_height":   _r(max((h["wave_height"] for h in consensus), default=0)),
@@ -1920,8 +2138,11 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "suspended_hours":   susp,
             "warning_hours":     warn,
             "operational_hours": len(consensus) - susp - warn,
-            "overall_status":    "suspended" if susp else "warning" if warn else "operational",
+            "restricted_hours":  {"barge": barge, "vessel": vessel},
+            "overall_status":    ("suspended" if susp else "vessel" if vessel
+                                  else "barge" if barge else "operational"),
         },
+        "mta_advisory": load_mta_advisory(),
         "forecast": consensus,
         "daily":    daily or [],
         # per-model ნედლი მნიშვნელობები მიმდინარე საათზე — ისტორიული
