@@ -1390,19 +1390,38 @@ function render(d) {
       const rLvl = v => v >= 5 ? 'v-alert' : v >= 2 ? 'v-warn' : 'v-ok';
       const ENG = currentLang==='eng';
 
+      // ნალექი — მილიმეტრების ნაცვლად მდგომარეობა. ზღვრები იგივეა,
+      // რაც fetch.py-ის _precip_label-ში, რომ Telegram და პორტალი არ
+      // განსხვავდებოდნენ.
+      const rainTxt = v =>
+          v < 0.1  ? [ENG?'dry':'მშრალი',      'v-ok']
+        : v < 1.0  ? [ENG?'drizzle':'ჟინჟლი',  'v-ok']
+        : v < 5.0  ? [ENG?'rain':'წვიმა',      'v-warn']
+        : v < 10.0 ? [ENG?'heavy':'ძლიერი',    'v-alert']
+        :            [ENG?'intense':'ინტენსიური','v-crit'];
+
       recapEl.innerHTML = next6.map(h=>{
         const t = (h.time||'').slice(11,16) || '--:--';
         const pills = ENG ? PILL_ENG : PILL;
         const pill = pills[h.status] || '';
-        const ws = h.wind_speed||0, wg = h.wind_gusts||0;
-        const wv = h.wave_height||0, rn = h.precipitation||0;
+        const wg = h.wind_gusts||0, wv = h.wave_height||0;
+        const rn = h.precipitation||0, tp = h.air_temp;
+        const [rTxt, rCls] = rainTxt(rn);
+
+        // ტალღა მხოლოდ მაშინ, როცა ლიმიტს უახლოვდება (≥1.0 მ).
+        // მშვიდ დღეს ზედმეტ ხმაურს არ ქმნის, უხეშზე კი სტატუსის
+        // მიზეზი თვალსაჩინოა.
+        const waveCell = wv >= 1.0
+          ? `<span><span class="rl">${ENG?'wave':'ტალღა'}</span> <b class="${vLvl(wv)}">${fmt(wv)}</b><span class="ru">${ENG?'m':'მ'}</span></span>`
+          : '';
+
         return `<div class="recap-row">
           <span class="recap-time">${t}</span>
           <span class="recap-metrics">
-            <span><span class="rl">${ENG?'wind':'ქარი'}</span> <b class="${wLvl(ws)}">${fmt(ws)}</b></span>
-            <span><span class="rl">${ENG?'gust':'დაქრ.'}</span> <b class="${wLvl(wg)}">${fmt(wg)}</b></span>
-            <span><span class="rl">${ENG?'wave':'ტალღა'}</span> <b class="${vLvl(wv)}">${fmt(wv)}</b><span class="ru">${ENG?'m':'მ'}</span></span>
-            <span><span class="rl">${ENG?'rain':'ნალ.'}</span> <b class="${rLvl(rn)}">${fmt(rn)}</b></span>
+            <span><span class="rl">${ENG?'gust':'დაქრ.'}</span> <b class="${wLvl(wg)}">${fmt(wg)}</b><span class="ru">${ENG?'m/s':'მ/წმ'}</span></span>
+            <span><b>${tp!=null?fmt(tp,1):'--'}</b><span class="ru">°C</span></span>
+            <span><b class="${rCls}">${rTxt}</b></span>
+            ${waveCell}
           </span>
           ${pill}
         </div>`;
