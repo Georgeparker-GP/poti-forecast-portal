@@ -421,16 +421,16 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 .compass-info{display:flex;flex-direction:column;gap:6px;}
 .compass-row{font-size:12px;color:var(--sb);}
 .compass-row span{color:var(--text-strong);font-weight:600;}
-.recap-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--ov1);}
+.recap-row{display:flex;align-items:center;gap:10px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--ov1);}
 .recap-row:last-child{border-bottom:none;}
 /* საათი გამოკვეთილია — რიგებს ერთმანეთისგან მკვეთრად მიჯნავს */
-.recap-time{flex:0 0 48px;color:var(--tx);font-family:'JetBrains Mono',monospace;
-  font-size:13px;font-weight:700;letter-spacing:-0.02em;}
-.recap-metrics{flex:1;display:flex;gap:11px;color:var(--sb);font-family:'JetBrains Mono',monospace;flex-wrap:wrap;}
+.recap-time{flex:0 0 56px;color:var(--tx);font-family:'JetBrains Mono',monospace;
+  font-size:15px;font-weight:700;letter-spacing:-0.02em;}
+.recap-metrics{flex:1;display:flex;gap:13px;color:var(--sb);font-family:'JetBrains Mono',monospace;flex-wrap:wrap;align-items:baseline;}
 /* ეტიკეტები და ერთეულები მკრთალდება — ციფრები წინ გამოდის */
-.recap-metrics .rl{font-size:10px;color:var(--mu);}
-.recap-metrics .ru{font-size:10px;color:var(--mu);}
-.recap-metrics b{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;}
+.recap-metrics .rl{font-size:11px;color:var(--mu);}
+.recap-metrics .ru{font-size:11px;color:var(--mu);}
+.recap-metrics b{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;}
 /* ზღვრებთან მიმართებაში — 1.33 და 15.0 ვიზუალურად აღარ ერთია */
 .recap-metrics b.v-ok  {color:var(--tl);}
 .recap-metrics b.v-warn{color:var(--yw);}
@@ -723,7 +723,10 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     <!-- მომდევნო 6 საათი — ცენტრში -->
     <div class="card teal" style="grid-column:span 2">
       <div class="card-label"><span data-i18n="recap_title">მომდევნო 6 საათის რეკაპი</span></div>
-      <div id="recap-6h" style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
+      <!-- flex:1 + space-between — რიგები ბარათის მთელ სიმაღლეზე ნაწილდება.
+           ეს შრიფტის ზომაზე უკეთ მუშაობს: ბარათის სიმაღლე მეზობელ პანელებზეა
+           დამოკიდებული და ეკრანის სიგანით იცვლება. -->
+      <div id="recap-6h" style="display:flex;flex-direction:column;justify-content:space-between;flex:1;gap:2px;margin-top:10px;">
         <div style="font-size:11px;color:var(--mu)" data-i18n="loading">იტვირთება...</div>
       </div>
     </div>
@@ -1418,7 +1421,7 @@ function render(d) {
         return `<div class="recap-row">
           <span class="recap-time">${t}</span>
           <span class="recap-metrics">
-            <span><span class="rl">${ENG?'gust':'დაქრ.'}</span> <b class="${wLvl(wg)}">${fmt(wg)}</b><span class="ru">${ENG?'m/s':'მ/წმ'}</span></span>
+            <span><span class="rl">${ENG?'gust':'დაქრ.'}</span> <b class="${wLvl(wg)}">${fmt(wg)}</b></span>
             <span><b>${tp!=null?fmt(tp,1):'--'}</b><span class="ru">°C</span></span>
             <span><b class="${rCls}">${rTxt}</b></span>
             ${waveCell}
