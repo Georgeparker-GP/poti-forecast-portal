@@ -29,6 +29,14 @@ FIELD_MAP = {
     "temperature air (°c)":         "air_temp",
     "humidity (%)":                 "humidity",
     "atmospheric pressure (mb)":    "pressure",
+    # დაემატა 2026-08-26: აქამდე რიცხვით ველებს ვიღებდით მხოლოდ,
+    # რის გამოც ნალექი სრულიად გამორცხებოდა — მაშინ როცა სწორედ ის არის
+    # არაერთი ცრუ-პოზიტივი/ცრუ-ნეგატივის დასადგენად.
+    # მნიშვნელობა ტექსტურია ("No precipitation" / "უნალექოდ"),
+    # ამიტომ შედარება ორობითია, არა რიცხვითი.
+    "precipitation":                "precip",
+    "cloud cover":                  "cloud",
+    "rip current":                  "rip_current",
 }
 
 # ცხრილში 3 ლოკაცია: ფოთი / ყულევი / ანაკლია. ჩვენ ფოთი გვჭირდება (სვეტი 1).
@@ -108,8 +116,12 @@ def wave_cm_to_m(wave_cm):
     """(155.0, 225.0) სმ → (1.55, 2.25) მ; ერთი რიცხვი → მეტრი; None → None."""
     if wave_cm is None:
         return None
-    if isinstance(wave_cm, tuple):
-        return (round(wave_cm[0] / 100, 2), round(wave_cm[1] / 100, 2))
+    # list-იც და tuple-იც: JSON-იდან წაკითხვისას tuple list-ად იქცევა,
+    # რის გამოც ეს ფუნქცია None-ს აბრუნებდა და ტალღის შედარება ჩუმად ქრებოდა.
+    if isinstance(wave_cm, (list, tuple)):
+        if len(wave_cm) < 2:
+            return round(float(wave_cm[0]) / 100, 2) if wave_cm else None
+        return (round(float(wave_cm[0]) / 100, 2), round(float(wave_cm[1]) / 100, 2))
     if isinstance(wave_cm, (int, float)):
         return round(wave_cm / 100, 2)
     return None
@@ -183,6 +195,12 @@ FC_FIELD_MAP = {
     "wave height (cm)":         "wave_cm",
     "sea state (duglas force)": "sea_state",
     "visibility (miles)":       "vis_miles",
+    # დაემატა 2026-08-26. ⚠ პროგნოზის ცხრილში ეს ეტიკეტები
+    # ნაგულისხმევია — რეალურ PDF-ზე გადამოწმებას ისახებს.
+    # თუ სახელი არ ემთხვევა, ველი უბრალოდ არ ამოიცნობა —
+    # შედარება გამოიტოვება, შეცდომა არ მოხდება.
+    "precipitation":            "precip",
+    "cloud cover":              "cloud",
 }
 
 
@@ -212,6 +230,7 @@ def parse_forecast(pdf_path: str) -> dict:
     if m: out["valid"] = re.sub(r"\s+", " ", m.group(1)).strip()
 
     prev_label = None
+    last_field = None
     for table in tables:
         for row in table:
             if not row or len(row) < 3:
@@ -229,6 +248,7 @@ def parse_forecast(pdf_path: str) -> dict:
                     continue
                 out["poti"]["day"][fld]   = _fc_num_pair(day_val)
                 out["poti"]["night"][fld] = _fc_num_pair(night_val)
+                last_field = fld
             elif key.startswith("note") and prev_label == "wind_speed_pending":
                 out["poti"]["day"]["wind_speed"]   = _fc_num_pair(day_val)
                 out["poti"]["night"]["wind_speed"] = _fc_num_pair(night_val)
@@ -240,6 +260,19 @@ def parse_forecast(pdf_path: str) -> dict:
                     g = (float(mm.group(1)), float(mm.group(2)))
                     out["poti"]["day"]["gust"]   = g
                     out["poti"]["night"]["gust"] = g
+                last_field = None
+
+            # დანარჩენი note-ები — ახლა აღარ იკარგება (დაემატა 2026-08-26).
+            #
+            # სწორედ აქ ზიბა სინოპტიკოსის თვისებრივი შეფასება, რომელსაც
+            # მოდელი ვერ აწარმოებს: "მოსალოდნელია ელჭექა", ადგილობრივი
+            # გაძლიერება და სხვ. ვინახავთ ბოლო ველზე მიმაგრებულად.
+            elif "note" in key and last_field:
+                for col, period in ((day_val, "day"), (night_val, "night")):
+                    t = re.sub(r"\s+", " ", (col or "")).strip()
+                    if t:
+                        out["poti"][period][f"{last_field}_note"] = t
+                last_field = None
 
     return out
 
