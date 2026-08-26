@@ -554,6 +554,17 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <span id="stale-banner-text"><span data-i18n="stale_text">მონაცემები დიდი ხანია არ განახლებულა</span></span>
 </div>
 
+<!-- MTA-ს სინოპტიკოსის შენიშვნა. ინფორმაციულია — სტატუსს არ ცვლის,
+     რადგან ეს პროგნოზია და არა გაზომვა. -->
+<div id="mta-advisory" style="display:none;background:rgba(240,192,74,0.12);border:1px solid rgba(240,192,74,0.5);border-radius:8px;margin:12px 24px 0;padding:10px 16px;color:var(--txt-warn);font-size:13px;align-items:flex-start;gap:9px;">
+  <span style="font-size:15px;line-height:1.3">📋</span>
+  <span>
+    <b id="mta-advisory-src">MTA</b>
+    <span id="mta-advisory-text"></span>
+    <span id="mta-advisory-until" style="color:var(--mu);font-weight:400"></span>
+  </span>
+</div>
+
 <div id="status-bar" class="status-bar operational">
   <div class="pulse"></div>
   <span id="status-text"><span data-i18n="th_status">სტატუსი</span> <span data-i18n="loading">იტვირთება...</span></span>
@@ -611,6 +622,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div class="card-unit">°C</div>
       </div>
       <div class="card-sub" id="c-feelslike"></div>
+      <div class="card-sub" id="c-humidity" style="margin-top:2px"></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-airtemp" style="width:0%"></div></div>
     </div>
     <div class="card neutral" id="card-rain">
@@ -1024,6 +1036,25 @@ async function refreshNow() {
   });
 })();
 
+// ═══ MTA-ს შენიშვნა ═══
+// სინოპტიკოსის თვისებრივი შეფასება, რომელსაც მოდელი ვერ აწარმოებს.
+// განზრახ არ ცვლის პორტის სტატუსს: ეს პროგნოზია და შეიძლება არ გამართლდეს
+// (25 აგვისტოს ღამის ჭექა-ქუხილი იწინასწარმეტყველა და არ მოვიდა).
+function renderMtaAdvisory(d) {
+  const box = document.getElementById('mta-advisory');
+  if (!box) return;
+  const a = d && d.mta_advisory;
+  if (!a || !a.notes || !a.notes.length) { box.style.display = 'none'; return; }
+
+  const ENG = currentLang === 'eng';
+  document.getElementById('mta-advisory-src').textContent =
+    (a.source || 'MTA') + (a.bulletin ? ' ' + a.bulletin : '') + ':';
+  document.getElementById('mta-advisory-text').textContent = ' ' + a.notes.join(' · ');
+  document.getElementById('mta-advisory-until').textContent =
+    a.valid_until ? (ENG ? '  · valid until ' : '  · ძალაშია ') + a.valid_until : '';
+  box.style.display = 'flex';
+}
+
 // ═══ ამბიენტური ტონი ═══
 // ფონი სუსტად იღებება მიმდინარე სტატუსის ფერში. მიზანი: მდგომარეობა
 // პერიფერიული მხედველობით აღიქმებოდეს, სანამ ციფრს წაიკითხავ.
@@ -1068,6 +1099,8 @@ function render(d) {
   // status bar
   const st = c.status || 'operational';
   applyStateTint(st);
+  renderMtaAdvisory(d);
+
   const sb = document.getElementById('status-bar');
   sb.className = 'status-bar '+st;
   document.getElementById('status-text').textContent = (currentLang==='eng' ? STATUS_LBL_ENG : STATUS_LBL)[st]||st;
@@ -1211,6 +1244,24 @@ function render(d) {
   // ბარი: 0°C=0%, 40°C=100%
   setBar('bar-airtemp', airT != null ? Math.min(Math.max(airT,0)/40,1) : 0,
     airT == null ? 'gn' : airT < 5 ? 'yw' : airT > 30 ? 'or' : 'gn');
+
+  // ტენიანობა და ნამის წერტილი — ᲘᲜᲤᲝᲠᲛᲐᲪᲘᲣᲚᲘ, ზღვრების გარეშე.
+  // ჰიგროსკოპული ტვირთისთვის (კარბამიდი და სხვ.) კრიტიკული ფარდობითი
+  // ტენიანობა ტვირთის დოკუმენტაციიდან და IMSBC კოდექსიდან მოდის,
+  // გადაწყვეტილება კი კაპიტნისაა — პორტალი მხოლოდ მონაცემს აწვდის.
+  const humEl = document.getElementById('c-humidity');
+  if (humEl) {
+    const hv = c.humidity, dp = c.dew_point;
+    const ENG = currentLang === 'eng';
+    if (hv != null) {
+      let t = (ENG ? 'Humidity: ' : 'ტენიანობა: ') + Math.round(hv) + '%';
+      if (dp != null) t += (ENG ? '  ·  dew pt ' : '  ·  ნამის წ. ') + fmt(dp, 1) + '°C';
+      humEl.textContent = t;
+    } else {
+      humEl.textContent = '';
+    }
+  }
+
 
   // compass
   const deg = c.wind_direction||0;
