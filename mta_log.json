@@ -20,7 +20,40 @@
       },
       "bulletin_no": "WF14/5966",
       "valid": "27/07/ 2026 წ. 10:00 სთ-დან Poti Kulevi დღე ღამე დღე ღამე 28/07/ 2026 წ. 10:00 სთ-მდე"
+    },
+    {
+      "ingested_at": "2026-08-26 05:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.6916_26.08.2026_წ._04_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 92.0,
+        "wind_avg": 3.0,
+        "wind_max": 4.0,
+        "wave_cm": [
+          71.0,
+          124.0
+        ],
+        "sea_state": 3.0,
+        "sea_level": "-1",
+        "sea_temp": null,
+        "vis_miles": 7.0,
+        "air_temp": 22.4,
+        "humidity": 95.0,
+        "pressure": 1016.4
+      },
+      "bulletin_no": "14/6916",
+      "date": "26 / აგვისტო / 2026",
+      "time": "04:00",
+      "vs_portal": {
+        "wind_mta": 4.0,
+        "wind_portal": 7.5,
+        "wind_delta": -3.5,
+        "wave_mta": 0.97,
+        "wave_portal": 0.36,
+        "wave_delta": 0.61
+      },
+      "portal_time": "2026-08-26 05:07"
     }
   ],
-  "last_ingest": "2026-07-27 14:11"
+  "last_ingest": "2026-08-26 05:07"
 }
