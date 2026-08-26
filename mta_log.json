@@ -53,7 +53,174 @@
         "wave_delta": 0.61
       },
       "portal_time": "2026-08-26 05:07"
+    },
+    {
+      "ingested_at": "2026-08-26 10:07",
+      "source_file": "ამინდის_პროგნოზი_ფოთი_WF_14.6924_26.08.26_10.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "6-11",
+          "wave_cm": "50-125",
+          "sea_state": "3",
+          "vis_miles": "5-10/2-5",
+          "cloud": "ცვალებადი\nVariable",
+          "precip": "უმნიშვნელო\nნალექი\nslight precipitation"
+        },
+        "night": {
+          "wind_speed": "5-10",
+          "wave_cm": "50-125/30-75",
+          "sea_state": "3/2-3",
+          "vis_miles": "5-10/2-5",
+          "cloud": "ძირითადად\nმოღრუბლული\nMostly Cloudy",
+          "precip": "ხანმოკლე\nწვიმა, ელჭექით\nBriefly\nRain with\nthunderstorms"
+        }
+      },
+      "bulletin_no": "WF14/6924",
+      "valid": "26/08/ 2026 წ. 10:00 სთ-დან 27/08/ 2026 წ. 10:00 სთ-მდე",
+      "vs_portal_forecast": {
+        "issued": "2026-08-26 10:00",
+        "blocks": [
+          {
+            "block": "day1",
+            "window": "2026-08-26T10:00 → 16:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                6.0,
+                11.0
+              ],
+              "portal": [
+                1.33,
+                2.7
+              ],
+              "overlap": false,
+              "max_delta": 8.3,
+              "mid_delta": 6.48
+            },
+            "wave": {
+              "mta": [
+                0.5,
+                1.25
+              ],
+              "portal": [
+                0.34,
+                0.36
+              ],
+              "overlap": false,
+              "max_delta": 0.89,
+              "mid_delta": 0.53
+            }
+          },
+          {
+            "block": "day2",
+            "window": "2026-08-26T16:00 → 22:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                6.0,
+                11.0
+              ],
+              "portal": [
+                0.96,
+                3.17
+              ],
+              "overlap": false,
+              "max_delta": 7.83,
+              "mid_delta": 6.44
+            },
+            "wave": {
+              "mta": [
+                0.5,
+                1.25
+              ],
+              "portal": [
+                0.34,
+                0.36
+              ],
+              "overlap": false,
+              "max_delta": 0.89,
+              "mid_delta": 0.53
+            }
+          },
+          {
+            "block": "night1",
+            "window": "2026-08-26T22:00 → 04:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                5.0,
+                10.0
+              ],
+              "portal": [
+                1.09,
+                1.59
+              ],
+              "overlap": false,
+              "max_delta": 8.41,
+              "mid_delta": 6.16
+            },
+            "wave": {
+              "mta": [
+                0.5,
+                1.25
+              ],
+              "portal": [
+                0.28,
+                0.33
+              ],
+              "overlap": false,
+              "max_delta": 0.92,
+              "mid_delta": 0.57
+            }
+          },
+          {
+            "block": "night2",
+            "window": "2026-08-27T04:00 → 10:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                5.0,
+                10.0
+              ],
+              "portal": [
+                1.19,
+                3.09
+              ],
+              "overlap": false,
+              "max_delta": 6.91,
+              "mid_delta": 5.36
+            },
+            "wave": {
+              "mta": [
+                0.3,
+                0.75
+              ],
+              "portal": [
+                0.22,
+                0.26
+              ],
+              "overlap": false,
+              "max_delta": 0.49,
+              "mid_delta": 0.29
+            }
+          }
+        ],
+        "wind_overlap": "0/4",
+        "wave_overlap": "0/4"
+      }
+    },
+    {
+      "ingested_at": "2026-08-26 10:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.6882_გაუქმება_26.08.2026წ._09.20_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/6922",
+      "forecast": {},
+      "vs_portal": {},
+      "portal_time": "2026-08-26 10:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-08-26 05:07"
+  "last_ingest": "2026-08-26 10:07"
 }
