@@ -142,6 +142,84 @@ if __name__ == "__main__":
 #  Storm warning პარსერი (თავისუფალი ტექსტი)
 # ═══════════════════════════════════════════════════════════════
 
+# კომპასის ტექსტი → გრადუსი. საჭიროა, რადგან საშტორმო
+# ბიულეტენებში მიმართულება ასოებითაა ("E", "NE"), არა რიცხვით —
+# პორტალთან შედარებისთვის კი გრადუსები გვჭირდება.
+COMPASS_DEG = {
+    "N": 0.0, "NNE": 22.5, "NE": 45.0, "ENE": 67.5,
+    "E": 90.0, "ESE": 112.5, "SE": 135.0, "SSE": 157.5,
+    "S": 180.0, "SSW": 202.5, "SW": 225.0, "WSW": 247.5,
+    "W": 270.0, "WNW": 292.5, "NW": 315.0, "NNW": 337.5,
+}
+
+
+def parse_storm_cancellation(pdf_path: str) -> dict:
+    """'საშტორმო გაფრთხილების გაუქმება' — შეიცავს ფაქტიურ ამინდს.
+
+    ეს დამატებითი ground truth წერტილია — ორ რეგულარულ
+    ფაქტიურ ბიულეტენს გარდა (04:20 და 16:20), და ყულევიც ცალკე.
+
+    სტრუქტურა:
+      STORM WARNING 14/6882 CANCELATION
+      Actual Weather : Poti - E 6-10 m/sec. Sea swell 3 state (W.H. 74-119 cm).
+                       Kulevi - NE  2-4 m/sec.
+      26.08.2026  09:20
+
+    ⚠ შენიშვნა: ქართულ და ინგლისურ ტექსტში ციფრები ზოგჯერ
+    არ ემთხვევა (5-7 vs 6-10). ვიღებთ ინგლისურს — ის უფრო
+    სტაბილურად ფორმატირებულია და პარსინგს უკეთესად ეძლევა.
+    """
+    out = {"type": "storm_cancel", "poti": {}, "kulevi": {}}
+    with pdfplumber.open(pdf_path) as pdf:
+        text = pdf.pages[0].extract_text() or ""
+
+    m = re.search(r"№\s*([\d/]+)", text)
+    if m:
+        out["bulletin_no"] = m.group(1)
+
+    # გაუქმებული გაფრთხილების ნომერი
+    m = re.search(r"STORM\s+WARNING\s+([\d/]+)\s+CANCEL", text, re.I)
+    if m:
+        out["cancels"] = m.group(1)
+
+    # თარიღი და დრო: "26.08.2026  09:20"
+    m = re.search(r"(\d{2})\.(\d{2})\.(\d{4})\s+(\d{1,2}):(\d{2})", text)
+    if m:
+        out["date"] = f"{m.group(1)}/{m.group(2)}/{m.group(3)}"
+        out["time"] = f"{int(m.group(4)):02d}:{m.group(5)}"
+
+    # ── ფოთი: "Poti - E 6-10 m/sec" ──
+    m = re.search(r"Poti\s*[-–:]\s*([NSEW]{1,3})\s*(\d+)\s*-\s*(\d+)\s*m/sec", text, re.I)
+    if m:
+        d = m.group(1).upper()
+        lo, hi = float(m.group(2)), float(m.group(3))
+        out["poti"]["wind_dir_txt"] = d
+        if d in COMPASS_DEG:
+            out["poti"]["wind_dir"] = COMPASS_DEG[d]
+        # _compare_to_portal-ის კონტრაქტი: საშუალო და მაქსიმუმი
+        out["poti"]["wind_avg"] = lo
+        out["poti"]["wind_max"] = hi
+
+    # ── ტალღა: "Sea swell 3 state (W.H. 74-119 cm)" ──
+    m = re.search(r"Sea\s+swell\s+(\d+)\s*state\s*\(?\s*W\.?H\.?\s*(\d+)\s*-\s*(\d+)\s*cm",
+                  text, re.I)
+    if m:
+        out["poti"]["sea_state"] = float(m.group(1))
+        out["poti"]["wave_cm"] = (float(m.group(2)), float(m.group(3)))
+
+    # ── ყულევი: "Kulevi - NE  2-4 m/sec" ──
+    m = re.search(r"Kulevi\s*[-–:]\s*([NSEW]{1,3})\s*(\d+)\s*-\s*(\d+)\s*m/sec", text, re.I)
+    if m:
+        d = m.group(1).upper()
+        out["kulevi"]["wind_dir_txt"] = d
+        if d in COMPASS_DEG:
+            out["kulevi"]["wind_dir"] = COMPASS_DEG[d]
+        out["kulevi"]["wind_avg"] = float(m.group(2))
+        out["kulevi"]["wind_max"] = float(m.group(3))
+
+    return out
+
+
 def parse_storm_warning(pdf_path: str) -> dict:
     """'საშტორმო გაფრთხილება' — თავისუფალი ტექსტი, ინგლისური ბლოკიდან ვიღებთ.
 
@@ -282,6 +360,9 @@ def parse_mta_pdf(pdf_path: str, subject: str = "") -> dict:
     s = (subject or "").lower()
     if "ფაქტიური" in s or "actual" in s:
         return parse_actual_weather(pdf_path)
+    # გაუქმება ცალკე ტიპია — სხვა სტრუქტურა აქვს და ფაქტიურ ამინდს შეიცავს
+    if "გაუქმებ" in s or "cancel" in s:
+        return parse_storm_cancellation(pdf_path)
     if "საშტორმო" in s or "storm" in s:
         return parse_storm_warning(pdf_path)
     if "პროგნოზი" in s or "forecast" in s:
@@ -289,6 +370,8 @@ def parse_mta_pdf(pdf_path: str, subject: str = "") -> dict:
     # subject უცნობია — ვცდით შიგთავსით
     with pdfplumber.open(pdf_path) as pdf:
         txt = (pdf.pages[0].extract_text() or "").lower()
+    if "cancelation" in txt or "cancellation" in txt or "გაუქმებ" in txt:
+        return parse_storm_cancellation(pdf_path)
     if "საშტორმო გაფრთხილება" in txt or "storm warning" in txt:
         return parse_storm_warning(pdf_path)
     if "ფაქტიური ამინდი" in txt or "actual weather" in txt:
