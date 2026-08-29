@@ -56,6 +56,36 @@ def _seen_ids(dblog: dict) -> set:
     return {e.get("bulletin_no") for e in dblog.get("entries", []) if e.get("bulletin_no")}
 
 
+def _seen_files(dblog: dict) -> set:
+    """მეორე ხაზის dedup — ფაილის სახელით.
+
+    თუ ბიულეტენის ნომერი არც PDF-ში წაიკითხა და არც სახელიდან ამოვიდა,
+    ერთადერთი, რაც ჩანაწერს აიდენტიფიცირებს, source_file-ია. გაშვება
+    შუაში რომ გაწყდეს (_save_log ჩავარდა → PDF-ები არ წაიშალა),
+    შემდეგი გაშვება იმავე ფაილს თავიდან არ ჩაწერს.
+    """
+    return {e.get("source_file") for e in dblog.get("entries", []) if e.get("source_file")}
+
+
+# ფაილის სახელში ნომერი ყოველთვის დევს: "..._WF_14.6986_26.08.26_22.00_სთ..pdf"
+# ან "..._№_14.6970_26.08.2026_წ._16_სთ..pdf"
+_BNO_RE = re.compile(r"(WF)?[\s_]*(?:№[\s_]*)?(\d{1,3})[.\-/](\d{3,5})")
+
+
+def _bulletin_no_from_name(fname: str):
+    """ნომრის ამოღება ფაილის სახელიდან — მხოლოდ სათადარიგო გზა.
+
+    ⚠️ საშტორმოს გაუქმებაზე არ გამოიყენება: იქ სახელში გაუქმებული
+    გაფრთხილების ნომერი წერია, თავად გაუქმების ჩანაწერისა კი — არა
+    (მაგ. სახელში 14.6882, PDF-ში 14/6922). არასწორ ნომერს ჩავწერდით.
+    """
+    m = _BNO_RE.search(os.path.basename(fname))
+    if not m:
+        return None
+    prefix = "WF" if m.group(1) else ""
+    return f"{prefix}{m.group(2)}/{m.group(3)}"
+
+
 # ქართული თვეები — ბიულეტენის თარიღის გასარჩევად ("26 / აგვისტო / 2026")
 GEO_MONTHS = {
     "იანვარი": 1, "თებერვალი": 2, "მარტი": 3, "აპრილი": 4,
@@ -436,6 +466,7 @@ def main():
 
     dblog = _load_log()
     seen  = _seen_ids(dblog)
+    seen_f = _seen_files(dblog)
 
     pdfs = sorted(glob.glob(os.path.join(BULLETIN_DIR, "*.pdf")))
     if not pdfs:
@@ -453,15 +484,34 @@ def main():
             continue
 
         bno = parsed.get("bulletin_no")
+        bno_src = "pdf" if bno else None
+
+        # საღამოს პროგნოზებზე ნომერი PDF-ის ტექსტიდან არ იკითხება.
+        # ვიღებთ ფაილის სახელიდან, გარდა საშტორმოს გაუქმებისა.
+        if not bno and parsed.get("type") != "storm_cancel":
+            bno = _bulletin_no_from_name(pdf)
+            if bno:
+                bno_src = "filename"
+                log.info(f"ნომერი სახელიდან: {bno} ({os.path.basename(pdf)})")
+
         if bno and bno in seen:
             processed_files.append(pdf)   # უკვე გვაქვს — PDF მაინც წასაშლელია
             continue   # უკვე დამუშავებული
+        if os.path.basename(pdf) in seen_f:
+            processed_files.append(pdf)
+            log.info(f"ფაილი უკვე დამუშავებულია: {os.path.basename(pdf)}")
+            continue
 
         entry = {
             "ingested_at": datetime.now(TBILISI_TZ).strftime("%Y-%m-%d %H:%M"),
             "source_file": os.path.basename(pdf),
             **parsed,
         }
+        # `**parsed` ცარიელ bulletin_no-ს დააბრუნებდა — სახელიდან
+        # ამოღებული ნომერი ამის შემდეგ ჩაიწერება.
+        entry["bulletin_no"] = bno
+        if bno_src:
+            entry["bulletin_no_source"] = bno_src
         # actual/storm nowcast → პორტალთან შედარება.
         # პორტალის ჩანაწერი ᲗᲘᲗᲝᲔᲣᲚ ᲑᲘᲣᲚᲔᲢᲔᲜᲖᲔ ცალკე ირჩევა — მისი
         # საკუთარი საათის მიხედვით, არა ingest-ის მომენტის.
@@ -481,8 +531,14 @@ def main():
                 # ოქტომბრის სტატისტიკაში ასეთი ჩანაწერები უნდა გამოირიცხოს.
                 entry["portal_hour_exact"] = exact
 
+        # თავდაცვითი ნაგულისხმევი: შედარება ველის გარეშე არ უნდა დარჩეს,
+        # თორემ ოქტომბრის ფილტრი მას ხმაურთან ერთად გაატარებს.
+        if "vs_portal" in entry:
+            entry.setdefault("portal_hour_exact", False)
+
         dblog["entries"].append(entry)
         if bno: seen.add(bno)
+        seen_f.add(os.path.basename(pdf))
         added += 1
         processed_files.append(pdf)
         log.info(f"დამატებულია: {parsed.get('type')} #{bno} ({os.path.basename(pdf)})")
