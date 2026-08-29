@@ -52,7 +52,9 @@
         "wave_portal": 0.36,
         "wave_delta": 0.61
       },
-      "portal_time": "2026-08-26 05:07"
+      "portal_time": "2026-08-26 05:07",
+      "portal_hour_exact": false,
+      "note_backfill": "portal_hour_exact ხელით დაემატა — ეს ჩანაწერი _portal_at-ის დამატებამდე შეიქმნა და current ბლოკს შეედარა, არა ბიულეტენის საათს. კალიბრაციაში არ ითვლება."
     },
     {
       "ingested_at": "2026-08-26 10:07",
