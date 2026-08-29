@@ -436,6 +436,12 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 .recap-metrics b.v-warn{color:var(--yw);}
 .recap-metrics b.v-alert{color:var(--or);}
 .recap-metrics b.v-crit{color:var(--rd);}
+/* რადარის რუკაზე ფოთის მუდმივი წარწერა — Leaflet-ის ნაგულისხმევი
+   თეთრი ბუშტი მუქ ფონს არ უხდება */
+.leaflet-tooltip.radar-label{background:transparent;border:none;box-shadow:none;
+  color:var(--tx);font-family:'Noto Sans Georgian',sans-serif;font-size:12px;
+  font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,0.85);padding:0;}
+.leaflet-tooltip.radar-label::before{display:none;}
 </style>
 </head>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -2069,6 +2075,12 @@ loadData();
 // ═══ RAIN RADAR (RainViewer) ═══
 (function(){
   const POTI = [42.15, 41.67];
+  // კოლხეთის დაბლობის მიახლოებითი კონტური [lat, lng]
+  const KOLKHETI = [
+    [42.42, 41.56], [42.48, 41.95], [42.36, 42.30], [42.15, 42.45],
+    [41.98, 42.28], [41.86, 42.00], [41.80, 41.78], [41.95, 41.72],
+    [42.15, 41.64], [42.30, 41.58]
+  ];
   let radarMap, radarFrames = [], radarLayers = {}, radarIdx = 0, radarNowIdx = 0, radarTimer = null, radarPlaying = true;
 
   function initRadar(){
@@ -2079,18 +2091,41 @@ loadData();
         minZoom: 5, maxZoom: 10,
         attributionControl: false, scrollWheelZoom: false
       });
+      // ფენების რიგი pane-ებით: ფონი (200) → კოლხეთი (210) → რადარი (220) → წარწერები (230)
+      radarMap.createPane('landPane');
+      radarMap.getPane('landPane').style.zIndex = 210;
+      radarMap.getPane('landPane').style.pointerEvents = 'none';
+      radarMap.createPane('radarPane');
+      radarMap.getPane('radarPane').style.zIndex = 220;
+      radarMap.createPane('labelPane');
+      radarMap.getPane('labelPane').style.zIndex = 230;
+      radarMap.getPane('labelPane').style.pointerEvents = 'none';
+
       // ფონი — Esri Dark Gray Canvas (API გასაღები არ სჭირდება).
       // CARTO-ს რასტრული ფენა 2026 წლის აგვისტოდან გასაღების გარეშე წყალნიშნით ბრუნდება.
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 10, maxNativeZoom: 10, zIndex: 1
       }).addTo(radarMap);
-      // წარწერები ცალკე ფენაა და რადარის ზემოთ ჯდება (zIndex 20 > 10),
+
+      // კოლხეთის დაბლობი — მწვანე ორიენტირი. მიახლოებითი კონტური:
+      // ანაკლია → ზუგდიდის ველი → სამტრედია → ვანი → ოზურგეთი → ქობულეთი → ფოთი.
+      L.polygon(KOLKHETI, {
+        pane: 'landPane', interactive: false, smoothFactor: 1.5,
+        color: '#2dd4a0', weight: 1, opacity: 0.30,
+        fillColor: '#1f9b74', fillOpacity: 0.16
+      }).addTo(radarMap);
+
+      // წარწერები ცალკე ფენაა და რადარის ზემოთ ჯდება,
       // რომ ღრუბლის ლაქამ ქალაქების სახელები არ დაფაროს.
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 10, maxNativeZoom: 10, zIndex: 20
+        pane: 'labelPane', maxZoom: 10, maxNativeZoom: 10
       }).addTo(radarMap);
+
       L.circleMarker(POTI, {radius:6, color:'#00dca0', fillColor:'#00dca0', fillOpacity:0.9, weight:2})
-        .addTo(radarMap).bindTooltip(currentLang==='eng' ? 'Poti' : 'ფოთი');
+        .addTo(radarMap)
+        .bindTooltip(currentLang==='eng' ? 'Poti' : 'ფოთი', {
+          permanent: true, direction: 'right', offset: [8, 0], className: 'radar-label'
+        });
 
       // Coverage mask — აჩვენებს სად არის ნამდვილი რადარი (გამჭვირვალე) vs არა (შავი)
       // ეს გვეხმარება გავიგოთ ფოთის მონაცემი ნამდვილი რადარია თუ არა
@@ -2100,7 +2135,7 @@ loadData();
           window._covLayer = null;
           document.getElementById('radar-cov').textContent = currentLang==='eng' ? 'Coverage: off' : 'დაფარვა: გამორთ.';
         } else if (radarFrames.length && window._covUrl){
-          window._covLayer = L.tileLayer(window._covUrl, {opacity:0.45, maxNativeZoom:7, maxZoom:10, zIndex:5});
+          window._covLayer = L.tileLayer(window._covUrl, {pane:'radarPane', opacity:0.45, maxNativeZoom:7, maxZoom:10, zIndex:5});
           window._covLayer.addTo(radarMap);
           document.getElementById('radar-cov').textContent = currentLang==='eng' ? 'Coverage: on' : 'დაფარვა: ჩართ.';
         }
@@ -2144,7 +2179,7 @@ loadData();
     const frame = radarFrames[idx];
     if (!frame || !radarMap) return;
     if (!radarLayers[idx]){
-      radarLayers[idx] = L.tileLayer(frame.url, {opacity:0, maxNativeZoom:7, maxZoom:10, zIndex:10});
+      radarLayers[idx] = L.tileLayer(frame.url, {pane:'radarPane', opacity:0, maxNativeZoom:7, maxZoom:10, zIndex:10});
       radarLayers[idx].addTo(radarMap);
     }
     Object.keys(radarLayers).forEach(k => {
