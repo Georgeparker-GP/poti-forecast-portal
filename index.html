@@ -796,8 +796,9 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           <span id="radar-time" class="mono" style="font-size:12px;color:var(--sb);">--:--</span>
           <button id="radar-cov" onclick="toggleRadarCoverage()" style="background:var(--sf);border:1px solid var(--br);color:var(--sb);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;" data-i18n="radar_cov_off">დაფარვა: გამორთ.</button>
         </div>
-        <div style="font-size:10px;color:var(--mu);">
+        <div style="font-size:10px;color:var(--mu);line-height:1.5;text-align:right;">
           <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" style="color:var(--mu);">Weather data by RainViewer</a>
+          <br><span style="color:var(--mu);">Basemap: Esri, HERE, Garmin, © OpenStreetMap contributors</span>
         </div>
       </div>
       <div id="radar-nodata" style="display:none;margin-top:8px;font-size:11px;color:var(--txt-warn);">
@@ -2078,8 +2079,15 @@ loadData();
         minZoom: 5, maxZoom: 10,
         attributionControl: false, scrollWheelZoom: false
       });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 10, subdomains: 'abcd'
+      // ფონი — Esri Dark Gray Canvas (API გასაღები არ სჭირდება).
+      // CARTO-ს რასტრული ფენა 2026 წლის აგვისტოდან გასაღების გარეშე წყალნიშნით ბრუნდება.
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 10, maxNativeZoom: 10, zIndex: 1
+      }).addTo(radarMap);
+      // წარწერები ცალკე ფენაა და რადარის ზემოთ ჯდება (zIndex 20 > 10),
+      // რომ ღრუბლის ლაქამ ქალაქების სახელები არ დაფაროს.
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 10, maxNativeZoom: 10, zIndex: 20
       }).addTo(radarMap);
       L.circleMarker(POTI, {radius:6, color:'#00dca0', fillColor:'#00dca0', fillOpacity:0.9, weight:2})
         .addTo(radarMap).bindTooltip(currentLang==='eng' ? 'Poti' : 'ფოთი');
