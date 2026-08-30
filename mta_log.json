@@ -1908,7 +1908,67 @@
         "wind_overlap": "0/4",
         "wave_overlap": "0/4"
       }
+    },
+    {
+      "ingested_at": "2026-08-30 17:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.7108_30.08.2026_წ._16_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 258.0,
+        "wind_avg": 11.0,
+        "wind_max": 13.0,
+        "wave_cm": [
+          84.0,
+          138.0
+        ],
+        "sea_state": [
+          3.0,
+          4.0
+        ],
+        "sea_level": 8.0,
+        "rip_current": null,
+        "sea_temp": 27.0,
+        "vis_miles": 10.0,
+        "cloud": "ნაწილობრივ\nPartly cloudy",
+        "precip": "უნალექოდ\nNo precipitation",
+        "air_temp": 26.1,
+        "humidity": 76.0,
+        "pressure": 1009.6
+      },
+      "bulletin_no": "14/7108",
+      "date": "30 / აგვისტო / 2026",
+      "time": "16:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 13.0,
+        "wind_portal": 9.8,
+        "wind_delta": 3.2,
+        "wind_avg_mta": 11.0,
+        "wind_avg_portal": 3.97,
+        "wind_avg_delta": 7.03,
+        "wave_mta": 1.11,
+        "wave_portal": 0.37,
+        "wave_delta": 0.74,
+        "dir_mta": 258.0,
+        "dir_portal": 197.0,
+        "dir_delta": 61.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 18.88,
+        "vis_capped": true,
+        "vis_flag": "ok_capped",
+        "precip_mta": "dry",
+        "precip_portal": 2.1,
+        "precip_verdict": "false_positive",
+        "air_temp_mta": 26.1,
+        "air_temp_portal": 25.2,
+        "air_temp_delta": 0.9,
+        "sea_temp_mta": 27.0,
+        "sea_temp_portal": 27.6,
+        "sea_temp_delta": -0.6
+      },
+      "portal_time": "2026-08-30T16:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-08-30 10:07"
+  "last_ingest": "2026-08-30 17:07"
 }
