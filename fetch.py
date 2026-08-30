@@ -1100,6 +1100,46 @@ def load_copernicus():
 MTA_LOG_FILE = "mta_log.json"
 
 
+# MTA-ს "_note" ველები: რომელ ძირითად მაჩვენებელს ერთვის და როგორ დაიწეროს.
+# ⚠ 2026-08-29-ზე `wind_speed_note` პირველად გამოჩნდა და ბანერზე შიშველი
+# "13-15 · 11-13" გამოვიდა — კონტექსტის გარეშე ის საშტორმო გაფრთხილებას ჰგავდა.
+# ველის ზუსტი მნიშვნელობა MTA-სთან დაუზუსტებელია, ამიტომ ტექსტი ნეიტრალურია:
+# ძირითადი დიაპაზონი წინ, მინაწერი მის გვერდით, ინტერპრეტაციის გარეშე.
+_NOTE_BASE = {
+    "wind_speed_note": ("wind_speed", "ქარი", "Wind", "მ/წმ", "m/s"),
+}
+_PERIOD_LBL = {"day": ("დღე", "Day"), "night": ("ღამე", "Night")}
+
+
+def _fmt_mta_note(key, val, blk):
+    """(ქართული, ინგლისური) წყვილი ერთი შენიშვნისთვის."""
+    txt = " ".join(str(val).split())
+    if not txt:
+        return None, None
+    meta = _NOTE_BASE.get(key)
+    if not meta:
+        return txt, txt          # თავისთავად გასაგები ტექსტი (მაგ. precip_note)
+    base_key, lbl_geo, lbl_eng, unit_geo, unit_eng = meta
+    base = " ".join(str(blk.get(base_key) or "").split())
+    if base:
+        return (f"{lbl_geo} {base}, მინაწერი {txt} {unit_geo}",
+                f"{lbl_eng} {base}, note {txt} {unit_eng}")
+    return f"{lbl_geo} {txt} {unit_geo}", f"{lbl_eng} {txt} {unit_eng}"
+
+
+def _merge_period_notes(per_geo, per_eng):
+    """დღე/ღამე ერთნაირია → ერთხელ. განსხვავდება → პერიოდის აღნიშვნით."""
+    periods = [p for p in ("day", "night") if p in per_geo]
+    if len(periods) == 2 and per_geo["day"] == per_geo["night"]:
+        return per_geo["day"], per_eng["day"]
+    notes, notes_eng = [], []
+    for p in periods:
+        g_lbl, e_lbl = _PERIOD_LBL[p]
+        notes.append(f"{g_lbl} — " + "; ".join(per_geo[p]))
+        notes_eng.append(f"{e_lbl} — " + "; ".join(per_eng[p]))
+    return notes, notes_eng
+
+
 def load_mta_advisory():
     """MTA-ს სინოპტიკოსის შენიშვნა — მოქმედი ფანჯრით.
 
@@ -1145,19 +1185,28 @@ def load_mta_advisory():
                 continue   # ვადაგასულია
 
             poti = e.get("poti") or {}
-            notes = []
+            per_geo, per_eng = {}, {}
             for period in ("day", "night"):
                 blk = poti.get(period) or {}
+                g_list, e_list = [], []
                 for k, v in blk.items():
-                    if k.endswith("_note") and v:
-                        txt = str(v).strip()
-                        if txt and txt not in notes:
-                            notes.append(txt)
-            if not notes:
+                    if not (k.endswith("_note") and v):
+                        continue
+                    g, en = _fmt_mta_note(k, v, blk)
+                    if g and g not in g_list:
+                        g_list.append(g)
+                        e_list.append(en)
+                if g_list:
+                    per_geo[period] = g_list
+                    per_eng[period] = e_list
+            if not per_geo:
                 continue
+
+            notes, notes_eng = _merge_period_notes(per_geo, per_eng)
 
             return {
                 "notes": notes,
+                "notes_eng": notes_eng,
                 "bulletin": e.get("bulletin_no"),
                 "valid_until": until.strftime("%Y-%m-%d %H:%M"),
                 "source": "MTA",
@@ -1258,22 +1307,27 @@ def _compute_status(wind, gusts, wave, vis):
         if STATUS_RANK[new] > STATUS_RANK[st]:
             st = new
 
+    # ⚠ სამივე ზღვარი max_wind-ზე ირთვება, ამიტომ ტექსტშიც max_wind იწერება.
+    # ადრე ბორნის სტრიქონი `wind`-ს ბეჭდავდა: გაფრთხილება ქროლვამ ჩართო,
+    # ეკრანზე კი მდგრადი ქარი ჩნდებოდა (მაგ. „1.6 მ/წმ (ბორნის ლიმიტი: 10.0)“).
+    # დამრგვალებაც აქ ხდება — მნიშვნელობები შეწონილი საშუალოებია და
+    # ნედლად სრული მცურავი წერტილით გამოდიოდა.
     if max_wind >= THRESHOLDS["wind_suspended"]:
-        alerts.append(f"ქარის აფეთქება: {gusts} მ/წმ (ლიმიტი: {THRESHOLDS['wind_suspended']})")
+        alerts.append(f"ქარის აფეთქება: {max_wind:.1f} მ/წმ (ლიმიტი: {THRESHOLDS['wind_suspended']})")
         esc("suspended")
     elif max_wind >= THRESHOLDS["wind_vessel"]:
-        alerts.append(f"ქარის აფეთქება: {gusts} მ/წმ (გემების ლიმიტი: {THRESHOLDS['wind_vessel']})")
+        alerts.append(f"ქარის აფეთქება: {max_wind:.1f} მ/წმ (გემების ლიმიტი: {THRESHOLDS['wind_vessel']})")
         esc("vessel")
     elif max_wind >= THRESHOLDS["wind_barge"]:
-        alerts.append(f"ქარის სიჩქარე: {wind} მ/წმ (ბორნის ლიმიტი: {THRESHOLDS['wind_barge']})")
+        alerts.append(f"ქარის სიჩქარე: {max_wind:.1f} მ/წმ (ბორნის ლიმიტი: {THRESHOLDS['wind_barge']})")
         esc("barge")
 
     if (wave or 0) >= THRESHOLDS["wave_height"]:
-        alerts.append(f"ტალღის სიმაღლე: {wave} მ (ლიმიტი: {THRESHOLDS['wave_height']})")
+        alerts.append(f"ტალღის სიმაღლე: {wave:.2f} მ (ლიმიტი: {THRESHOLDS['wave_height']})")
         esc("suspended")
 
     if vis is not None and vis <= THRESHOLDS["visibility"]:
-        alerts.append(f"ხილვადობა: {vis} კმ (კრიტიკული ნისლი)")
+        alerts.append(f"ხილვადობა: {vis:.1f} კმ (კრიტიკული ნისლი)")
         esc("suspended")
 
     return st, alerts
