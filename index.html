@@ -1095,7 +1095,10 @@ function renderMtaAdvisory(d) {
   const ENG = currentLang === 'eng';
   document.getElementById('mta-advisory-src').textContent =
     (a.source || 'MTA') + (a.bulletin ? ' ' + a.bulletin : '') + ':';
-  document.getElementById('mta-advisory-text').textContent = ' ' + a.notes.join(' · ');
+  // ENG რეჟიმში ინგლისური ვარიანტი, თუ ბექენდმა გამოგზავნა
+  const notes = (ENG && Array.isArray(a.notes_eng) && a.notes_eng.length)
+    ? a.notes_eng : a.notes;
+  document.getElementById('mta-advisory-text').textContent = ' ' + notes.join(' · ');
   document.getElementById('mta-advisory-until').textContent =
     a.valid_until ? (ENG ? '  · valid until ' : '  · ძალაშია ') + a.valid_until : '';
   box.style.display = 'flex';
