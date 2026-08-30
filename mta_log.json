@@ -1968,7 +1968,29 @@
       },
       "portal_time": "2026-08-30T16:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-08-30 18:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7112_30.08.2026წ._17.20_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {
+        "wind_dir_txt": "SW",
+        "wind_range": [
+          13.0,
+          15.0
+        ]
+      },
+      "bulletin_no": "14/7112",
+      "forecast": {},
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 15.0,
+        "wind_portal": 8.0,
+        "wind_delta": 7.0
+      },
+      "portal_time": "2026-08-30 18:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-08-30 17:07"
+  "last_ingest": "2026-08-30 18:07"
 }
