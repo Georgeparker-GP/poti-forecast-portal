@@ -2589,7 +2589,19 @@
         "wind_overlap": "0/4",
         "wave_overlap": "1/4"
       }
+    },
+    {
+      "ingested_at": "2026-09-01 01:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7148_01.09.2026წ._00.30_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/7148",
+      "forecast": {},
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-09-01 01:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-08-31 22:07"
+  "last_ingest": "2026-09-01 01:07"
 }
