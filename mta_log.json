@@ -2217,7 +2217,163 @@
       },
       "portal_time": "2026-08-31T04:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-08-31 10:07",
+      "source_file": "ამინდის_პროგნოზი_ფოთი_WF_14.7128_31.08.26_10.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "6-11/ 13",
+          "wave_cm": "50-125/ 70-160",
+          "sea_state": "3/ 3-4",
+          "vis_miles": "5-10/ 2-5",
+          "cloud": "ძირითადად\nმოღრუბლული\nMostly cloudy",
+          "precip": "დროგამოშვებით\nწვიმა\nOccasional rain"
+        },
+        "night": {
+          "wind_speed": "6-11",
+          "wave_cm": "70-150/ 80-185",
+          "sea_state": "3-4",
+          "vis_miles": "5-10/ 2-5",
+          "cloud": "მოღრუბლული\nMostly cloudy",
+          "precip": "დროგამოშვებით\nწვიმა\nOccasional rain"
+        }
+      },
+      "bulletin_no": "WF14/7128",
+      "bulletin_no_source": "pdf",
+      "vs_portal_forecast": {
+        "issued": "2026-08-31 10:07",
+        "blocks": [
+          {
+            "block": "day1",
+            "window": "2026-09-01T10:00 → 16:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                6.0,
+                11.0
+              ],
+              "portal": [
+                1.68,
+                3.59
+              ],
+              "overlap": false,
+              "max_delta": 7.41,
+              "mid_delta": 5.87
+            },
+            "wave": {
+              "mta": [
+                0.5,
+                1.25
+              ],
+              "portal": [
+                0.61,
+                0.63
+              ],
+              "overlap": true,
+              "max_delta": 0.62,
+              "mid_delta": 0.26
+            }
+          },
+          {
+            "block": "day2",
+            "window": "2026-08-31T16:00 → 22:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                13.0,
+                13.0
+              ],
+              "portal": [
+                1.71,
+                4.07
+              ],
+              "overlap": false,
+              "max_delta": 8.93,
+              "mid_delta": 10.11
+            },
+            "wave": {
+              "mta": [
+                0.7,
+                1.6
+              ],
+              "portal": [
+                0.33,
+                0.42
+              ],
+              "overlap": false,
+              "max_delta": 1.18,
+              "mid_delta": 0.77
+            }
+          },
+          {
+            "block": "night1",
+            "window": "2026-08-31T22:00 → 04:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                6.0,
+                11.0
+              ],
+              "portal": [
+                2.99,
+                3.63
+              ],
+              "overlap": false,
+              "max_delta": 7.37,
+              "mid_delta": 5.19
+            },
+            "wave": {
+              "mta": [
+                0.7,
+                1.5
+              ],
+              "portal": [
+                0.45,
+                0.56
+              ],
+              "overlap": false,
+              "max_delta": 0.94,
+              "mid_delta": 0.6
+            }
+          },
+          {
+            "block": "night2",
+            "window": "2026-09-01T04:00 → 10:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                6.0,
+                11.0
+              ],
+              "portal": [
+                3.15,
+                3.79
+              ],
+              "overlap": false,
+              "max_delta": 7.21,
+              "mid_delta": 5.03
+            },
+            "wave": {
+              "mta": [
+                0.8,
+                1.85
+              ],
+              "portal": [
+                0.58,
+                0.6
+              ],
+              "overlap": false,
+              "max_delta": 1.25,
+              "mid_delta": 0.74
+            }
+          }
+        ],
+        "wind_overlap": "0/4",
+        "wave_overlap": "1/4"
+      }
     }
   ],
-  "last_ingest": "2026-08-31 05:07"
+  "last_ingest": "2026-08-31 10:07"
 }
