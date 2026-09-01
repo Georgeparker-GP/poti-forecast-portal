@@ -426,10 +426,13 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 /* საათი გამოკვეთილია — რიგებს ერთმანეთისგან მკვეთრად მიჯნავს */
 .recap-time{flex:0 0 56px;color:var(--tx);font-family:'JetBrains Mono',monospace;
   font-size:15px;font-weight:700;letter-spacing:-0.02em;}
-.recap-metrics{flex:1;display:flex;gap:13px;color:var(--sb);font-family:'JetBrains Mono',monospace;flex-wrap:wrap;align-items:baseline;}
+.recap-metrics{flex:1;display:flex;gap:10px;color:var(--sb);font-family:'JetBrains Mono',monospace;flex-wrap:wrap;align-items:baseline;}
 /* ეტიკეტები და ერთეულები მკრთალდება — ციფრები წინ გამოდის */
 .recap-metrics .rl{font-size:11px;color:var(--mu);}
 .recap-metrics .ru{font-size:11px;color:var(--mu);}
+/* ნალექის თანხმობა — სიტყვას ეწებებოდა ("ჟინჟლი52%"). საკუთარი
+   დაშორება და უფრო მკრთალი ტონი: ციფრი ჩანს, სიტყვას არ ეჯიბრება. */
+.recap-metrics .rp{font-size:10px;color:var(--mu);margin-left:5px;opacity:.85;}
 .recap-metrics b{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;}
 /* ზღვრებთან მიმართებაში — 1.33 და 15.0 ვიზუალურად აღარ ერთია */
 .recap-metrics b.v-ok  {color:var(--tl);}
@@ -1407,7 +1410,7 @@ function render(d) {
       // რაც fetch.py-ის _precip_label-ში, რომ Telegram და პორტალი არ
       // განსხვავდებოდნენ.
       const rainTxt = v =>
-          v < 0.1  ? [ENG?'dry':'მშრალი',      'v-ok']
+          v < 0.1  ? [ENG?'no precip':'უნალექო', 'v-ok']
         : v < 1.0  ? [ENG?'drizzle':'ჟინჟლი',  'v-ok']
         : v < 5.0  ? [ENG?'rain':'წვიმა',      'v-warn']
         : v < 10.0 ? [ENG?'heavy':'ძლიერი',    'v-alert']
@@ -1427,7 +1430,7 @@ function render(d) {
         // მშრალ საათებზე არ ჩანს: იქ შეთანხმება ნულია და პროცენტი
         // შეცდომაში შემყვანია.
         const agr = (rn >= 0.1 && h.precip_agreement != null)
-          ? `<span class="ru">${Math.round(h.precip_agreement)}%</span>`
+          ? `<span class="rp">${Math.round(h.precip_agreement)}%</span>`
           : '';
 
         // ტალღა მხოლოდ მაშინ, როცა ლიმიტს უახლოვდება (≥1.0 მ).
