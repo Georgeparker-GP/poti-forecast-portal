@@ -1421,6 +1421,15 @@ function render(d) {
         const rn = h.precipitation||0, tp = h.air_temp;
         const [rTxt, rCls] = rainTxt(rn);
 
+        // წყაროთა შეთანხმება პროცენტულად. ერთი წყაროს 1.7 მმ და ხუთი
+        // წყაროს 1.7 მმ ეკრანზე ერთნაირად გამოიყურებოდა — ეს რიცხვი
+        // სწორედ ამ განსხვავებას აჩვენებს.
+        // მშრალ საათებზე არ ჩანს: იქ შეთანხმება ნულია და პროცენტი
+        // შეცდომაში შემყვანია.
+        const agr = (rn >= 0.1 && h.precip_agreement != null)
+          ? `<span class="ru">${Math.round(h.precip_agreement)}%</span>`
+          : '';
+
         // ტალღა მხოლოდ მაშინ, როცა ლიმიტს უახლოვდება (≥1.0 მ).
         // მშვიდ დღეს ზედმეტ ხმაურს არ ქმნის, უხეშზე კი სტატუსის
         // მიზეზი თვალსაჩინოა.
@@ -1433,7 +1442,7 @@ function render(d) {
           <span class="recap-metrics">
             <span><span class="rl">${ENG?'gust':'დაქრ.'}</span> <b class="${wLvl(wg)}">${fmt(wg)}</b></span>
             <span><b>${tp!=null?fmt(tp,1):'--'}</b><span class="ru">°C</span></span>
-            <span><b class="${rCls}">${rTxt}</b></span>
+            <span><b class="${rCls}">${rTxt}</b>${agr}</span>
             ${waveCell}
           </span>
           ${pill}
