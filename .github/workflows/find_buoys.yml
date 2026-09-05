@@ -1,0 +1,27 @@
+name: ბუების ძებნა
+
+on:
+  workflow_dispatch:
+    inputs:
+      radius:
+        description: 'რადიუსი კმ-ში'
+        required: false
+        default: '300'
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install copernicusmarine
+      - name: ძებნა
+        env:
+          COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.CMEMS_USERNAME }}
+          COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.CMEMS_PASSWORD }}
+        run: |
+          copernicusmarine describe --contains INSITU_BLK || true
+          echo "═══════════════════════"
+          python3 find_wave_buoys.py ${{ github.event.inputs.radius }}
