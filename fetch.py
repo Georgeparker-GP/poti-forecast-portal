@@ -1466,19 +1466,22 @@ def _tstorm_str(c: dict, output: dict = None) -> str:
     მხოლოდ რადარი ან ელჭექის დეტექტორი ადგენს. ეს გაფრთხილება
     "მოემზადეთ"-ია, არა "შეაჩერეთ ახლა".
     """
-    parts = []
-    if c.get("thunderstorm"):
-        parts.append("მოდელები")
+    model_hit = bool(c.get("thunderstorm"))
+    mta_hit = False
     if output:
         adv = output.get("mta_advisory") or {}
         for nt in (adv.get("notes") or []):
             t = str(nt).lower()
             if "thunder" in t or "ელჭ" in t or "ჭექ" in t:
-                parts.append("MTA")
+                mta_hit = True
                 break
-    if not parts:
+    if not (model_hit or mta_hit):
         return ""
-    return "⚡ <b>ჭექა-ქუხილი მოსალოდნელია</b> (" + " + ".join(parts) + ")\n"
+    # "(მოდელები)" მოხსნილია — ნაგულისხმევი წყაროა და ტექსტს ხმაურს მატებდა.
+    # MTA რჩება: სინოპტიკოსის დადასტურება მოდელისგან განსხვავებული წონის
+    # სიგნალია და ეს განსხვავება ეკრანზე უნდა ჩანდეს.
+    suffix = " (MTA)" if mta_hit else ""
+    return f"⚡ <b>ჭექა-ქუხილი მოსალოდნელია</b>{suffix}\n"
 
 
 def _vis_range_str(c: dict) -> str:
@@ -1548,7 +1551,9 @@ def _precip_label(mm: float, sources: int = None, agreement: int = None) -> str:
     მოსალოდნელი. სიგნალი არ იკარგება — ის უბრალოდ სწორად ფასდება.
     """
     if mm is None: return "—"
-    if mm < 0.1:     return "მოსალოდნელი არ არის"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
+    # "უნალექო" — იგივე ტერმინი, რომელსაც MTA იყენებს ბიულეტენებში და
+    # პორტალის რეკაპი ეკრანზე. სამივე ერთნაირად უნდა ლაპარაკობდეს.
+    if mm < 0.1:     return "უნალექო"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
 
     if   mm < 1.0:   desc = "ჟინჟლი"
     elif mm < 5.0:   desc = "მსუბუქი წვიმა"
@@ -1871,7 +1876,7 @@ def send_shift_handover_telegram(output: dict):
     peak_agr   = max((h.get("precip_agreement", 0) or 0
                       for h in next_hours if (h["precipitation"] or 0) >= 0.1), default=0)
     if rain_hours == 0 or total_rain < 0.1:
-        rain_line = "მოსალოდნელი არ არის"
+        rain_line = "უნალექო"
     else:
         # ყურადღება: total_rain არის ჯამი (მმ), peak_rain კი სიჩქარე (მმ/სთ).
         # აღწერა ყოველთვის სიჩქარეს უნდა ეყრდნობოდეს — _precip_label-ის
@@ -1923,7 +1928,7 @@ def send_shift_handover_telegram(output: dict):
         seg_agr     = max((h.get("precip_agreement", 0) or 0
                            for h in seg if (h["precipitation"] or 0) >= 0.1), default=0)
         if seg_rain < 0.1:
-            rain_str = "🌧 ნალექი: მოსალოდნელი არ არის"
+            rain_str = "🌧 უნალექო"
         else:
             rain_desc = _precip_label(max(seg_peak, 0.1), seg_src, seg_agr).split(" — ", 1)[-1]
             rain_str  = f"🌧 ნალექი: {seg_rain} მმ ჯამში — მაქს. {rain_desc}"
