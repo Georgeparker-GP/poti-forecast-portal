@@ -70,7 +70,12 @@ def fetch_index(outdir):
 
 
 def parse_index(path):
-    """index ფაილი CSV-ია, კომენტარები '#'-ით. აბრუნებს row-dict-ების სიას."""
+    """index ფაილი CSV-ია, კომენტარები '#'-ით.
+
+    ⚠ ჩანაწერი = ᲤᲐᲘᲚᲘ, არა პლატფორმა. ერთ ბუის თვეების მიხედვით
+    ათობით ფაილი აქვს (GL_PR_PF_6903240_202112.nc, ..._202203.nc).
+    ამიტომ dedup პლატფორმის კოდზე ხდება და არა ფაილის სახელზე.
+    """
     rows, header = [], None
     with open(path, encoding="utf-8", errors="replace") as f:
         for line in f:
@@ -78,8 +83,11 @@ def parse_index(path):
             if not line:
                 continue
             if line.startswith("#"):
-                # ბოლო კომენტარი ჩვეულებრივ სვეტების სათაურია
-                header = [c.strip() for c in line.lstrip("#").split(",")]
+                cells = [c.strip() for c in line.lstrip("#").split(",")]
+                # სათაურად ვთვლით მხოლოდ იმ კომენტარს, სადაც ცნობადი
+                # სვეტებია — თორემ ნებისმიერი აღწერითი ხაზი გადააწერდა.
+                if any("lat" in c.lower() for c in cells):
+                    header = cells
                 continue
             if header is None:
                 continue
@@ -87,7 +95,26 @@ def parse_index(path):
             if len(parts) < len(header):
                 parts += [""] * (len(header) - len(parts))
             rows.append(dict(zip(header, parts)))
-    return rows
+    return header, rows
+
+
+def col(row, *names):
+    """სვეტის მოძებნა სახელის ნაწილით, რეგისტრის გარეშე."""
+    for k, v in row.items():
+        kl = (k or "").lower()
+        if any(n in kl for n in names):
+            if v not in (None, ""):
+                return v
+    return ""
+
+
+def platform_id(fname):
+    """GL_PR_PF_6903240_202112.nc → GL_PR_PF_6903240"""
+    base = fname.split("/")[-1].replace(".nc", "")
+    bits = base.split("_")
+    if bits and bits[-1].isdigit() and len(bits[-1]) == 6:   # YYYYMM
+        bits = bits[:-1]
+    return "_".join(bits)
 
 
 def to_float(v):
@@ -102,49 +129,65 @@ def main():
     print(f"პროდუქტი: {PRODUCT}")
     print(f"ცენტრი: ფოთი {POTI[0]}, {POTI[1]} · რადიუსი: {radius:.0f} კმ\n")
 
+    plats = {}
     with tempfile.TemporaryDirectory() as tmp:
         idx = fetch_index(tmp)
         if not idx:
-            sys.exit("ინდექს-ფაილი ვერ მოიძებნა — იხ. შენიშვნა ქვემოთ.")
+            sys.exit("ინდექს-ფაილი ვერ მოიძებნა.")
 
-        seen, hits = set(), []
         for path in idx:
-            for r in parse_index(path):
-                name = r.get("file_name") or r.get("catalog_id") or ""
-                if name in seen:
+            header, rows = parse_index(path)
+            print(f"[{pathlib.Path(path).name}] სტრიქონი: {len(rows)}")
+            print(f"  ამოცნობილი სვეტები: {header}\n")
+            for r in rows:
+                fname = col(r, "file_name", "file") or col(r, "catalog_id")
+                if not fname:
                     continue
-                seen.add(name)
-
-                lat = to_float(r.get("geospatial_lat_min"))
-                lon = to_float(r.get("geospatial_lon_min"))
+                lat = to_float(col(r, "lat_min", "latitude", "lat"))
+                lon = to_float(col(r, "lon_min", "longitude", "lon"))
                 if lat is None or lon is None:
                     continue
-
-                params = (r.get("parameters") or "").upper()
-                has_wave = any(v in params for v in WAVE_VARS)
-
                 d = haversine(POTI, (lat, lon))
-                if d <= radius:
-                    hits.append((d, lat, lon, has_wave, r))
+                if d > radius:
+                    continue
 
-    if not hits:
+                pid = platform_id(fname)
+                params = (col(r, "parameter") or "").upper()
+                has_wave = any(v in params for v in WAVE_VARS)
+                end = col(r, "time_coverage_end", "date_update")
+
+                cur = plats.get(pid)
+                if cur is None or has_wave and not cur["wave"] or end > cur["end"]:
+                    plats[pid] = {"d": d, "lat": lat, "lon": lon,
+                                  "wave": has_wave or (cur or {}).get("wave", False),
+                                  "end": max(end, (cur or {}).get("end", "")),
+                                  "params": params or (cur or {}).get("params", ""),
+                                  "type": pid.split("_")[2] if len(pid.split("_")) > 2 else "?"}
+
+    if not plats:
         print(f"{radius:.0f} კმ-ში პლატფორმა არ არის. საკითხი იხურება.")
         return
 
-    hits.sort(key=lambda x: x[0])
-    print(f"ნაპოვნია {len(hits)} პლატფორმა "
-          f"({sum(1 for h in hits if h[3])} ტალღის მონაცემით):\n")
-    for d, lat, lon, has_wave, r in hits:
-        mark = "🌊" if has_wave else "  "
-        name = (r.get("file_name") or "?").split("/")[-1]
-        print(f"{mark} {d:6.1f} კმ  {lat:7.3f}, {lon:7.3f}  "
-              f"{r.get('provider','?')[:28]:28s}  {name}")
-        if has_wave:
-            print(f"              ბოლო მონაცემი: {r.get('time_coverage_end','?')}  "
-                  f"რეჟიმი: {r.get('data_mode','?')}")
+    waves = {k: v for k, v in plats.items() if v["wave"]}
+    print(f"პლატფორმა სულ: {len(plats)} · ტალღის მონაცემით: {len(waves)}\n")
 
-    print("\n🌊 = ტალღის პარამეტრი დევს. სწორედ ესენი გვაინტერესებს.")
-    print("თუ ასეთი არცერთია, in-situ ამ რეგიონში ტალღას არ ზომავს.")
+    if waves:
+        print("═══ ტალღის მზომი პლატფორმები ═══")
+        for pid, v in sorted(waves.items(), key=lambda x: x[1]["d"]):
+            print(f"🌊 {v['d']:6.1f} კმ  {v['lat']:7.3f}, {v['lon']:7.3f}  {pid}")
+            print(f"           ბოლო: {v['end']}  ცვლადები: {v['params'][:90]}")
+    else:
+        print("ტალღის მზომი პლატფორმა არ არის.")
+        print("ტიპების განაწილება (ბოლო სვეტი პლატფორმის კოდიდან):")
+        from collections import Counter
+        for t, n in Counter(v["type"] for v in plats.values()).most_common():
+            print(f"  {t}: {n}")
+        print("\nMO = ღუზაზე მდგარი (ჩვეულებრივ ტალღას ზომავს)")
+        print("PF = პროფილირებადი (ტემპერატურა/მარილიანობა, ტალღა არა)")
+        near = sorted(plats.items(), key=lambda x: x[1]["d"])[:5]
+        print("\nუახლოესი 5 პლატფორმა:")
+        for pid, v in near:
+            print(f"  {v['d']:6.1f} კმ  {pid}  ცვლადები: {v['params'][:70]}")
 
 
 if __name__ == "__main__":
