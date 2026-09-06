@@ -720,9 +720,33 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
 
     elite_w = sum(w for _, w in elite_wind_pool)
 
-    # Fail-Safe: თუ ელიტური მოდელები მიუწვდომელია, ვბრუნდებით სრულ აუზზე
-    active_wind_pool = elite_wind_pool if elite_wind_pool else atmo_pool
-    active_wind_w    = elite_w if elite_wind_pool else total_w
+    # Fail-Safe: ელიტური აუზი ᲠᲐᲝᲓᲔᲜᲝᲑᲘᲗ მოწმდება და არა ცარიელობით.
+    #
+    # ⚠ 2026-09-06: ადრე პირობა იყო `if elite_wind_pool else atmo_pool` —
+    #   ანუ ფოლბექი მხოლოდ მაშინ ირთვებოდა, როცა სამივე ელიტური იკარგებოდა.
+    #   სამიდან ორი (ECMWF, ICON-EU) ერთსა და იმავე დომენზეა —
+    #   api.open-meteo.com. მისი ჩავარდნისას სია ცარიელი არ ხდებოდა
+    #   (yr.no რჩებოდა) და ქარის მთელი კონსენსუსი ᲔᲠᲗ წყაროზე გადადიოდა,
+    #   ფოლბექის გარეშე. ამას ისიც ემატება, რომ yr.no-ს ქროლვა სინთეზურია
+    #   (wind_speed × 1.25) და veto-ში არ მონაწილეობს — ანუ რეალური
+    #   ქროლვა საერთოდ არ რჩებოდა.
+    #
+    # ᲐᲮᲚᲐ: ორზე ნაკლები ელიტური წყარო → ვაფართოებთ სრულ აუზამდე.
+    # ნორმალურ რეჟიმში (სამივე ხელმისაწვდომი) ქცევა ᲣᲪᲕᲚᲔᲚᲘᲐ —
+    # ეს მხოლოდ დეგრადირებულ მდგომარეობაში ირთვება, სადაც ალტერნატივა
+    # ერთწყაროიანი "კონსენსუსია".
+    ELITE_MIN = 2
+    if len(elite_wind_pool) >= ELITE_MIN:
+        active_wind_pool, active_wind_w = elite_wind_pool, elite_w
+        wind_pool_mode = "elite"
+    else:
+        active_wind_pool, active_wind_w = atmo_pool, total_w
+        wind_pool_mode = "degraded"
+        log.warning(
+            f"ქარის ელიტური აუზი დეგრადირებულია "
+            f"({len(elite_wind_pool)}/3) — ვფართოვდებით სრულ აუზზე "
+            f"({len(atmo_pool)} წყარო)"
+        )
 
     hours   = min(FORECAST_HOURS, len(atmo_best))
     result  = []
@@ -966,6 +990,9 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "dir_fallback": dir_fallback,
             "confidence": _confidence_level(wind_spread, len(wind_values)),
             "source_count": len(wind_values),
+            # "degraded" → ქარი სრული აუზიდან ითვლება, არა ელიტურიდან.
+            # ოქტომბრის ანალიზში ასეთი საათები ცალკე უნდა გამოიყოს.
+            "wind_pool": wind_pool_mode,
         })
     return result
 
@@ -1550,18 +1577,11 @@ def _precip_label(mm: float, sources: int = None, agreement: int = None) -> str:
     if mm is None: return "—"
     if mm < 0.1:     return "მოსალოდნელი არ არის"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
 
-    # 2026-09-06: შკალა გადაწყობილია. ადრე 1-5 მმ/სთ "მსუბუქ წვიმად"
-    # იწერებოდა — 4.9 მმ/სთ კი უკვე შესამჩნევი წვიმაა.
-    # ზედა ზღვრები (7 და 18.5) ფოთის სუბტროპიკულ რეჟიმზეა მორგებული —
-    # WMO-ს ზოგადი 10/50-ის ნაცვლად, რომელიც აქ თითქმის ვერასოდეს
-    # გადაილახებოდა და ზედა საფეხური უსარგებლო გახდებოდა.
-    # ⚠ ეს ᲛᲮᲝᲚᲝᲓ ᲬᲐᲠᲬᲔᲠᲐᲐ — ნალექი THRESHOLDS-ში არ შედის და სტატუსს
-    #   არ ცვლის (სტატუსი ქარზე, ტალღასა და ხილვადობაზეა აგებული).
-    if   mm < 0.5:   desc = "ჟინჟლი"
-    elif mm < 2.5:   desc = "მსუბუქი წვიმა"
-    elif mm < 7.0:   desc = "ზომიერი წვიმა"
-    elif mm < 18.5:  desc = "ძლიერი წვიმა"
-    else:            desc = "კოკისპირული წვიმა ⚠️"
+    if   mm < 1.0:   desc = "ჟინჟლი"
+    elif mm < 5.0:   desc = "მსუბუქი წვიმა"
+    elif mm < 10.0:  desc = "ზომიერი წვიმა"
+    elif mm < 20.0:  desc = "ძლიერი წვიმა"
+    else:            desc = "ინტენსიური წვიმა ⚠️"
 
     pct = f" · თანხმობა {agreement}%" if agreement is not None else ""
 
