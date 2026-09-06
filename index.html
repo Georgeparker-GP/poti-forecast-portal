@@ -726,6 +726,21 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <span id="c-dew-val">--</span><span style="font-size:14px;color:var(--mu)">°C</span>
           </div>
         </div>
+        <!-- ატმოსფერული წნევა — ᲘᲜᲤᲝᲠᲛᲐᲪᲘᲣᲚᲘ, დირექტივის გარეშე.
+             ფერი რისკზეა მიბმული და არა უბრალოდ ნორმიდან გადახრაზე:
+             დაბალი წნევა = ციკლონი = ქარი და ტალღა → წითელი;
+             მაღალი = ანტიციკლონი = მშვიდი ამინდი → ლურჯი (ნეიტრალური).
+             პორტალზე წითელი ყველგან რისკს ნიშნავს — ეს ენა არ უნდა
+             გაწყდეს, თორემ ყველაზე მშვიდი დღე კრიტიკულად აინთებოდა. -->
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--mu);font-weight:600;"
+               data-i18n="lbl_pressure">წნევა</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;
+                      line-height:1.1;margin-top:3px;">
+            <span id="c-prs-val">--</span><span style="font-size:14px;color:var(--mu)"> hPa</span>
+          </div>
+          <div id="c-prs-note" style="font-size:10px;color:var(--mu);margin-top:2px;"></div>
+        </div>
       </div>
     </div>
 
@@ -1306,6 +1321,36 @@ function render(d) {
   const dvEl = document.getElementById('c-dew-val');
   if (hvEl) hvEl.textContent = c.humidity != null ? Math.round(c.humidity) : '--';
   if (dvEl) dvEl.textContent = c.dew_point != null ? fmt(c.dew_point, 1) : '--';
+
+  // ─── ატმოსფერული წნევა ───
+  // ზღვრები ფოთისთვის: <1005 დაბალი · 1005-1025 ნორმა · >1025 მაღალი.
+  // ფერი რისკზეა მიბმული — იხ. კომენტარი markup-ში.
+  const pvEl = document.getElementById('c-prs-val');
+  const pnEl = document.getElementById('c-prs-note');
+  if (pvEl) {
+    const pr = c.pressure != null ? Number(c.pressure) : null;
+    if (pr == null) {
+      pvEl.textContent = '--';
+      pvEl.parentElement.style.color = 'var(--text-strong)';
+      if (pnEl) pnEl.textContent = '';
+    } else {
+      const ENG = currentLang === 'eng';
+      let col, note;
+      if (pr < 1005) {
+        col  = 'var(--txt-danger)';
+        note = ENG ? 'low · unsettled' : 'დაბალი · არამდგრადი';
+      } else if (pr > 1025) {
+        col  = 'var(--txt-cold)';
+        note = ENG ? 'high · settled' : 'მაღალი · მდგრადი';
+      } else {
+        col  = 'var(--txt-ok)';
+        note = ENG ? 'normal' : 'ნორმა';
+      }
+      pvEl.textContent = fmt(pr, 1);
+      pvEl.parentElement.style.color = col;
+      if (pnEl) pnEl.textContent = note;
+    }
+  }
 
 
 
@@ -1988,6 +2033,7 @@ const I18N = {
   no_week_data:  {geo:'კვირის მონაცემები მიუწვდომელია', eng:'Weekly data unavailable'},
   lbl_humidity:  {geo:'ტენიანობა', eng:'Humidity'},
   lbl_dewpoint:  {geo:'ნამის წერტილი', eng:'Dew point'},
+  lbl_pressure:  {geo:'წნევა', eng:'Pressure'},
   intro_main:    {geo:'ფოთის პორტი', eng:'Port of Poti'},
   load_fail:     {geo:'data.json ვერ ჩაიტვირთა', eng:'Failed to load data.json'},
   offline:       {geo:'ოფლაინი', eng:'offline'},
