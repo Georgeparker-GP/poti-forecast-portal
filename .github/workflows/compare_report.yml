@@ -1,0 +1,41 @@
+name: შედარების ანგარიში
+
+on:
+  workflow_dispatch:
+  schedule:
+    # დღეში ერთხელ, 20:30 UTC = 00:30 თბილისი — მას შემდეგ,
+    # რაც დღის ორივე ფაქტიური ბიულეტენი უკვე დამუშავებულია.
+    - cron: '30 20 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 აუცილებელია — სკრიპტი პორტალის ისტორიულ
+      # მნიშვნელობებს data.json-ის commit-ებიდან იღებს.
+      # ამიტომაა ცალკე workflow და არა საათობრივში: სრული ისტორიის
+      # ჩამოტვირთვა ყოველ საათს ზედმეტი იქნებოდა.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: ანგარიშის აგება
+        run: python3 compare_report.py
+
+      - name: Commit
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add comparison.md
+          if git diff --cached --quiet; then
+            echo "ცვლილება არ არის."
+          else
+            git commit -m "შედარების ანგარიში ($(date -u +%Y-%m-%d))"
+            git push
+          fi
