@@ -1466,22 +1466,19 @@ def _tstorm_str(c: dict, output: dict = None) -> str:
     მხოლოდ რადარი ან ელჭექის დეტექტორი ადგენს. ეს გაფრთხილება
     "მოემზადეთ"-ია, არა "შეაჩერეთ ახლა".
     """
-    model_hit = bool(c.get("thunderstorm"))
-    mta_hit = False
+    parts = []
+    if c.get("thunderstorm"):
+        parts.append("მოდელები")
     if output:
         adv = output.get("mta_advisory") or {}
         for nt in (adv.get("notes") or []):
             t = str(nt).lower()
             if "thunder" in t or "ელჭ" in t or "ჭექ" in t:
-                mta_hit = True
+                parts.append("MTA")
                 break
-    if not (model_hit or mta_hit):
+    if not parts:
         return ""
-    # "(მოდელები)" მოხსნილია — ნაგულისხმევი წყაროა და ტექსტს ხმაურს მატებდა.
-    # MTA რჩება: სინოპტიკოსის დადასტურება მოდელისგან განსხვავებული წონის
-    # სიგნალია და ეს განსხვავება ეკრანზე უნდა ჩანდეს.
-    suffix = " (MTA)" if mta_hit else ""
-    return f"⚡ <b>ჭექა-ქუხილი მოსალოდნელია</b>{suffix}\n"
+    return "⚡ <b>ჭექა-ქუხილი მოსალოდნელია</b> (" + " + ".join(parts) + ")\n"
 
 
 def _vis_range_str(c: dict) -> str:
@@ -1551,15 +1548,19 @@ def _precip_label(mm: float, sources: int = None, agreement: int = None) -> str:
     მოსალოდნელი. სიგნალი არ იკარგება — ის უბრალოდ სწორად ფასდება.
     """
     if mm is None: return "—"
-    # "უნალექო" — იგივე ტერმინი, რომელსაც MTA იყენებს ბიულეტენებში და
-    # პორტალის რეკაპი ეკრანზე. სამივე ერთნაირად უნდა ლაპარაკობდეს.
-    if mm < 0.1:     return "უნალექო"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
+    if mm < 0.1:     return "მოსალოდნელი არ არის"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
 
-    if   mm < 1.0:   desc = "ჟინჟლი"
-    elif mm < 5.0:   desc = "მსუბუქი წვიმა"
+    # 2026-09-06: შკალა მეტეოროლოგიურ სტანდარტს მოერგო.
+    # ადრე 1-5 მმ/სთ "მსუბუქ წვიმად" იწერებოდა — 4.9 მმ/სთ კი უკვე
+    # შესამჩნევი წვიმაა და ეკრანი რეალობას არბილებდა.
+    # სტანდარტი: <2.5 მსუბუქი · 2.5-10 ზომიერი · 10-50 ძლიერი · 50+ კოკისპირული.
+    # ⚠ ეს ᲛᲮᲝᲚᲝᲓ ᲬᲐᲠᲬᲔᲠᲐᲐ — ნალექი THRESHOLDS-ში არ შედის და სტატუსს
+    #   არ ცვლის (სტატუსი ქარზე, ტალღასა და ხილვადობაზეა აგებული).
+    if   mm < 0.5:   desc = "ჟინჟლი"
+    elif mm < 2.5:   desc = "მსუბუქი წვიმა"
     elif mm < 10.0:  desc = "ზომიერი წვიმა"
-    elif mm < 20.0:  desc = "ძლიერი წვიმა"
-    else:            desc = "ინტენსიური წვიმა ⚠️"
+    elif mm < 50.0:  desc = "ძლიერი წვიმა"
+    else:            desc = "კოკისპირული წვიმა ⚠️"
 
     pct = f" · თანხმობა {agreement}%" if agreement is not None else ""
 
@@ -1876,7 +1877,7 @@ def send_shift_handover_telegram(output: dict):
     peak_agr   = max((h.get("precip_agreement", 0) or 0
                       for h in next_hours if (h["precipitation"] or 0) >= 0.1), default=0)
     if rain_hours == 0 or total_rain < 0.1:
-        rain_line = "უნალექო"
+        rain_line = "მოსალოდნელი არ არის"
     else:
         # ყურადღება: total_rain არის ჯამი (მმ), peak_rain კი სიჩქარე (მმ/სთ).
         # აღწერა ყოველთვის სიჩქარეს უნდა ეყრდნობოდეს — _precip_label-ის
@@ -1928,7 +1929,7 @@ def send_shift_handover_telegram(output: dict):
         seg_agr     = max((h.get("precip_agreement", 0) or 0
                            for h in seg if (h["precipitation"] or 0) >= 0.1), default=0)
         if seg_rain < 0.1:
-            rain_str = "🌧 უნალექო"
+            rain_str = "🌧 ნალექი: მოსალოდნელი არ არის"
         else:
             rain_desc = _precip_label(max(seg_peak, 0.1), seg_src, seg_agr).split(" — ", 1)[-1]
             rain_str  = f"🌧 ნალექი: {seg_rain} მმ ჯამში — მაქს. {rain_desc}"
