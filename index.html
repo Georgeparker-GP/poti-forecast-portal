@@ -732,7 +732,8 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
              დაბალი წნევა = ციკლონი = ქარი და ტალღა → წითელი;
              მაღალი = ანტიციკლონი = მშვიდი ამინდი → ლურჯი (ნეიტრალური).
              პორტალზე წითელი ყველგან რისკს ნიშნავს — ეს ენა არ უნდა
-             გაწყდეს, თორემ ყველაზე მშვიდი დღე კრიტიკულად აინთებოდა. -->
+             გაწყდეს, თორემ ყველაზე მშვიდი დღე კრიტიკულად აინთებოდა.
+             ზღვრები: 1010 / 1020 (იხ. კომენტარი render()-ში). -->
         <div>
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--mu);font-weight:600;"
                data-i18n="lbl_pressure">წნევა</div>
@@ -1325,8 +1326,14 @@ function render(d) {
   if (dvEl) dvEl.textContent = c.dew_point != null ? fmt(c.dew_point, 1) : '--';
 
   // ─── ატმოსფერული წნევა ───
-  // ზღვრები ფოთისთვის: <1005 დაბალი · 1005-1025 ნორმა · >1025 მაღალი.
-  // ფერი რისკზეა მიბმული — იხ. კომენტარი markup-ში.
+  // ზღვრები: <1010 დაბალი · 1010-1020 ნორმა · >1020 მაღალი.
+  // 2026-09-06: პირველი ვარიანტი (1005/1025) git-ის ისტორიაზე შემოწმდა —
+  // 280 საათზე ᲐᲠᲪᲔᲠᲗᲘ ᲐᲠ ᲒᲐᲓᲐᲘᲚᲐᲮᲐ. რეალური დიაპაზონი 1008.0-1017.4,
+  // σ=2.50. 1010 იმიტომ, რომ 29-30 აგვისტოს შტორმის დღეები (მინიმუმი
+  // 1008.0) აინთეს; 1020 — რომ ზაფხულში არ ხმაურობდეს, შემოდგომის
+  // ანტიციკლონზე კი გამოჩნდეს.
+  // ⚠ ᲓᲠᲝᲔᲑᲘᲗᲘᲐ — ეყრდნობა მხოლოდ 12 ზაფხულის დღეს. ოქტომბერში
+  //   pressure_stats.py ხელახლა უნდა გაეშვას შემოდგომის მონაცემით.
   const pvEl = document.getElementById('c-prs-val');
   const pnEl = document.getElementById('c-prs-note');
   if (pvEl) {
@@ -1338,10 +1345,10 @@ function render(d) {
     } else {
       const ENG = currentLang === 'eng';
       let col, note;
-      if (pr < 1005) {
+      if (pr < 1010) {
         col  = 'var(--txt-danger)';
         note = ENG ? 'low · unsettled' : 'დაბალი · არამდგრადი';
-      } else if (pr > 1025) {
+      } else if (pr > 1020) {
         col  = 'var(--txt-cold)';
         note = ENG ? 'high · settled' : 'მაღალი · მდგრადი';
       } else {
@@ -1603,7 +1610,7 @@ function buildTable(fc) {
     const visc= (h.visibility_km||99)<=THR.fog?'t-rd': (h.visibility_km||99)<=1?'t-yw':'t-mu';
     // წნევა: დაბალი = ციკლონი = რისკი (წითელი), მაღალი = მდგრადი (ლურჯი)
     const pr  = h.pressure;
-    const pc  = pr==null ? 't-mu' : pr < 1005 ? 't-rd' : pr > 1025 ? 't-cold' : 't-mu';
+    const pc  = pr==null ? 't-mu' : pr < 1010 ? 't-rd' : pr > 1020 ? 't-cold' : 't-mu';
     const dir = h.wind_direction!=null ? `${Math.round(h.wind_direction)}° ${toCompass(h.wind_direction)}` : '--';
     const temp = h.air_temp != null ? fmt(h.air_temp,1) : '--';
     const tc   = h.air_temp == null ? 't-mu' : h.air_temp < 5 ? 't-yw' : h.air_temp > 30 ? 't-or' : 't-mu';
