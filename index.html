@@ -403,6 +403,7 @@ svg.chart{width:100%;overflow:visible;}
 .tbl tr.row-now td:first-child{border-left:2px solid var(--tl);padding-left:10px;}
 .t-time{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sb);}
 .t-num{font-family:'JetBrains Mono',monospace;font-size:12px;}
+.t-cold{color:var(--txt-cold)}
 .t-rd{color:var(--txt-danger);font-weight:600}.t-or{color:var(--txt-alert);font-weight:600}.t-yw{color:var(--txt-warn);font-weight:600}.t-gn{color:var(--txt-ok)}.t-mu{color:var(--sb)}
 .pill{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:5px;text-transform:uppercase;}
 .pill-op  {background:rgba(45,212,160,.12);color:var(--txt-ok);}
@@ -854,11 +855,12 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
             <th><span data-i18n="th_wave">ტალღა მ</span></th>
             <th><span data-i18n="th_rain">წვიმა</span></th>
             <th><span data-i18n="th_vis">ხილვ. კმ</span></th>
+            <th><span data-i18n="th_press">წნევა</span></th>
             <th><span data-i18n="th_status">სტატუსი</span></th>
           </tr>
         </thead>
         <tbody id="tbl-body">
-          <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)" data-i18n="loading">იტვირთება...</td></tr>
+          <tr><td colspan="10" style="text-align:center;padding:20px;color:var(--sb)" data-i18n="loading">იტვირთება...</td></tr>
         </tbody>
       </table>
     </div>
@@ -1454,12 +1456,18 @@ function render(d) {
       // ნალექი — მილიმეტრების ნაცვლად მდგომარეობა. ზღვრები იგივეა,
       // რაც fetch.py-ის _precip_label-ში, რომ Telegram და პორტალი არ
       // განსხვავდებოდნენ.
+      // 2026-09-06: შკალა მეტეოროლოგიურ სტანდარტს მოერგო. ადრე 5-10 მმ/სთ
+      // "ძლიერს" ერქვა (სინამდვილეში ზომიერია) და 10+ "ინტენსიურს"
+      // (ინტენსიური 50-დან იწყება) — ეკრანი რეალობაზე მკაცრი იყო.
+      // ⚠ ეს ᲛᲮᲝᲚᲝᲓ ᲬᲐᲠᲬᲔᲠᲐᲐ: ნალექი THRESHOLDS-ში არ შედის და
+      //   სტატუსზე გავლენას არ ახდენს (ქარი, ტალღა, ხილვადობა).
       const rainTxt = v =>
-          v < 0.1  ? [ENG?'no precip':'უნალექო', 'v-ok']
-        : v < 1.0  ? [ENG?'drizzle':'ჟინჟლი',  'v-ok']
-        : v < 5.0  ? [ENG?'rain':'წვიმა',      'v-warn']
-        : v < 10.0 ? [ENG?'heavy':'ძლიერი',    'v-alert']
-        :            [ENG?'intense':'ინტენსიური','v-crit'];
+          v < 0.1  ? [ENG?'no precip':'უნალექო',   'v-ok']
+        : v < 0.5  ? [ENG?'drizzle':'ჟინჟლი',      'v-ok']
+        : v < 2.5  ? [ENG?'light':'მსუბუქი',       'v-ok']
+        : v < 10.0 ? [ENG?'moderate':'ზომიერი',    'v-warn']
+        : v < 50.0 ? [ENG?'heavy':'ძლიერი',        'v-alert']
+        :            [ENG?'violent':'კოკისპირული', 'v-crit'];
 
       recapEl.innerHTML = next6.map(h=>{
         const t = (h.time||'').slice(11,16) || '--:--';
@@ -1591,6 +1599,9 @@ function buildTable(fc) {
     const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':'t-gn';
     const vc  = (h.wave_height||0)>=THR.wave?'t-rd': (h.wave_height||0)>=1.2?'t-yw':'t-gn';
     const visc= (h.visibility_km||99)<=THR.fog?'t-rd': (h.visibility_km||99)<=1?'t-yw':'t-mu';
+    // წნევა: დაბალი = ციკლონი = რისკი (წითელი), მაღალი = მდგრადი (ლურჯი)
+    const pr  = h.pressure;
+    const pc  = pr==null ? 't-mu' : pr < 1005 ? 't-rd' : pr > 1025 ? 't-cold' : 't-mu';
     const dir = h.wind_direction!=null ? `${Math.round(h.wind_direction)}° ${toCompass(h.wind_direction)}` : '--';
     const temp = h.air_temp != null ? fmt(h.air_temp,1) : '--';
     const tc   = h.air_temp == null ? 't-mu' : h.air_temp < 5 ? 't-yw' : h.air_temp > 30 ? 't-or' : 't-mu';
@@ -1603,6 +1614,7 @@ function buildTable(fc) {
       <td class="t-num ${vc}">${fmt(h.wave_height)}</td>
       <td class="t-num ${(h.precipitation||0)>=2?'t-yw':'t-mu'}">${fmt(h.precipitation)}</td>
       <td class="t-num ${visc}">${fmt(h.visibility_km)}</td>
+      <td class="t-num ${pc}">${h.pressure!=null?fmt(h.pressure,1):'--'}</td>
       <td>${(currentLang==='eng'?PILL_ENG:PILL)[st]||''}</td>
     </tr>`;
   }).join('');
@@ -1650,7 +1662,7 @@ function renderWeekMini(daily){
 function buildWeekTable(daily) {
   const body = document.getElementById('tbl-body');
   if (!daily || !daily.length) {
-    body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--sb)">${_t('no_week_data')}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--sb)">${_t('no_week_data')}</td></tr>`;
     return;
   }
   const WD = currentLang==='eng'
@@ -1677,6 +1689,7 @@ function buildWeekTable(daily) {
       <td class="t-num ${vc}">${fmt(d.wave_max)}</td>
       <td class="t-num ${(d.precip_sum||0)>=5?'t-yw':'t-mu'}">${fmt(d.precip_sum)}</td>
       <td class="t-num t-mu">—</td>
+      <td class="t-num t-mu">—</td>
       <td>${(currentLang==='eng'?PILL_ENG:PILL)[st]||''}</td>
     </tr>`;
   }).join('');
@@ -1691,6 +1704,7 @@ const HOURLY_THEAD_GEO = `<tr>
             <th>ტალღა მ</th>
             <th>წვიმა</th>
             <th>ხილვ. კმ</th>
+            <th>წნევა hPa</th>
             <th>სტატუსი</th>
           </tr>`;
 const WEEK_THEAD_GEO = `<tr>
@@ -1702,6 +1716,7 @@ const WEEK_THEAD_GEO = `<tr>
             <th>ტალღა მაქს. მ</th>
             <th>ნალექი ჯ. მმ</th>
             <th>ხილვ. კმ</th>
+            <th>წნევა hPa</th>
             <th>სტატუსი</th>
           </tr>`;
 
@@ -1714,6 +1729,7 @@ const HOURLY_THEAD_ENG = `<tr>
             <th>Wave m</th>
             <th>Rain</th>
             <th>Vis. km</th>
+            <th>Press. hPa</th>
             <th>Status</th>
           </tr>`;
 const WEEK_THEAD_ENG = `<tr>
@@ -1725,6 +1741,7 @@ const WEEK_THEAD_ENG = `<tr>
             <th>Wave Max m</th>
             <th>Precip. mm</th>
             <th>Vis. km</th>
+            <th>Press. hPa</th>
             <th>Status</th>
           </tr>`;
 
@@ -2005,6 +2022,7 @@ const I18N = {
   th_wave:       {geo:'ტალღა მ', eng:'Wave m'},
   th_rain:       {geo:'წვიმა', eng:'Rain'},
   th_vis:        {geo:'ხილვ. კმ', eng:'Vis. km'},
+  th_press:      {geo:'წნევა hPa', eng:'Press. hPa'},
   th_status:     {geo:'სტატუსი', eng:'Status'},
   chart_title:   {geo:'48-საათიანი ტრენდი', eng:'48-Hour Trend'},
   radar_title:   {geo:'წვიმის რადარი', eng:'Rain Radar'},
