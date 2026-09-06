@@ -1,0 +1,17 @@
+name: ქროლვის outlier-სტატისტიკა
+
+on:
+  workflow_dispatch:
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # სრული ისტორია — shallow clone სერიას გააცამტვერებდა
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: ანალიზი
+        run: python3 gust_outlier_stats.py
