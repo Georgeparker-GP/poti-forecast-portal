@@ -1,0 +1,19 @@
+name: წნევის სტატისტიკა
+
+on:
+  workflow_dispatch:
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 — სრული ისტორია. ნაგულისხმევი shallow clone
+      # მხოლოდ ბოლო commit-ს იღებს და სერია ცარიელი გამოვიდოდა.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: ანალიზი
+        run: python3 pressure_stats.py
