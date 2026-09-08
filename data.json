@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-09-08 12:07",
-    "next_update": "2026-09-08 13:07",
+    "last_update": "2026-09-08 13:07",
+    "next_update": "2026-09-08 14:07",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
@@ -18,45 +18,45 @@
     "forecast_hours": 48
   },
   "current": {
-    "time": "2026-09-08T12:00",
-    "wind_speed": 7.12,
-    "wind_gusts": 10.5,
-    "wind_direction": 208.0,
-    "wave_height": 0.96,
+    "time": "2026-09-08T13:00",
+    "wind_speed": 6.32,
+    "wind_gusts": 10.4,
+    "wind_direction": 219.0,
+    "wave_height": 0.9,
     "precipitation": 1.0,
-    "visibility_km": 23.53,
-    "wave_period": 5.35,
+    "visibility_km": 19.12,
+    "wave_period": 5.3,
     "wave_direction": 266.0,
-    "swell_height": 0.72,
-    "swell_period": 4.77,
-    "swell_direction": 284.0,
-    "wind_wave_height": 0.46,
-    "water_temp": 26.52,
-    "current_speed": 0.24,
-    "air_temp": 19.3,
-    "feels_like": 19.4,
+    "swell_height": 0.7,
+    "swell_period": 4.65,
+    "swell_direction": 286.0,
+    "wind_wave_height": 0.42,
+    "water_temp": 26.51,
+    "current_speed": 0.22,
+    "air_temp": 19.4,
+    "feels_like": 19.6,
     "status": "barge",
     "alerts": [
-      "ქარის სიჩქარე: 10.5 მ/წმ (ბორნის ლიმიტი: 10.0)"
+      "ქარის სიჩქარე: 10.4 მ/წმ (ბორნის ლიმიტი: 10.0)"
     ],
-    "wind_spread": 1.74,
-    "confidence": "medium",
+    "wind_spread": 1.21,
+    "confidence": "high",
     "source_count": 3,
-    "dir_agreement": 0.97,
+    "dir_agreement": 0.98,
     "dir_fallback": false,
     "precip_sources": 4,
-    "precip_agreement": 70,
+    "precip_agreement": 58,
     "wave_estimated": false,
     "gust_estimated": false,
-    "wave_max": 1.0,
-    "wave_min": 0.46,
+    "wave_max": 0.94,
+    "wave_min": 0.44,
     "wave_sources": 5,
-    "wave_copernicus": 0.91,
-    "visibility_min": 20.2,
+    "wave_copernicus": 0.85,
+    "visibility_min": 7.22,
     "vis_estimated": false,
-    "humidity": 75.0,
+    "humidity": 74.0,
     "dew_point": 15.3,
-    "pressure": 1020.5,
+    "pressure": 1020.2,
     "thunderstorm": false
   },
   "summary_24h": {
@@ -2148,80 +2148,80 @@
   ],
   "models_now": {
     "best": {
-      "w": 4.28,
-      "g": 7.3,
-      "d": 233.0,
+      "w": 4.3,
+      "g": 7.5,
+      "d": 239.0,
       "p": 1.0,
-      "t": 19.3,
-      "v": 25.68
+      "t": 19.4,
+      "v": 25.26
     },
     "gfs": {
-      "w": 3.63,
-      "g": 5.3,
-      "d": 278.0,
-      "p": 0.2,
-      "t": 20.8,
-      "v": 20.2
+      "w": 4.08,
+      "g": 5.5,
+      "d": 253.0,
+      "p": 0.1,
+      "t": 21.5,
+      "v": 20.8
     },
     "icon_eu": {
-      "w": 4.28,
-      "g": 7.3,
-      "d": 233.0,
+      "w": 4.3,
+      "g": 7.5,
+      "d": 239.0,
       "p": 1.0,
-      "t": 19.3,
-      "v": 25.68
+      "t": 19.4,
+      "v": 25.26
     },
     "ecmwf": {
-      "w": 7.52,
-      "g": 10.5,
-      "d": 204.0,
-      "p": 0.1,
-      "t": 20.7,
-      "v": 22.18
+      "w": 6.7,
+      "g": 10.4,
+      "d": 214.0,
+      "p": 0.0,
+      "t": 20.6,
+      "v": 7.22
     },
     "yr_no": {
-      "w": 8.3,
-      "g": 10.38,
-      "d": 198.4,
-      "p": 0.0,
+      "w": 7.0,
+      "g": 8.75,
+      "d": 213.5,
+      "p": 0.2,
       "v": 10.0
     },
     "marine": {
-      "wave": 1.0,
-      "per": 5.35,
-      "sw": 0.78,
-      "sw_p": 5.3,
-      "ww": 0.46
+      "wave": 0.94,
+      "per": 5.3,
+      "sw": 0.74,
+      "sw_p": 5.15,
+      "ww": 0.42
     },
     "stormglass": {
-      "wave": 0.9,
-      "w": 3.12,
+      "wave": 0.85,
+      "w": 2.44,
       "v": 24.14
     },
     "copernicus": {
-      "wave": 0.91,
-      "per": 4.73,
-      "dir": 256.46,
-      "sw": 0.61,
-      "sw2": 0.01,
-      "max": 1.23,
-      "crest": 0.83,
-      "kul": 1.0
+      "wave": 0.85,
+      "per": 4.7,
+      "dir": 259.59,
+      "sw": 0.59,
+      "sw2": 0.0,
+      "max": 1.14,
+      "crest": 0.77,
+      "kul": 0.95
     },
     "wave_models": {
       "ewam": {
-        "wave": 0.46,
-        "per": 4.55,
+        "wave": 0.44,
+        "per": 4.4,
         "dir": 263.0,
-        "sw": 0.38,
-        "sw_p": 5.55
+        "sw": 0.36,
+        "sw_p": 5.35
       },
       "gwam": {
-        "wave": 0.74,
-        "per": 5.75,
+        "wave": 0.72,
+        "per": 5.65,
         "dir": 287.0,
-        "sw": 0.74,
-        "sw_p": 5.8
+        "sw": 0.7,
+        "sw_p": 5.75
       }
     }
   }
