@@ -97,7 +97,16 @@ THRESHOLDS = {
     "wave_height":     1.50,  # ტალღა → შეჩერება. დაწეულია 2.0-დან განზრახ:
                               # დადასტურებულია, რომ ტალღის კონსენსუსი
                               # სისტემატურად ანაკლებს (იხ. observations.md).
-    "visibility":      1.0,   # კრიტიკული ნისლი
+    # ნისლი — ᲝᲠᲘ ᲖᲦᲕᲐᲠᲘ. 2026-09-14-მდე ერთი იყო (1.0 კმ) და ორივე
+    # ოპერაცია ერთდროულად ჩერდებოდა. რეალურად:
+    #   • გემების მანევრირება ᲣᲤᲠᲝ ᲐᲓᲠᲔ იზღუდება — ნავიგაციაა,
+    #     მანძილები დიდია;
+    #   • ამწე უფრო ინტენსიურ ნისლს უძლებს — მეამწესა და ტრიუმს შორის
+    #     ათეულობით მეტრია. ფაქტობრივად წყდება მაშინ, როცა მეამწე
+    #     ტრიუმს ვეღარ ხედავს.
+    # რიცხვები ფოთის საოპერაციო პრაქტიკიდანაა.
+    "vis_vessel":      0.12,  # 120 მ — გემების მანევრირება იზღუდება
+    "vis_cranes":      0.08,  #  80 მ — ამწე ჩერდება
 }
 
 BASE_WEIGHTS = {
@@ -949,7 +958,8 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
                     feels_like = src[i]["feels_like"]
                     break
 
-        status, alerts = _compute_status(wind_speed, wind_gusts, wave_h, visibility)
+        status, alerts = _compute_status(wind_speed, wind_gusts, wave_h,
+                                         visibility, visibility_min)
 
         result.append({
             "time": atmo_best[i]["time"],
@@ -1315,7 +1325,7 @@ def _estimate_wave_from_wind(v, direction=None):
 STATUS_RANK = {"operational": 0, "barge": 1, "vessel": 2, "suspended": 3}
 
 
-def _compute_status(wind, gusts, wave, vis):
+def _compute_status(wind, gusts, wave, vis, vis_min=None):
     """საოპერაციო სტატუსი — იდენტური index.html-ის computeStatus()-ისა.
 
     კრიტიკული: ორივე მხარემ ერთი და იგივე ვერდიქტი უნდა გამოიტანოს.
@@ -1353,9 +1363,33 @@ def _compute_status(wind, gusts, wave, vis):
         alerts.append(f"ტალღის სიმაღლე: {wave:.2f} მ (ლიმიტი: {THRESHOLDS['wave_height']})")
         esc("suspended")
 
-    if vis is not None and vis <= THRESHOLDS["visibility"]:
-        alerts.append(f"ხილვადობა: {vis:.1f} კმ (კრიტიკული ნისლი)")
-        esc("suspended")
+    # ⚠ 2026-09-14: ნისლი ᲣᲐᲠᲔᲡ ᲬᲧᲐᲠᲝᲖᲔ მოწმდება და არა შეწონილ საშუალოზე.
+    #
+    # ხილვადობა ᲛᲘᲜᲘᲛᲣᲛᲘᲡ ᲢᲘᲞᲘᲡ სიდიდეა: ნისლი ან არის, ან არა.
+    # თუ ერთი წყარო 0.14 კმ-ს ხედავს და ექვსი 15-ს, საშუალო 11 კმ-ს
+    # იძლევა — სიგნალი ორი რიგით განზავდება.
+    #
+    # რეალური შემთხვევა (09-14 05:38): პორტალი 11.07 კმ, worst source
+    # 0.14 კმ, სტატუსი operational. ვიზუალურად დადასტურდა, რომ 0.14
+    # ᲡᲬᲝᲠᲘ ᲘᲧᲝ — 300 მ-ზე მხოლოდ ამწის შუქები ჩანდა, კონსტრუქცია არა.
+    # ზღვარი (1.0 კმ) შვიდჯერ იყო გადალახული, სტატუსი არ შეცვლილა.
+    #
+    # იგივე veto-პრინციპი, რაც ქროლვაზე — `max(_gusts_real)`.
+    # ᲔᲙᲠᲐᲜᲖᲔ ᲘᲡᲔᲕ ᲙᲝᲜᲡᲔᲜᲡᲣᲡᲘ ᲘᲬᲔᲠᲔᲑᲐ; მხოლოდ ვერდიქტი იცვლება.
+    # vis_min `_vis_pool`-იდან მოდის, ანუ სინთეზური მნიშვნელობა იქ არ
+    # ხვდება, სანამ ერთი რეალური წყაროც არსებობს.
+    _vc = [x for x in (vis, vis_min) if x is not None]
+    _vis_check = min(_vc) if _vc else None
+    if _vis_check is not None and _vis_check <= THRESHOLDS["vis_vessel"]:
+        _m = int(round(_vis_check * 1000))
+        _src = (f" უარეს წყაროზე (კონსენსუსი {vis:.1f} კმ)"
+                if vis is not None and _vis_check < vis else "")
+        if _vis_check <= THRESHOLDS["vis_cranes"]:
+            alerts.append(f"ხილვადობა: {_m} მ{_src} — ამწე ჩერდება")
+            esc("suspended")
+        else:
+            alerts.append(f"ხილვადობა: {_m} მ{_src} — გემების მანევრირება შეზღუდულია")
+            esc("vessel")
 
     return st, alerts
 
