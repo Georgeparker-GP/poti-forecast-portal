@@ -248,7 +248,6 @@ def parse_storm_warning(pdf_path: str) -> dict:
     if m:
         fc["sea_state"] = float(m.group(1))
         fc["wave_cm"] = (float(m.group(2)), float(m.group(3)))
-    out["forecast"] = fc
 
     # ── nowcast ნაწილი: a.w. (Poti) ──
     m = re.search(r"a\.w\.\s*\(Poti\)\s*Wind-?\s*([NSEW]{1,2})\s*(\d+)-(\d+)\s*m/sec", text, re.I)
@@ -261,6 +260,59 @@ def parse_storm_warning(pdf_path: str) -> dict:
         out["poti"]["sea_state"] = float(m.group(1))
         out["poti"]["wave_cm"] = (float(m.group(2)), float(m.group(3)))
 
+    # ── ხილვადობა ──
+    # ⚠ დაემატა 2026-09-14. აქამდე პარსერი მხოლოდ ქარსა და ტალღას
+    #   კითხულობდა: ოთხი storm_warning-იდან სამს `poti` ბლოკი ცარიელი
+    #   დარჩა, რადგან ნისლის გაფრთხილებაში ქარი საერთოდ არ იწერება.
+    #
+    #   ბიულეტენი 14/7539 (14.09.2026, 07:20) ასე გამოიყურება:
+    #     "In the area of Poti-Kulevi In the next 2-3 hours will be
+    #      remained fog. time to time heavi fog. visibility 0.1-0.5 miles."
+    #     "A.W. Poti  - visibility 200 meter."
+    #     "kulevi- 10 miles."
+    #
+    #   ორი განსხვავებული ერთეულია — მეტრი ფოთზე, მილი აკვატორიაზე.
+    #   ორივეს ვკითხულობთ და კმ-ში ვაერთიანებთ.
+    _MI_KM = 1.852
+
+    # A.W. Poti — visibility NNN meter (nowcast, ყველაზე ღირებული)
+    m = re.search(r"A\.?W\.?\s*\(?\s*Poti\s*\)?\s*[-–]?\s*visibility\s*"
+                  r"(\d+(?:[.,]\d+)?)\s*(?:meter|metre|m\b)", text, re.I)
+    if m:
+        out["poti"]["vis_km"] = round(float(m.group(1).replace(",", ".")) / 1000.0, 3)
+        out["poti"]["vis_src"] = "meter"
+    else:
+        # A.W. Poti — visibility N miles
+        m = re.search(r"A\.?W\.?\s*\(?\s*Poti\s*\)?\s*[-–]?\s*visibility\s*"
+                      r"(\d+(?:[.,]\d+)?)\s*(?:mile|mi\b)", text, re.I)
+        if m:
+            out["poti"]["vis_km"] = round(float(m.group(1).replace(",", ".")) * _MI_KM, 3)
+            out["poti"]["vis_src"] = "mile"
+
+    # აკვატორიის პროგნოზი: visibility 0.1-0.5 miles
+    m = re.search(r"visibility\s*(\d+(?:[.,]\d+)?)\s*[-–]\s*(\d+(?:[.,]\d+)?)\s*"
+                  r"(?:mile|mi\b)", text, re.I)
+    if m:
+        lo = float(m.group(1).replace(",", ".")) * _MI_KM
+        hi = float(m.group(2).replace(",", ".")) * _MI_KM
+        fc["vis_km"] = (round(lo, 3), round(hi, 3))
+
+    # kulevi- 10 miles  (ან meter)
+    m = re.search(r"kulevi\s*[-–:]?\s*(\d+(?:[.,]\d+)?)\s*(mile|mi\b|meter|metre|m\b)",
+                  text, re.I)
+    if m:
+        v = float(m.group(1).replace(",", "."))
+        unit = m.group(2).lower()
+        out.setdefault("kulevi", {})["vis_km"] = round(
+            v * _MI_KM if unit.startswith("mi") else v / 1000.0, 3)
+
+    # ნისლის დროშა — გაფრთხილების ტიპის ამოცნობისთვის
+    if re.search(r"\bfog\b|ნისლ", text, re.I):
+        out["hazard"] = "fog"
+    elif fc.get("wind_range") or out["poti"].get("wind_range"):
+        out["hazard"] = "wind"
+
+    out["forecast"] = fc
     return out
 
 
