@@ -661,7 +661,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
         <div class="card-value" id="c-vis">--</div>
         <div class="card-unit" data-i18n="u_km">კმ</div>
       </div>
-      <div class="card-sub"><span data-i18n="vis_sub">ნისლის ზღვარი: 1.0 კმ</span></div>
+      <div class="card-sub"><span data-i18n="vis_sub">ნისლი: გემები 120 მ · ამწე 80 მ</span></div>
       <div id="c-vis-note" style="font-size:.66rem;line-height:1.25;margin-top:6px;color:var(--sb);min-height:.9rem"></div>
       <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
     </div>
@@ -889,7 +889,12 @@ const THR = {
   // ტალღა განზრახ დაწეულია 2.0-დან: დადასტურებულია, რომ ტალღის კონსენსუსი
   // სისტემატურად ანაკლებს (26 ივლ: 1.09 მ vs რეალური 1.55–2.50 მ).
   wave:       1.50,
-  fog:        1.0,   // ხილვადობა ≤1 კმ — საოპერაციო ზღვარი
+  // ნისლი — ᲝᲠᲘ ᲖᲦᲕᲐᲠᲘ (fetch.py-ის იდენტური).
+  // გემები უფრო ადრე იზღუდება: ნავიგაციაა, მანძილები დიდია.
+  // ამწე უფრო ინტენსიურ ნისლს უძლებს — ფაქტობრივად მაშინ ჩერდება,
+  // როცა მეამწე ტრიუმს ვეღარ ხედავს.
+  visVessel:  0.12,  // 120 მ — გემების მანევრირება იზღუდება
+  visCranes:  0.08,  //  80 მ — ამწე ჩერდება
 };
 
 const COMPASS = ['N','NE','E','SE','S','SW','W','NW'];
@@ -963,12 +968,19 @@ function computeStatus(h) {
   const w = h.wind_speed  || 0;
   const g = h.wind_gusts  || 0;
   const wv= h.wave_height || 0;
-  const v = h.visibility_km != null ? h.visibility_km : 99;
+  // ⚠ 2026-09-14: ნისლი ᲣᲐᲠᲔᲡ ᲬᲧᲐᲠᲝᲖᲔ მოწმდება (fetch.py-ის იდენტურად).
+  // ხილვადობა მინიმუმის ტიპის სიდიდეა — ნისლი ან არის, ან არა.
+  // 09-14 05:38: კონსენსუსი 11.07 კმ, worst source 0.14 კმ, სტატუსი
+  // operational. ვიზუალურად 0.14 სწორი აღმოჩნდა. ᲔᲙᲠᲐᲜᲖᲔ ᲘᲡᲔᲕ
+  // ᲙᲝᲜᲡᲔᲜᲡᲣᲡᲘ ᲘᲬᲔᲠᲔᲑᲐ — მხოლოდ ვერდიქტი იცვლება.
+  const vCons = h.visibility_km  != null ? h.visibility_km  : 99;
+  const vMin  = h.visibility_min != null ? h.visibility_min : vCons;
+  const v = Math.min(vCons, vMin);
   const maxWind = Math.max(w, g);
 
-  if (maxWind >= THR.suspended || wv >= THR.wave || v <= THR.fog)
+  if (maxWind >= THR.suspended || wv >= THR.wave || v <= THR.visCranes)
     return 'suspended';
-  if (maxWind >= THR.vessel)
+  if (maxWind >= THR.vessel || v <= THR.visVessel)
     return 'vessel';
   if (maxWind >= THR.barge)
     return 'barge';
@@ -1184,24 +1196,29 @@ function render(d) {
   const isEng = currentLang==='eng';
 
   // ამწეები — მხოლოდ suspended ზღვარზე იცვლება
+  // ამწეს ᲝᲠᲘ მიზეზი აჩერებს: ქარი ან ინტენსიური ნისლი (≤80 მ).
+  const cranesStop = w >= THR.suspended || vis <= THR.visCranes;
   setOps('ops-cranes',
-    w >= THR.suspended ? 'danger' : 'ok',
-    w >= THR.suspended
+    cranesStop ? 'danger' : 'ok',
+    cranesStop
       ? (isEng ? 'Cranes — Suspended' : 'ამწეები — შეჩერებულია')
       : (isEng ? 'Cranes — Operational' : 'ამწეები — ოპერაციული'));
 
   // გემების მანევრირება — 4 დონის ერთიანი ლოგიკა
-  const depBlocked = w >= THR.suspended || wv >= THR.wave || vis <= THR.fog;
+  const depBlocked = w >= THR.suspended || wv >= THR.wave || vis <= THR.visCranes;
   let vesselLevel, vesselText, vesselSub;
 
   if (depBlocked) {
     vesselLevel = 'danger';
     vesselText  = isEng ? 'Vessel Departure — Restricted' : 'გემების გასვლა — შეზღუდულია';
     vesselSub   = isEng ? 'Critical threshold exceeded' : 'კრიტიკული ზღვარი გადაცილებულია';
-  } else if (w >= THR.vessel) {
+  } else if (w >= THR.vessel || vis <= THR.visVessel) {
     vesselLevel = 'danger';
     vesselText  = isEng ? 'Vessel Manoeuvring — Restricted' : 'გემების მანევრირება — შეზღუდულია';
-    vesselSub   = isEng ? 'Wind ≥ 17 m/s' : 'ქარი ≥ 17 მ/წმ';
+    vesselSub   = vis <= THR.visVessel
+      ? (isEng ? `Visibility ${Math.round(vis*1000)} m (limit 120 m)`
+               : `ხილვადობა ${Math.round(vis*1000)} მ (ზღვარი 120 მ)`)
+      : (isEng ? 'Wind ≥ 17 m/s' : 'ქარი ≥ 17 მ/წმ');
   } else if (w >= THR.barge) {
     vesselLevel = 'warn';
     vesselText  = isEng ? 'Vessel Manoeuvring — Permitted' : 'გემების მანევრირება — ნებადართული';
@@ -1233,13 +1250,13 @@ function render(d) {
   if (wvCard) wvCard.classList.toggle('estimated', wvEst);
   renderWaveSplit(c);
 
-  // THR.fog ახლა 1.0-ია (backend-თან შესაბამისობისთვის). ძველი 'warn' შტო
-  // `vis<=1` იყო, რაც ახლა danger-ს ემთხვევა და მიუწვდომელი გახდებოდა —
-  // ამიტომ გაფრთხილების საფეხური 3 კმ-ზეა: ნისლი ახლოვდება.
-  const VIS_WARN = 3.0;
+  // ოთხი საფეხური: ≤80 მ კრიტიკული · ≤120 მ შეზღუდვა ·
+  // ≤1 კმ ყურადღება (ზღვრამდე არაა, მაგრამ ნისლია) · სხვა — ნორმა.
+  const VIS_WARN = 1.0;
   setCard('card-vis','c-vis', c.visibility_km,
-    vis<=THR.fog?'danger': vis<=VIS_WARN?'warn':'ok');
-  setBar('bar-vis', Math.min(vis/15,1), vis<=THR.fog?'rd': vis<=VIS_WARN?'yw':'gn');
+    vis<=THR.visCranes?'danger': vis<=THR.visVessel?'alert': vis<=VIS_WARN?'warn':'ok');
+  setBar('bar-vis', Math.min(vis/15,1),
+    vis<=THR.visCranes?'rd': vis<=THR.visVessel?'or': vis<=VIS_WARN?'yw':'gn');
 
   // ხილვადობა მინიმუმის ტიპის სიდიდეა — შეწონილი საშუალო რისკს ანაკლებს,
   // ამიტომ უარესი წყარო ცალკე ჩანს.
@@ -1607,7 +1624,8 @@ function buildTable(fc) {
     const mw  = Math.max(w,g);
     const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':'t-gn';
     const vc  = (h.wave_height||0)>=THR.wave?'t-rd': (h.wave_height||0)>=1.2?'t-yw':'t-gn';
-    const visc= (h.visibility_km||99)<=THR.fog?'t-rd': (h.visibility_km||99)<=1?'t-yw':'t-mu';
+    const _v = h.visibility_km!=null ? h.visibility_km : 99;
+    const visc= _v<=THR.visCranes?'t-rd': _v<=THR.visVessel?'t-or': _v<=1?'t-yw':'t-mu';
     // წნევა: დაბალი = ციკლონი = რისკი (წითელი), მაღალი = მდგრადი (ლურჯი)
     const pr  = h.pressure;
     const pc  = pr==null ? 't-mu' : pr < 1010 ? 't-rd' : pr > 1020 ? 't-cold' : 't-mu';
@@ -2000,7 +2018,7 @@ const I18N = {
   lbl_temp:      {geo:'ჰაერის ტემპ.', eng:'Air Temp.'},
   lbl_rain:      {geo:'ნალექი', eng:'Precipitation'},
   lbl_vis:       {geo:'ხილვადობა', eng:'Visibility'},
-  vis_sub:       {geo:'ნისლის ზღვარი: 1.0 კმ', eng:'Fog threshold: 1.0 km'},
+  vis_sub:       {geo:'ნისლი: გემები 120 მ · ამწე 80 მ', eng:'Fog: vessels 120 m · cranes 80 m'},
   gusts_lbl:     {geo:'დაქროლვა:', eng:'Gusts:'},
   lbl_compass:   {geo:'ქარის მიმართულება', eng:'Wind Direction'},
   compass_conv:  {geo:'მეტეოროლ. კონვ.', eng:'Meteorol. conv.'},
