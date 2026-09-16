@@ -251,7 +251,149 @@ header{
 /* ── MAIN ── */
 main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24px;display:flex;flex-direction:column;gap:18px;}
 
-/* ── CARDS ── */
+
+/* ═══════════════════════════════════════════════════════════
+   v2 — სასიგნალო დაფა
+   ---------------------------------------------------------
+   პრინციპი: ეკრანი ჯერ ᲕᲔᲠᲓᲘᲥᲢᲡ ამბობს, მერე ციფრებს.
+   ადრე პირიქით იყო — ხუთი 40-პიქსელიანი ციფრი ზემოთ,
+   საოპერაციო დასკვნა კი 13 პიქსელის ტექსტად.
+   სიმამაცე ერთ ადგილას იხარჯება: სასიგნალო ბლოკზე.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── სასიგნალო დაფა ── */
+.signal{
+  position:relative;
+  border:1px solid var(--br);
+  border-left:4px solid var(--state);
+  border-radius:4px;
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--state) 9%, transparent) 0%,
+    transparent 55%);
+  padding:22px 26px 20px;
+  overflow:hidden;
+}
+.signal-verdict{
+  font-size:clamp(20px,3.4vw,30px);
+  font-weight:700;
+  line-height:1.15;
+  letter-spacing:-0.02em;
+  color:var(--state);
+  display:flex;align-items:center;gap:14px;
+}
+.signal-lamp{
+  width:14px;height:14px;border-radius:50%;flex-shrink:0;
+  background:var(--state);
+  box-shadow:0 0 0 4px color-mix(in srgb, var(--state) 18%, transparent);
+}
+.signal-why{
+  margin-top:10px;font-size:14px;color:var(--sb);
+  font-variant-numeric:tabular-nums;
+}
+.signal-why b{color:var(--tx);font-weight:600;}
+/* ორი ოპერაცია ცალკე — ამწეს და გემს სხვადასხვა ზღვარი აქვს */
+.signal-ops{
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--br);
+  display:flex;gap:26px;flex-wrap:wrap;
+}
+.sig-op{display:flex;align-items:center;gap:9px;font-size:13px;}
+.sig-op .d{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sig-op .n{color:var(--sb);}
+.sig-op .v{font-weight:600;}
+.sig-op small{display:block;color:var(--mu);font-size:11px;margin-top:2px;}
+
+/* ── მეტრიკის ზოლი: ბარათების ნაცვლად ერთი რიგი ── */
+.strip{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:0;
+  border:1px solid var(--br);
+  border-radius:4px;
+  overflow:hidden;
+}
+.mx{
+  padding:15px 16px 13px;
+  border-right:1px solid var(--br);
+  position:relative;
+  min-width:0;
+}
+.mx:last-child{border-right:none;}
+/* შეხებაზე — მხოლოდ ჩარჩოს ოდნავ გაბრწყინება.
+   ამბობს "ეს ელემენტი ცოცხალია" და სხვას არაფერს: აწევა და
+   ჩრდილი ყურადღებას იქ მიაქცევდა, სადაც არაფერი მომხდარა. */
+.mx{transition:background-color .18s ease, box-shadow .18s ease;}
+.mx:hover{
+  box-shadow:inset 0 0 0 1px var(--br2);
+  background-color:var(--ov1);
+}
+.mx.lvl-warn:hover  {background-color:color-mix(in srgb, var(--yw) 11%, transparent);}
+.mx.lvl-alert:hover {background-color:color-mix(in srgb, var(--or) 13%, transparent);}
+.mx.lvl-danger:hover{background-color:color-mix(in srgb, var(--rd) 15%, transparent);}
+@media (prefers-reduced-motion:reduce){ .mx{transition:none;} }
+/* სენსორულ ეკრანზე hover "ეკვრის" — იქ საერთოდ არ გვჭირდება */
+@media (hover:none){ .mx:hover{box-shadow:none;background-color:transparent;} }
+@media(max-width:760px){
+  .mx{border-right:none;border-bottom:1px solid var(--br);}
+  .mx:last-child{border-bottom:none;}
+}
+/* ეტიკეტი — ᲐᲚᲘᲡ ᲒᲐᲠᲔᲨᲔ. ციფრი და ერთეული ისედაც ხსნის რას ხედავ. */
+.mx-name{font-size:12px;color:var(--mu);margin-bottom:5px;}
+.mx-val{
+  font-family:'JetBrains Mono',monospace;
+  font-size:27px;font-weight:700;line-height:1;
+  letter-spacing:-0.03em;color:var(--text-strong);
+  font-variant-numeric:tabular-nums;
+  display:flex;align-items:baseline;gap:5px;
+}
+.mx-val .u{font-size:12px;font-weight:400;color:var(--mu);letter-spacing:0;}
+.mx-sub{font-size:11px;color:var(--sb);margin-top:6px;line-height:1.4;min-height:15px;}
+.mx-spark{display:block;width:100%;height:20px;margin-top:9px;overflow:visible;}
+/* ზღვართან სიახლოვე — ფონის თხელი ზოლი, არა ცალკე ელემენტი */
+.mx.lvl-warn  {background:color-mix(in srgb, var(--yw) 7%, transparent);}
+.mx.lvl-alert {background:color-mix(in srgb, var(--or) 9%, transparent);}
+.mx.lvl-danger{background:color-mix(in srgb, var(--rd) 11%, transparent);}
+.mx.lvl-warn   .mx-val{color:var(--txt-warn);}
+.mx.lvl-alert  .mx-val{color:var(--txt-alert);}
+.mx.lvl-danger .mx-val{color:var(--txt-danger);}
+
+/* ── პანელი: ბარათი მაშინ, როცა შიგთავსი მართლა ცალკე ერთეულია ── */
+
+
+/* ── ქვედა ნახევარი: სექცია, არა ბარათი ──
+   ბარათი მაშინაა გამართლებული, როცა ელემენტები ერთმანეთს ედრება.
+   კომპასი, რეკაპი და კვირა სხვადასხვა რამეს ამბობს — მათ
+   გამყოფი სჭირდებათ და არა ჩარჩო. */
+.sec{
+  border:1px solid var(--br);
+  border-radius:4px;
+  background:var(--panel-bg);
+  backdrop-filter:blur(10px);
+  padding:18px 20px;
+  display:flex;flex-direction:column;min-width:0;
+}
+.sec-title{
+  font-size:12px;color:var(--mu);margin-bottom:14px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+}
+.sec-title em{font-style:normal;color:var(--mu);font-size:11px;}
+.sec{transition:border-color .18s ease;}
+.sec:hover{border-color:var(--br2);}
+@media (prefers-reduced-motion:reduce){ .sec{transition:none;} }
+@media (hover:none){ .sec:hover{border-color:var(--br);} }
+.grid3{
+  display:grid;gap:12px;
+  grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+}
+/* პანელის სათაური — ალის გარეშე, ერთ ხაზზე */
+.panel{border-radius:4px;}
+.panel-head h3{font-size:13px;font-weight:600;letter-spacing:-0.01em;}
+.tab{border-radius:0;}
+/* ცხრილის სათაური — ალი მოხსნილი, კითხვადობა მატულობს */
+.tbl th{text-transform:none;letter-spacing:.02em;font-size:11px;}
+/* რეკაპის სტრიქონი — ოდნავ ჰაეროვანი */
+.recap-row{padding:7px 0;}
+
+/* ── CARDS (legacy) ── */
 .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
 .card{
   display:flex;flex-direction:column;
@@ -264,8 +406,8 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
   position:relative;overflow:hidden;
   transition:border-color .25s ease, transform .25s ease;
 }
-.card:hover{border-color:var(--br2);transform:translateY(-1px);}
-@media (prefers-reduced-motion:reduce){.card:hover{transform:none;}}
+.card:hover{border-color:var(--br2);}
+
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0;opacity:.9;}
 .card.ok::before    {background:var(--gn);}
 .card.warn::before  {background:var(--yw);}
@@ -274,7 +416,7 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 .card.neutral::before{background:var(--mu);}
 .card.teal::before  {background:var(--tl);}
 
-.card-label{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:var(--mu);font-weight:600;}
+.card-label{font-size:12px;color:var(--mu);font-weight:500;}
 .card-value{font-size:40px;font-weight:700;margin:10px 0 3px;font-family:'JetBrains Mono',monospace;
   line-height:1;color:var(--text-strong);letter-spacing:-0.03em;
   font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;}
@@ -295,7 +437,7 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 .card-badge{
   position:absolute;top:12px;right:12px;
   font-size:9px;font-weight:700;padding:3px 7px;
-  border-radius:5px;letter-spacing:.05em;text-transform:uppercase;
+  border-radius:3px;letter-spacing:.01em;
 }
 .badge-ok    {background:rgba(45,212,160,.15);color:var(--txt-ok);}
 .badge-warn  {background:rgba(245,200,66,.15);color:var(--txt-warn);}
@@ -394,7 +536,7 @@ svg.chart{width:100%;overflow:visible;}
 .tab{padding:9px 16px;font-size:12px;font-weight:500;color:var(--sb);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
 .tab.active{color:var(--bl);border-bottom-color:var(--bl);}
 .tbl{width:100%;border-collapse:collapse;}
-.tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--sb);font-weight:500;padding:10px 12px;text-align:left;border-bottom:1px solid var(--br);background:var(--ov1);}
+.tbl th{font-size:11px;letter-spacing:.02em;color:var(--sb);font-weight:500;padding:10px 12px;text-align:left;border-bottom:1px solid var(--br);background:var(--ov1);}
 .tbl td{padding:8px 12px;border-bottom:1px solid var(--ov1);}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr.row-suspended{background:rgba(245,90,90,.05);}
@@ -405,7 +547,7 @@ svg.chart{width:100%;overflow:visible;}
 .t-num{font-family:'JetBrains Mono',monospace;font-size:12px;}
 .t-cold{color:var(--txt-cold)}
 .t-rd{color:var(--txt-danger);font-weight:600}.t-or{color:var(--txt-alert);font-weight:600}.t-yw{color:var(--txt-warn);font-weight:600}.t-gn{color:var(--txt-ok)}.t-mu{color:var(--sb)}
-.pill{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:5px;text-transform:uppercase;}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:3px;}
 .pill-op  {background:rgba(45,212,160,.12);color:var(--txt-ok);}
 .pill-bg  {background:rgba(245,200,66,.12);color:var(--txt-warn);}
 .pill-vs  {background:rgba(245,146,58,.15);color:var(--txt-alert);}
@@ -593,87 +735,82 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 
 <main>
 
-  <!-- ოპერაციული სტატუს-პანელი -->
-  <div class="ops-panel rel" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
-    <div class="ops-item" id="ops-cranes" style="padding:14px 16px;">
-      <div class="ops-dot" style="background:var(--gn);width:12px;height:12px;"></div>
-      <div>
-        <div class="ops-text" id="ops-cranes-text" style="font-size:13px;"><span data-i18n="op_cranes">ამწეები — ოპერაციული</span></div>
-        <div class="ops-sub"><span data-i18n="op_cranes_sub">შეჩერება: ≥ 21.5 მ/წმ</span></div>
-      </div>
+  <!-- ═══ სასიგნალო დაფა — ერთადერთი დიდი რამ ეკრანზე ═══
+       ვერდიქტი, მიზეზი, ორი ოპერაცია. ციფრები ქვემოთ. -->
+  <div class="signal rel" id="signal">
+    <div class="signal-verdict">
+      <span class="signal-lamp" id="sig-lamp"></span>
+      <span id="sig-verdict">—</span>
     </div>
-    <div class="ops-item" id="ops-vessel" style="padding:14px 16px;">
-      <div class="ops-dot" style="background:var(--gn);width:12px;height:12px;"></div>
-      <div>
-        <div class="ops-text" id="ops-vessel-text" style="font-size:13px;"><span data-i18n="op_vessel">გემების მანევრირება — ნებადართული</span></div>
-        <div class="ops-sub" id="ops-vessel-sub"><span data-i18n="op_vessel_sub">შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ</span></div>
+    <div class="signal-why" id="sig-why"></div>
+    <div class="signal-ops">
+      <div class="sig-op" id="ops-cranes">
+        <span class="d" style="background:var(--gn)"></span>
+        <span>
+          <span class="n" data-i18n="sig_cranes">ამწეები</span>
+          <span class="v" id="ops-cranes-text">—</span>
+          <small id="ops-cranes-sub"></small>
+        </span>
+      </div>
+      <div class="sig-op" id="ops-vessel">
+        <span class="d" style="background:var(--gn)"></span>
+        <span>
+          <span class="n" data-i18n="sig_vessel">გემები</span>
+          <span class="v" id="ops-vessel-text">—</span>
+          <small id="ops-vessel-sub"></small>
+        </span>
       </div>
     </div>
   </div>
 
-
- <!-- მეტრიკის ბარათები (ზედა რიგი) -->
-  <div class="cards-grid rel">
-    <div class="card neutral" id="card-wind">
-      <div class="card-label"><span data-i18n="lbl_wind">ქარის სიჩქარე</span></div>
-      <div class="card-value-row">
-        <div class="card-value" id="c-wind">--</div>
-        <div class="card-unit" data-i18n="u_ms">მ/წმ</div>
-      </div>
-      <div class="card-sub"><span data-i18n="gusts_lbl">დაქროლვა:</span> <span id="c-gusts" class="mono">--</span> <span data-i18n="u_ms">მ/წმ</span></div>
-      <div class="card-sub" id="c-confidence" style="margin-top:4px;display:flex;align-items:center;gap:5px;"></div>
-      <div class="bar-wrap" data-ticks="wind" title="ზღვრები: 10 · 17 · 21.5 მ/წმ"><div class="bar-fill bar-gn" id="bar-wind" style="width:0%"></div></div>
-    </div>
-    <div class="card neutral" id="card-wave">
-      <div class="card-label"><span data-i18n="lbl_wave">ტალღის სიმაღლე</span></div>
-      <div class="card-value-row">
-        <div class="card-value" id="c-wave">--</div>
-        <div class="card-unit" data-i18n="u_m_full">მეტრი</div>
-      </div>
-      <!-- swell / ქარის ტალღის ჩაშლა — JS-იდან ივსება -->
-      <div class="wave-split" id="c-wave-split"></div>
-      <div class="bar-wrap" data-ticks="wave" title="ზღვრები: 1.25 · 2.0 მ"><div class="bar-fill bar-gn" id="bar-wave" style="width:0%"></div></div>
-    </div>
-    <!-- ჰაერის ტემპერატურა -->
-    <div class="card neutral" id="card-airtemp">
-      <div class="card-label"><span data-i18n="lbl_temp">ჰაერის ტემპ.</span></div>
-      <div class="card-value-row">
-        <div class="card-value" id="c-airtemp">--</div>
-        <div class="card-unit">°C</div>
-      </div>
-      <div class="card-sub" id="c-feelslike"></div>
-      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-airtemp" style="width:0%"></div></div>
-    </div>
-    <div class="card neutral" id="card-rain">
-      <div class="card-label"><span data-i18n="lbl_rain">ნალექი</span></div>
-      <div class="card-value-row">
-        <div class="card-value" id="c-rain">--</div>
-        <div class="card-unit" data-i18n="u_mmh">მმ/სთ</div>
-      </div>
-      <div id="c-rain-note" style="font-size:.66rem;line-height:1.25;margin-top:6px;color:var(--sb);min-height:.9rem"></div>
-      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-rain" style="width:0%"></div></div>
+  <!-- ═══ მეტრიკის ზოლი — ბარათების ნაცვლად ერთი რიგი ═══
+       სპარკლაინი ციფრზე მნიშვნელოვანია: ტენდენცია ეუბნება
+       ოპერატორს, უახლოვდება თუ შორდება ზღვარს. -->
+  <div class="strip rel">
+    <div class="mx" id="card-wind">
+      <div class="mx-name" data-i18n="lbl_wind_s">ქარი</div>
+      <div class="mx-val"><span id="c-wind">--</span><span class="u" data-i18n="u_ms">მ/წმ</span></div>
+      <div class="mx-sub"><span data-i18n="gusts_lbl">დაქროლვა:</span> <span id="c-gusts" class="mono">--</span></div>
+      <div class="mx-sub" id="c-confidence" style="margin-top:3px"></div>
+      <svg class="mx-spark" id="sp-wind" preserveAspectRatio="none"></svg>
     </div>
 
-    <!-- <span data-i18n="lbl_vis">ხილვადობა</span> -->
-    <div class="card neutral" id="card-vis">
-      <div class="card-label"><span data-i18n="lbl_vis">ხილვადობა</span></div>
-      <div class="card-value-row">
-        <div class="card-value" id="c-vis">--</div>
-        <div class="card-unit" data-i18n="u_km">კმ</div>
-      </div>
-      <div class="card-sub"><span data-i18n="vis_sub">ნისლი: გემები 120 მ · ამწე 80 მ</span></div>
-      <div id="c-vis-note" style="font-size:.66rem;line-height:1.25;margin-top:6px;color:var(--sb);min-height:.9rem"></div>
-      <div class="bar-wrap"><div class="bar-fill bar-gn" id="bar-vis" style="width:0%"></div></div>
+    <div class="mx" id="card-wave">
+      <div class="mx-name" data-i18n="lbl_wave_s">ტალღა</div>
+      <div class="mx-val"><span id="c-wave">--</span><span class="u" data-i18n="u_m">მ</span></div>
+      <div class="mx-sub" id="c-wave-split"></div>
+      <svg class="mx-spark" id="sp-wave" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div class="mx" id="card-vis">
+      <div class="mx-name" data-i18n="lbl_vis">ხილვადობა</div>
+      <div class="mx-val"><span id="c-vis">--</span><span class="u" data-i18n="u_km">კმ</span></div>
+      <div class="mx-sub" id="c-vis-note"></div>
+      <svg class="mx-spark" id="sp-vis" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div class="mx" id="card-rain">
+      <div class="mx-name" data-i18n="lbl_rain">ნალექი</div>
+      <div class="mx-val"><span id="c-rain">--</span><span class="u" data-i18n="u_mmh">მმ/სთ</span></div>
+      <div class="mx-sub" id="c-rain-note"></div>
+      <svg class="mx-spark" id="sp-rain" preserveAspectRatio="none"></svg>
+    </div>
+
+    <div class="mx" id="card-airtemp">
+      <div class="mx-name" data-i18n="lbl_temp_s">ჰაერი</div>
+      <div class="mx-val"><span id="c-airtemp">--</span><span class="u">°C</span></div>
+      <div class="mx-sub" id="c-feelslike"></div>
+      <svg class="mx-spark" id="sp-temp" preserveAspectRatio="none"></svg>
     </div>
   </div>
 
   <!-- დეტალური ბარათები (ქვედა რიგი) -->
-  <div class="cards-grid rel">
+  <div class="grid3 rel">
     <!-- ქარის ვარდი + ტენიანობა (გადაადგილდა მარცხნივ 2026-08-26).
          კომპასის ქვემოთ აქამდე მკვდარი ადგილი იყო — ეხლა ტენიანობის
          ბლოკია. -->
-    <div class="card teal" style="grid-column:span 2;display:flex;flex-direction:column;">
-      <div class="card-label"><span data-i18n="lbl_compass">ქარის მიმართულება</span></div>
+    <div class="sec">
+      <div class="sec-title"><span data-i18n="lbl_compass">ქარის მიმართულება</span></div>
       <div class="wind-rose-wrap" style="justify-content:center;gap:24px;">
         <svg id="compass-svg" width="130" height="130" viewBox="0 0 110 110">
           <circle cx="55" cy="55" r="50" fill="none" stroke="var(--ov2)" stroke-width="1"/>
@@ -712,7 +849,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <div style="height:1px;background:var(--br);margin-top:auto;"></div>
       <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;padding-top:14px;">
         <div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--mu);font-weight:600;"
+          <div style="font-size:11px;color:var(--mu);font-weight:500;"
                data-i18n="lbl_humidity">ტენიანობა</div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;
                       color:var(--text-strong);line-height:1.1;margin-top:3px;">
@@ -720,7 +857,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
           </div>
         </div>
         <div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--mu);font-weight:600;"
+          <div style="font-size:11px;color:var(--mu);font-weight:500;"
                data-i18n="lbl_dewpoint">ნამის წერტილი</div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;
                       color:var(--tl);line-height:1.1;margin-top:3px;">
@@ -735,7 +872,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
              გაწყდეს, თორემ ყველაზე მშვიდი დღე კრიტიკულად აინთებოდა.
              ზღვრები: 1010 / 1020 (იხ. კომენტარი render()-ში). -->
         <div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--mu);font-weight:600;"
+          <div style="font-size:11px;color:var(--mu);font-weight:500;"
                data-i18n="lbl_pressure">წნევა</div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;
                       line-height:1.1;margin-top:3px;">
@@ -747,8 +884,8 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     </div>
 
     <!-- მომდევნო 6 საათი — ცენტრში -->
-    <div class="card teal" style="grid-column:span 2">
-      <div class="card-label"><span data-i18n="recap_title">მომდევნო 6 საათის რეკაპი</span></div>
+    <div class="sec">
+      <div class="sec-title"><span data-i18n="recap_title">მომდევნო 6 საათის რეკაპი</span></div>
       <!-- flex:1 + space-between — რიგები ბარათის მთელ სიმაღლეზე ნაწილდება.
            ეს შრიფტის ზომაზე უკეთ მუშაობს: ბარათის სიმაღლე მეზობელ პანელებზეა
            დამოკიდებული და ეკრანის სიგანით იცვლება. -->
@@ -758,8 +895,8 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
     </div>
 
     <!-- 7-დღიანი პროგნოზი -->
-    <div class="card teal" style="grid-column:span 2">
-      <div class="card-label"><span data-i18n="week_title">7 დღის პროგნოზი</span></div>
+    <div class="sec">
+      <div class="sec-title"><span data-i18n="week_title">7 დღის პროგნოზი</span></div>
       <div id="week-mini" style="display:flex;flex-direction:column;gap:2px;margin-top:12px;"></div>
     </div>
   </div>
@@ -837,7 +974,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   <div class="panel rel">
     <div class="panel-head">
       <h3 id="tbl-title"><span data-i18n="tbl_title">საათობრივი პროგნოზი</span></h3>
-      <p id="tbl-sources"><span data-i18n="sources_lbl">წყაროები:</span> <span data-i18n="loading">იტვირთება...</span></p>
+      <p id="tbl-sources" style="max-width:52ch;line-height:1.5;"><span data-i18n="loading">იტვირთება...</span></p>
     </div>
     <div class="tabs">
       <div class="tab active" onclick="switchTab(24,this)"><span data-i18n="tab_24">24 საათი</span></div>
@@ -875,7 +1012,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
   </div>
 </main>
 
-<footer><span data-i18n="footer_text">ფოთის პორტის შიდა საოპერაციო მონიტორინგის სისტემა © 2026 &nbsp;·&nbsp; 48h კონსენსუს-პროგნოზი</span></footer>
+<footer><span data-i18n="footer_text">ფოთის პორტის შიდა საოპერაციო მონიტორინგი · 48 საათის კონსენსუს-პროგნოზი</span></footer>
 
 <script>
 // ═══ CONSTANTS ═══
@@ -995,9 +1132,9 @@ const STATUS_LBL = {
   suspended:   'ამწე + გემების გასვლა შეჩერებულია',
 };
 const PILL = {
-  operational: '<span class="pill pill-op">სრული ოპ.</span>',
-  barge:       '<span class="pill pill-bg">ბორანი ↓</span>',
-  vessel:      '<span class="pill pill-vs">გემ. ↓</span>',
+  operational: '<span class="pill pill-op">სრული</span>',
+  barge:       '<span class="pill pill-bg">ბორანი</span>',
+  vessel:      '<span class="pill pill-vs">გემები</span>',
   suspended:   '<span class="pill pill-sus">შეჩერება</span>',
 };
 
@@ -1187,7 +1324,7 @@ function render(d) {
   sb.className = 'status-bar '+st;
   document.getElementById('status-text').textContent = (currentLang==='eng' ? STATUS_LBL_ENG : STATUS_LBL)[st]||st;
   const ai = document.getElementById('alert-items');
-  ai.innerHTML = (c.alerts||[]).map(a=>`<span>▲ ${a}</span>`).join('');
+  if (ai) ai.innerHTML = (c.alerts||[]).map(a=>`<span>▲ ${a}</span>`).join('');
 
   // ops panel — 2 panels: cranes & vessel maneuvering (with barge sub-state)
   const w = Math.max(c.wind_speed||0, c.wind_gusts||0);
@@ -1230,7 +1367,11 @@ function render(d) {
   }
 
   setOps('ops-vessel', vesselLevel, vesselText);
-  document.getElementById('ops-vessel-sub').textContent = vesselSub;
+  const ovs = document.getElementById('ops-vessel-sub');
+  if (ovs) ovs.textContent = vesselSub;
+  const ocs = document.getElementById('ops-cranes-sub');
+  if (ocs) ocs.textContent = isEng ? 'stop ≥ 21.5 m/s · fog ≤ 80 m'
+                                   : 'შეჩერება ≥ 21.5 მ/წმ · ნისლი ≤ 80 მ';
 
   // metric cards
   setCard('card-wind','c-wind', c.wind_speed,
@@ -1533,6 +1674,15 @@ function render(d) {
     }
   }
 
+  // ── v2: სასიგნალო დაფა და სპარკლაინები ──
+  renderSignal(c, fcFuture);
+  const sp = fcFuture.slice(0, 13);
+  renderSpark('sp-wind', sp.map(h=>h.wind_gusts), THR.barge,  'var(--bl)');
+  renderSpark('sp-wave', sp.map(h=>h.wave_height), THR.wave,  'var(--tl)');
+  renderSpark('sp-vis',  sp.map(h=>h.visibility_km), THR.visVessel, 'var(--sb)');
+  renderSpark('sp-rain', sp.map(h=>h.precipitation), null,    'var(--ac)');
+  renderSpark('sp-temp', sp.map(h=>h.air_temp), null,         'var(--or)');
+
   allForecast = fc;
   buildChart(fc);
   // update thead to match current language and tab
@@ -1551,18 +1701,19 @@ function render(d) {
 
 // ═══ OPS PANEL HELPER ═══
 function setOps(id, level, text) {
-  const el  = document.getElementById(id);
-  const dot = el.querySelector('.ops-dot');
-  const txt = el.querySelector('.ops-text');
-  txt.textContent = text;
-  const colors = {ok:'#2dd4a0', warn:'#f5c842', alert:'#f5923a', danger:'#f55a5a'};
-  dot.style.background    = colors[level]||colors.ok;
-  dot.style.boxShadow     = `0 0 8px ${colors[level]||colors.ok}`;
-  const root = getComputedStyle(document.documentElement);
-  const neutralBorder = root.getPropertyValue('--ov1').trim();
-  const neutralBg      = root.getPropertyValue('--sf').trim();
-  el.style.borderColor    = level==='ok' ? neutralBorder : colors[level]+'44';
-  el.style.background     = level==='ok' ? neutralBg : colors[level]+'11';
+  const el = document.getElementById(id);
+  if (!el) return;
+  const dot = el.querySelector('.d');
+  const txt = el.querySelector('.v');
+  const colors = {ok:'var(--gn)', warn:'var(--yw)', alert:'var(--or)', danger:'var(--rd)'};
+  const c = colors[level] || colors.ok;
+  if (dot) { dot.style.background = c; dot.style.boxShadow = `0 0 7px ${c}`; }
+  if (txt) {
+    // "ამწეები — ოპერაციული" → მხოლოდ "ოპერაციული";
+    // სახელი ცალკე ელემენტშია და გამეორება ზედმეტია
+    txt.textContent = String(text).split('—').pop().trim();
+    txt.style.color = level === 'ok' ? 'var(--txt-ok)' : c;
+  }
 }
 
 // ═══ CHART ═══
@@ -1921,23 +2072,81 @@ function renderWaveSplit(c){
 }
 
 function setCard(cardId,valId,val,level){
-  document.getElementById(valId).textContent = fmt(val);
-  const card=document.getElementById(cardId);
-  card.className='card '+level;
-  card.querySelectorAll('.card-badge').forEach(b=>b.remove());
-  if(level!=='ok'){
-    const b=document.createElement('div');
-    b.className='card-badge badge-'+level;
-    b.textContent = currentLang==='eng'
-      ? (level==='danger'?'CRIT.': level==='alert'?'RESTR.':'WATCH')
-      : (level==='danger'?'კრიტ.': level==='alert'?'შეზღ.':'ყურ.');
-    card.appendChild(b);
-  }
+  const el = document.getElementById(valId);
+  if (el) el.textContent = fmt(val);
+  const box = document.getElementById(cardId);
+  if (box) box.className = 'mx lvl-' + level;
 }
-function setBar(id,ratio,color){
-  const el=document.getElementById(id);
-  el.style.width=Math.min(ratio*100,100).toFixed(1)+'%';
-  el.className='bar-fill bar-'+color;
+// setBar აღარ გამოიყენება — ზოლის ნაცვლად სპარკლაინია.
+// ხელმოწერა შენარჩუნებულია, რომ ძველი გამოძახებები არ ჩავარდეს.
+function setBar(){}
+
+/* ─────────────────────────────────────────────────────────────
+   სპარკლაინი — 12 საათი წინ.
+   ციფრი ამბობს „სად ვართ“, სპარკლაინი — „საით მივდივართ“.
+   ზღვარი წყვეტილი ხაზია: ერთი შეხედვით ჩანს, კვეთს თუ არა.
+   ───────────────────────────────────────────────────────────── */
+function renderSpark(id, vals, limit, col){
+  const el = document.getElementById(id);
+  if (!el) return;
+  const v = (vals || []).filter(x => x != null).map(Number);
+  if (v.length < 2) { el.innerHTML = ''; return; }
+  const W = 100, H = 20;
+  const lo = Math.min(...v, limit != null ? limit : Infinity);
+  const hi = Math.max(...v, limit != null ? limit : -Infinity);
+  const span = (hi - lo) || 1;
+  const x = i => (i / (v.length - 1)) * W;
+  const y = n => H - ((n - lo) / span) * (H - 2) - 1;
+  const pts = v.map((n,i) => `${x(i).toFixed(1)},${y(n).toFixed(1)}`).join(' ');
+  const area = `M0,${H} L` + pts.replace(/ /g,' L') + ` L${W},${H} Z`;
+  const lim = (limit != null && limit >= lo && limit <= hi)
+    ? `<line x1="0" y1="${y(limit).toFixed(1)}" x2="${W}" y2="${y(limit).toFixed(1)}"
+             stroke="var(--rd)" stroke-width="0.7" stroke-dasharray="3,2" opacity=".55"/>` : '';
+  el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  el.innerHTML =
+    `<path d="${area}" fill="${col}" opacity=".13"/>` + lim +
+    `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.3"
+               stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
+    `<circle cx="${x(v.length-1).toFixed(1)}" cy="${y(v[v.length-1]).toFixed(1)}"
+             r="1.8" fill="${col}"/>`;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   სასიგნალო დაფა — ვერდიქტი + მიზეზი.
+   მიზეზი ᲣᲙᲕᲔ ᲒᲐᲛᲝᲗᲕᲚᲘᲚᲘᲐ alerts-ში; აქ მხოლოდ ვაჩვენებთ.
+   თუ alert არ არის, ვწერთ ზღვრამდე დარჩენილ მარაგს —
+   ეს ის ერთი წინადადებაა, რომელიც ცვლას ყველაზე სჭირდება.
+   ───────────────────────────────────────────────────────────── */
+function renderSignal(c, fcFuture){
+  const ENG = currentLang === 'eng';
+  const st  = c.status || 'operational';
+  const vEl = document.getElementById('sig-verdict');
+  const wEl = document.getElementById('sig-why');
+  if (vEl) vEl.textContent = (ENG ? STATUS_LBL_ENG : STATUS_LBL)[st] || st;
+  if (!wEl) return;
+
+  const a = c.alerts || [];
+  if (a.length) { wEl.innerHTML = a.map(x => `▲ ${x}`).join(' &nbsp;·&nbsp; '); return; }
+
+  // ზღვრამდე რამდენი საათია — პირველი საათი, სადაც სტატუსი გაუარესდება
+  const ORD = {operational:0, barge:1, vessel:2, suspended:3};
+  const hit = (fcFuture || []).findIndex(h => (ORD[h.status]||0) > ORD[st]);
+  if (hit > 0) {
+    const h = fcFuture[hit];
+    const t = (h.time||'').slice(11,16);
+    const lbl = (ENG ? STATUS_LBL_ENG : STATUS_LBL)[h.status] || h.status;
+    wEl.innerHTML = ENG
+      ? `Next change <b>${t}</b> — ${lbl} <span style="color:var(--mu)">(in ${hit} h)</span>`
+      : `შემდეგი ცვლილება <b>${t}</b> — ${lbl} <span style="color:var(--mu)">(${hit} სთ-ში)</span>`;
+  } else {
+    const mw = Math.max(c.wind_speed||0, c.wind_gusts||0);
+    const gap = (THR.barge - mw);
+    // ვერდიქტი ზემოთ ისედაც ამბობს, რომ პორტი სრულ რეჟიმშია —
+    // აქ მხოლოდ ის ემატება, რაც იქ არ წერია: რამდენი მარაგია დარჩენილი.
+    wEl.innerHTML = ENG
+      ? `<b>${gap.toFixed(1)} m/s</b> to the barge limit`
+      : `ბორნის ლიმიტამდე <b>${gap.toFixed(1)} მ/წმ</b>`;
+  }
 }
 
 // ═══ STALE-DATA შემოწმება (მხოლოდ საიტზე — Telegram-ს არ ეხება) ═══
@@ -2014,6 +2223,12 @@ const I18N = {
   op_vessel:     {geo:'გემების მანევრირება — ნებადართული', eng:'Vessel Manoeuvring — Permitted'},
   op_vessel_sub: {geo:'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ', eng:'Limits: Barge ≥10 | Manoeuvre ≥17 | Departure ≥21.5 m/s'},
   lbl_wind:      {geo:'ქარის სიჩქარე', eng:'Wind Speed'},
+  lbl_wind_s:    {geo:'ქარი', eng:'Wind'},
+  lbl_wave_s:    {geo:'ტალღა', eng:'Wave'},
+  lbl_temp_s:    {geo:'ჰაერი', eng:'Air'},
+  u_m:           {geo:'მ', eng:'m'},
+  sig_cranes:    {geo:'ამწეები', eng:'Cranes'},
+  sig_vessel:    {geo:'გემები', eng:'Vessels'},
   lbl_wave:      {geo:'ტალღის სიმაღლე', eng:'Wave Height'},
   lbl_temp:      {geo:'ჰაერის ტემპ.', eng:'Air Temp.'},
   lbl_rain:      {geo:'ნალექი', eng:'Precipitation'},
@@ -2060,7 +2275,7 @@ const I18N = {
   chart_susp:    {geo:'შეჩ. 21.5', eng:'Susp. 21.5'},
   chart_barge:   {geo:'ბორ. 10', eng:'Barge 10'},
   chart_vessel:  {geo:'გემ. 17', eng:'Vsl. 17'},
-  footer_text:   {geo:'ფოთის პორტის შიდა საოპერაციო მონიტორინგის სისტემა © 2026 \xa0·\xa0 48h კონსენსუს-პროგნოზი', eng:'Poti Port Internal Operational Monitoring System © 2026 \xa0·\xa0 48h Consensus Forecast'},
+  footer_text:   {geo:'ფოთის პორტის შიდა საოპერაციო მონიტორინგი · 48 საათის კონსენსუს-პროგნოზი', eng:'Poti Port internal operational monitoring · 48-hour consensus forecast'},
   stale_text:    {geo:'მონაცემები დიდი ხანია არ განახლებულა', eng:'Data not updated for a long time'},
   // ─── ერთეულები და დამხმარე წარწერები (დაემატა 2026-08-18) ───
   u_ms:          {geo:'მ/წმ', eng:'m/s'},
@@ -2091,9 +2306,9 @@ const STATUS_LBL_ENG = {
   vessel:'Vessel Manoeuvring Restricted', suspended:'Cranes + Vessel Departure Suspended',
 };
 const PILL_ENG = {
-  operational:'<span class="pill pill-op">Full Op.</span>',
-  barge:'<span class="pill pill-bg">Barge ↓</span>',
-  vessel:'<span class="pill pill-vs">Vessel ↓</span>',
+  operational:'<span class="pill pill-op">Full</span>',
+  barge:'<span class="pill pill-bg">Barge</span>',
+  vessel:'<span class="pill pill-vs">Vessel</span>',
   suspended:'<span class="pill pill-sus">Suspended</span>',
 };
 const CONF_LABEL_ENG = {high:'High confidence',medium:'Medium confidence',low:'Low confidence',unknown:'Limited data'};
