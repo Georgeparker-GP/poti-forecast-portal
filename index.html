@@ -406,6 +406,31 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 .recap-row{padding:7px 0;}
 
 
+
+/* ── რეკაპი: ცხრილი ფიქსირებული სვეტებით ──
+   ციფრები მარჯვნივ გასწორებული და ტაბულარული — თვალი სვეტს
+   ვერტიკალურად ეშვება და ტენდენციას მაშინვე ხედავს. */
+table.rc{width:100%;border-collapse:collapse;}
+table.rc th{
+  font-size:10px;font-weight:500;color:var(--mu);padding:0 8px 7px;
+  text-align:right;white-space:nowrap;border-bottom:1px solid var(--br);
+}
+table.rc th:first-child,table.rc th:last-child{text-align:left;}
+table.rc td{padding:8px;border-bottom:1px solid var(--ov1);white-space:nowrap;}
+table.rc tr:last-child td{border-bottom:none;}
+.rc-t{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;
+  color:var(--tx);letter-spacing:-0.02em;}
+.rc-n{font-family:'JetBrains Mono',monospace;font-size:14px;text-align:right;
+  font-variant-numeric:tabular-nums;}
+.rc-n b{font-weight:700;}
+.rc-d{font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--sb);}
+.rc-r{font-size:13px;text-align:right;}
+.rc-p{text-align:right;}
+.rc-vis{font-size:10px;margin-top:3px;font-family:'JetBrains Mono',monospace;}
+@media(max-width:820px){
+  table.rc th:nth-child(5),table.rc td:nth-child(5){display:none;}
+}
+
 /* ── 7 დღე: სრული სიგანის ცხრილი ──
    ადრე ვიწრო სვეტში ეტეოდა მხოლოდ ქარი, ტალღა და ტემპერატურა.
    გათავისუფლებულ სიგანეზე ემატება ქროლვა, ნალექი და სტატუსი,
@@ -930,7 +955,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       <!-- flex:1 + space-between — რიგები ბარათის მთელ სიმაღლეზე ნაწილდება.
            ეს შრიფტის ზომაზე უკეთ მუშაობს: ბარათის სიმაღლე მეზობელ პანელებზეა
            დამოკიდებული და ეკრანის სიგანით იცვლება. -->
-      <div id="recap-6h" style="display:flex;flex-direction:column;justify-content:space-between;flex:1;gap:2px;margin-top:10px;">
+      <div id="recap-6h" style="flex:1;">
         <div style="font-size:11px;color:var(--mu)" data-i18n="loading">იტვირთება...</div>
       </div>
     </div>
@@ -1640,49 +1665,54 @@ function render(d) {
         : v < 18.5 ? [ENG?'heavy':'ძლიერი',        'v-alert']
         :            [ENG?'violent':'კოკისპირული', 'v-crit'];
 
-      recapEl.innerHTML = next6.map(h=>{
-        const t = (h.time||'').slice(11,16) || '--:--';
-        const pills = ENG ? PILL_ENG : PILL;
-        const pill = pills[h.status] || '';
-        const wg = h.wind_gusts||0, wv = h.wave_height||0;
-        const rn = h.precipitation||0, tp = h.air_temp;
+      // ═══ ცხრილი ფიქსირებული სვეტებით ═══
+      // ადრე flex-ის ჯაჭვი იყო: ყოველი სტრიქონი სხვა სიგანისა,
+      // თვალი ვერტიკალურად ვერ ეშვებოდა და მარჯვნივ ცარიელი
+      // ადგილი რჩებოდა. ახლა თითოეული მაჩვენებელი თავის სვეტშია.
+      const head = ENG
+        ? ['', 'Wind', 'Gust', 'Dir', 'Temp', 'Precip', 'Wave', '']
+        : ['', 'ქარი', 'ქროლვა', 'მიმართ.', 'ტემპ.', 'ნალექი', 'ტალღა', ''];
+
+      const body = next6.map(h=>{
+        const t  = (h.time||'').slice(11,16) || '--:--';
+        const ws = h.wind_speed||0, wg = h.wind_gusts||0;
+        const wv = h.wave_height||0, rn = h.precipitation||0;
+        const tp = h.air_temp, dir = h.wind_direction;
         const [rTxt, rCls] = rainTxt(rn);
+        const pill = (ENG ? PILL_ENG : PILL)[h.status] || '';
 
-        // წყაროთა შეთანხმება პროცენტულად. ერთი წყაროს 1.7 მმ და ხუთი
-        // წყაროს 1.7 მმ ეკრანზე ერთნაირად გამოიყურებოდა — ეს რიცხვი
-        // სწორედ ამ განსხვავებას აჩვენებს.
-        // მშრალ საათებზე არ ჩანს: იქ შეთანხმება ნულია და პროცენტი
-        // შეცდომაში შემყვანია.
         const agr = (rn >= 0.1 && h.precip_agreement != null)
-          ? `<span class="rp">${Math.round(h.precip_agreement)}%</span>`
-          : '';
+          ? `<span class="rp">${Math.round(h.precip_agreement)}%</span>` : '';
 
-        // ტალღა ᲧᲝᲕᲔᲚᲗᲕᲘᲡ ჩანს. ადრე მხოლოდ ≥1.0 მ-ზე იწერებოდა,
-        // რომ ვიწრო სვეტში ჩატეულიყო — გაფართოებულ რეკაპში ეს
-        // შეზღუდვა აღარ არსებობს, ტალღა კი სტატუსის ერთ-ერთი
-        // განმსაზღვრელია და მისი დამალვა არასწორია.
-        const waveCell = `<span><span class="rl">${ENG?'wave':'ტალღა'}</span> `
-          + `<b class="${vLvl(wv)}">${fmt(wv)}</b><span class="ru">${ENG?'m':'მ'}</span></span>`;
-        // ხილვადობა — მხოლოდ მაშინ, როცა ნისლის ზონას უახლოვდება
+        // ზღვიდან მომავალი ქარი ტალღას ზრდის — ისარი ამას პირდაპირ ამბობს
+        const on = dir != null && isOnshore(dir);
+        const dirCell = dir != null
+          ? `<span class="${on?'v-warn':''}" title="${on?(ENG?'onshore':'ზღვიდან'):(ENG?'offshore':'ხმელეთიდან')}">`
+            + `${toCompass(dir)}</span>`
+          : '—';
+
+        // ხილვადობა ცალკე სვეტს არ იმსახურებს — იშვიათად ჩანს.
+        // ნისლის ზონაში ტალღის უჯრის ქვეშ ჩნდება.
         const vk = h.visibility_km;
-        const visCell = (vk != null && vk <= 1.0)
-          ? `<span><span class="rl">${ENG?'vis':'ხილვ.'}</span> `
-            + `<b class="${vk<=THR.visCranes?'v-crit':vk<=THR.visVessel?'v-alert':'v-warn'}">`
-            + `${Math.round(vk*1000)}</b><span class="ru">${ENG?'m':'მ'}</span></span>`
+        const visNote = (vk != null && vk <= 1.0)
+          ? `<div class="rc-vis ${vk<=THR.visCranes?'v-crit':vk<=THR.visVessel?'v-alert':'v-warn'}">`
+            + `${ENG?'vis':'ხილვ.'} ${Math.round(vk*1000)} ${ENG?'m':'მ'}</div>`
           : '';
 
-        return `<div class="recap-row">
-          <span class="recap-time">${t}</span>
-          <span class="recap-metrics">
-            <span><span class="rl">${ENG?'gust':'დაქრ.'}</span> <b class="${wLvl(wg)}">${fmt(wg)}</b></span>
-            <span><b>${tp!=null?fmt(tp,1):'--'}</b><span class="ru">°C</span></span>
-            <span><b class="${rCls}">${rTxt}</b>${agr}</span>
-            ${waveCell}
-            ${visCell}
-          </span>
-          ${pill}
-        </div>`;
+        return `<tr>
+          <td class="rc-t">${t}</td>
+          <td class="rc-n"><b class="${wLvl(ws)}">${fmt(ws,1)}</b></td>
+          <td class="rc-n"><b class="${wLvl(wg)}">${fmt(wg,1)}</b></td>
+          <td class="rc-d">${dirCell}</td>
+          <td class="rc-n"><b>${tp!=null?fmt(tp,1):'--'}</b><span class="ru">°</span></td>
+          <td class="rc-r"><b class="${rCls}">${rTxt}</b>${agr}</td>
+          <td class="rc-n"><b class="${vLvl(wv)}">${fmt(wv)}</b><span class="ru">${ENG?'m':'მ'}</span>${visNote}</td>
+          <td class="rc-p">${pill}</td>
+        </tr>`;
       }).join('');
+
+      recapEl.innerHTML = `<table class="rc"><thead><tr>${
+        head.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
     }
   }
 
