@@ -391,8 +391,11 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 @media (hover:none){ .sec:hover{border-color:var(--br);} }
 .grid3{
   display:grid;gap:12px;
-  grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+  /* კომპასი კომპაქტურია, რეკაპი — ექვსი სტრიქონი ხუთი მაჩვენებლით.
+     თანაბარი სვეტები რეკაპს ჭყლეტდა და ტალღას ვერ ვამატებდით. */
+  grid-template-columns:minmax(260px,1fr) minmax(360px,1.9fr);
 }
+@media(max-width:820px){ .grid3{grid-template-columns:1fr;} }
 /* პანელის სათაური — ალის გარეშე, ერთ ხაზზე */
 .panel{border-radius:4px;}
 .panel-head h3{font-size:13px;font-weight:600;letter-spacing:-0.01em;}
@@ -401,6 +404,35 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 .tbl th{text-transform:none;letter-spacing:.02em;font-size:11px;}
 /* რეკაპის სტრიქონი — ოდნავ ჰაეროვანი */
 .recap-row{padding:7px 0;}
+
+
+/* ── 7 დღე: სრული სიგანის ცხრილი ──
+   ადრე ვიწრო სვეტში ეტეოდა მხოლოდ ქარი, ტალღა და ტემპერატურა.
+   გათავისუფლებულ სიგანეზე ემატება ქროლვა, ნალექი და სტატუსი,
+   ხოლო ზოლები ზღვართან სიახლოვეს ციფრზე სწრაფად აჩვენებს. */
+table.wk{width:100%;border-collapse:collapse;}
+table.wk th{
+  font-size:11px;font-weight:500;color:var(--mu);text-align:left;
+  padding:0 10px 8px;border-bottom:1px solid var(--br);white-space:nowrap;
+}
+table.wk td{padding:9px 10px;border-bottom:1px solid var(--ov1);vertical-align:middle;}
+table.wk tr:last-child td{border-bottom:none;}
+table.wk tr.wk-now td{background:var(--ov1);}
+table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
+.wk-day{font-size:13px;white-space:nowrap;}
+.wk-ico{font-size:17px;width:1px;}
+.wk-n{font-family:'JetBrains Mono',monospace;font-size:14px;
+  font-variant-numeric:tabular-nums;white-space:nowrap;}
+.wk-n b{font-weight:700;}
+.wk-u{font-size:10px;color:var(--mu);margin-left:3px;}
+.wk-bar{display:block;height:3px;border-radius:2px;background:var(--ov2);
+  margin-top:5px;overflow:hidden;max-width:96px;}
+.wk-bar i{display:block;height:100%;border-radius:2px;}
+@media(max-width:700px){
+  table.wk th:nth-child(4), table.wk td:nth-child(4),
+  table.wk th:nth-child(6), table.wk td:nth-child(6){display:none;}
+  .wk-bar{display:none;}
+}
 
 /* ── CARDS (legacy) ── */
 .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
@@ -576,9 +608,9 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 .recap-row{display:flex;align-items:center;gap:10px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--ov1);}
 .recap-row:last-child{border-bottom:none;}
 /* საათი გამოკვეთილია — რიგებს ერთმანეთისგან მკვეთრად მიჯნავს */
-.recap-time{flex:0 0 56px;color:var(--tx);font-family:'JetBrains Mono',monospace;
+.recap-time{flex:0 0 62px;color:var(--tx);font-family:'JetBrains Mono',monospace;
   font-size:15px;font-weight:700;letter-spacing:-0.02em;}
-.recap-metrics{flex:1;display:flex;gap:10px;color:var(--sb);font-family:'JetBrains Mono',monospace;flex-wrap:wrap;align-items:baseline;}
+.recap-metrics{flex:1;display:flex;gap:14px;color:var(--sb);font-family:'JetBrains Mono',monospace;flex-wrap:wrap;align-items:baseline;}
 /* ეტიკეტები და ერთეულები მკრთალდება — ციფრები წინ გამოდის */
 .recap-metrics .rl{font-size:11px;color:var(--mu);}
 .recap-metrics .ru{font-size:11px;color:var(--mu);}
@@ -903,55 +935,15 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
       </div>
     </div>
 
-    <!-- 7-დღიანი პროგნოზი -->
-    <div class="sec">
-      <div class="sec-title"><span data-i18n="week_title">7 დღის პროგნოზი</span></div>
-      <div id="week-mini" style="display:flex;flex-direction:column;gap:2px;margin-top:12px;"></div>
-    </div>
   </div>
 
-  <!-- ტრენდ-გრაფიკი -->
-  <div class="panel rel">
-    <div class="panel-head">
-      <h3><span data-i18n="chart_title">48-საათიანი ტრენდი</span></h3>
-      <p><span data-i18n="chart_legend">ქარი (ლურჯი) · ტალღა ×5 (ბირთვისფერი) · საოპერ. ზღვრები</span></p>
-    </div>
-    <div style="padding:16px">
-      <svg class="chart" id="trend-chart" viewBox="0 0 1000 140" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#5b9cf5" stop-opacity=".35"/>
-            <stop offset="100%" stop-color="#5b9cf5" stop-opacity="0"/>
-          </linearGradient>
-          <linearGradient id="gV" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#38d9d9" stop-opacity=".25"/>
-            <stop offset="100%" stop-color="#38d9d9" stop-opacity="0"/>
-          </linearGradient>
-        </defs>
-        <line x1="0" y1="35"  x2="1000" y2="35"  stroke="var(--ov1)" stroke-width="1"/>
-        <line x1="0" y1="70"  x2="1000" y2="70"  stroke="var(--ov1)" stroke-width="1"/>
-        <line x1="0" y1="105" x2="1000" y2="105" stroke="var(--ov1)" stroke-width="1"/>
-        <!-- ოპერ. ზღვრები -->
-        <line id="thresh-suspended" x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,90,90,0.5)"   stroke-width="1" stroke-dasharray="5,3"/>
-        <line id="thresh-vessel"    x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,146,58,0.4)"  stroke-width="1" stroke-dasharray="3,4"/>
-        <line id="thresh-barge"     x1="0" y1="0" x2="1000" y2="0" stroke="rgba(245,200,66,0.35)" stroke-width="1" stroke-dasharray="2,5"/>
-        <line id="day2-line" x1="500" y1="0" x2="500" y2="120" stroke="var(--ov2)" stroke-width="1" stroke-dasharray="4,3"/>
-        <text id="day2-label" x="504" y="12" font-size="9" fill="var(--sb)" font-family="JetBrains Mono"></text>
-        <path id="area-wind" fill="url(#gW)" d=""/>
-        <path id="area-wave" fill="url(#gV)" d=""/>
-        <path id="line-wind" fill="none" stroke="#5b9cf5" stroke-width="2" stroke-linejoin="round" d=""/>
-        <path id="line-wave" fill="none" stroke="#38d9d9" stroke-width="2" stroke-linejoin="round" d=""/>
-        <line id="now-line" x1="0" y1="0" x2="0" y2="120" stroke="var(--ov4)" stroke-width="1.5" stroke-dasharray="3,3"/>
-        <g id="chart-labels" font-family="'JetBrains Mono',monospace" font-size="9" fill="var(--sb)"></g>
-      </svg>
-      <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--sb);flex-wrap:wrap;">
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--bl);display:inline-block"></span><span data-i18n="th_wind">ქარი მ/წმ</span></span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:2px;background:var(--tl);display:inline-block"></span><span data-i18n="chart_wave_lbl">ტალღა ×5</span></span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,90,90,0.7);display:inline-block;width:14px"></span><span data-i18n="chart_susp">შეჩ. 21.5</span></span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,146,58,0.6);display:inline-block;width:14px"></span><span data-i18n="chart_vessel">გემ. 17</span></span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:1px;border-top:1px dashed rgba(245,200,66,0.5);display:inline-block;width:14px"></span><span data-i18n="chart_barge">ბორ. 10</span></span>
-      </div>
-    </div>
+  <!-- ═══ 7 დღის პროგნოზი — სრული სიგანე ═══
+       48-საათიანი ტრენდი ამოღებულია: ის იმავე მონაცემს აჩვენებდა,
+       რასაც ცხრილი, ოღონდ წაუკითხავად. გათავისუფლებული სიგანე
+       კვირას გადაეცა, სადაც თითოეული დღე ახლა ცხრილის სტრიქონია. -->
+  <div class="sec rel" style="padding:18px 20px 14px;">
+    <div class="sec-title"><span data-i18n="week_title">7 დღის პროგნოზი</span></div>
+    <div id="week-mini"></div>
   </div>
 
   <!-- წვიმის რადარი (RainViewer) -->
@@ -1665,11 +1657,18 @@ function render(d) {
           ? `<span class="rp">${Math.round(h.precip_agreement)}%</span>`
           : '';
 
-        // ტალღა მხოლოდ მაშინ, როცა ლიმიტს უახლოვდება (≥1.0 მ).
-        // მშვიდ დღეს ზედმეტ ხმაურს არ ქმნის, უხეშზე კი სტატუსის
-        // მიზეზი თვალსაჩინოა.
-        const waveCell = wv >= 1.0
-          ? `<span><span class="rl">${ENG?'wave':'ტალღა'}</span> <b class="${vLvl(wv)}">${fmt(wv)}</b><span class="ru">${ENG?'m':'მ'}</span></span>`
+        // ტალღა ᲧᲝᲕᲔᲚᲗᲕᲘᲡ ჩანს. ადრე მხოლოდ ≥1.0 მ-ზე იწერებოდა,
+        // რომ ვიწრო სვეტში ჩატეულიყო — გაფართოებულ რეკაპში ეს
+        // შეზღუდვა აღარ არსებობს, ტალღა კი სტატუსის ერთ-ერთი
+        // განმსაზღვრელია და მისი დამალვა არასწორია.
+        const waveCell = `<span><span class="rl">${ENG?'wave':'ტალღა'}</span> `
+          + `<b class="${vLvl(wv)}">${fmt(wv)}</b><span class="ru">${ENG?'m':'მ'}</span></span>`;
+        // ხილვადობა — მხოლოდ მაშინ, როცა ნისლის ზონას უახლოვდება
+        const vk = h.visibility_km;
+        const visCell = (vk != null && vk <= 1.0)
+          ? `<span><span class="rl">${ENG?'vis':'ხილვ.'}</span> `
+            + `<b class="${vk<=THR.visCranes?'v-crit':vk<=THR.visVessel?'v-alert':'v-warn'}">`
+            + `${Math.round(vk*1000)}</b><span class="ru">${ENG?'m':'მ'}</span></span>`
           : '';
 
         return `<div class="recap-row">
@@ -1679,6 +1678,7 @@ function render(d) {
             <span><b>${tp!=null?fmt(tp,1):'--'}</b><span class="ru">°C</span></span>
             <span><b class="${rCls}">${rTxt}</b>${agr}</span>
             ${waveCell}
+            ${visCell}
           </span>
           ${pill}
         </div>`;
@@ -1696,7 +1696,6 @@ function render(d) {
   renderSpark('sp-temp', sp.map(h=>h.air_temp), null,         'var(--or)');
 
   allForecast = fc;
-  buildChart(fc);
   // update thead to match current language and tab
   const theadEl = document.getElementById('tbl-thead');
   const titleEl = document.getElementById('tbl-title');
@@ -1726,54 +1725,6 @@ function setOps(id, level, text) {
     txt.textContent = String(text).split('—').pop().trim();
     txt.style.color = level === 'ok' ? 'var(--txt-ok)' : c;
   }
-}
-
-// ═══ CHART ═══
-function buildChart(fc) {
-  const W=1000, H=120, PT=10, PB=22, ch=H-PT-PB;
-  const n=fc.length;
-  const maxW = Math.max(...fc.map(h=>h.wind_gusts||0), 30);
-  const xOf  = i => (i/(n-1))*W;
-  const yW   = v => PT+ch-(v/maxW)*ch;
-  const yWv  = v => PT+ch-((v*5)/maxW)*ch;
-
-  // threshold lines
-  document.getElementById('thresh-suspended').setAttribute('y1', yW(THR.suspended));
-  document.getElementById('thresh-suspended').setAttribute('y2', yW(THR.suspended));
-  document.getElementById('thresh-vessel').setAttribute('y1', yW(THR.vessel));
-  document.getElementById('thresh-vessel').setAttribute('y2', yW(THR.vessel));
-  document.getElementById('thresh-barge').setAttribute('y1', yW(THR.barge));
-  document.getElementById('thresh-barge').setAttribute('y2', yW(THR.barge));
-
-  document.getElementById('now-line').setAttribute('x1', xOf(nowIndex));
-  document.getElementById('now-line').setAttribute('x2', xOf(nowIndex));
-  if(fc[24]) {
-    const d2x = xOf(24);
-    document.getElementById('day2-line').setAttribute('x1', d2x);
-    document.getElementById('day2-line').setAttribute('x2', d2x);
-    document.getElementById('day2-label').textContent = fc[24].time.slice(5,10);
-  }
-
-  const toP = pts => 'M'+pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L');
-  const toA = (pts,bot) => toP(pts)+`L${pts[pts.length-1][0]},${bot} L${pts[0][0]},${bot} Z`;
-  const bot = PT+ch;
-  const wp  = fc.map((h,i)=>[xOf(i), yW(h.wind_speed||0)]);
-  const wvp = fc.map((h,i)=>[xOf(i), yWv(h.wave_height||0)]);
-
-  document.getElementById('line-wind').setAttribute('d', toP(wp));
-  document.getElementById('line-wave').setAttribute('d', toP(wvp));
-  document.getElementById('area-wind').setAttribute('d', toA(wp,bot));
-  document.getElementById('area-wave').setAttribute('d', toA(wvp,bot));
-
-  const lbl = document.getElementById('chart-labels');
-  lbl.innerHTML='';
-  fc.forEach((h,i)=>{
-    if(i%6!==0) return;
-    const el=document.createElementNS('http://www.w3.org/2000/svg','text');
-    el.setAttribute('x',xOf(i));el.setAttribute('y',H-2);el.setAttribute('text-anchor','middle');
-    el.textContent = h.time.slice(5,16).replace('T',' ');
-    lbl.appendChild(el);
-  });
 }
 
 // ═══ TABLE ═══
@@ -1823,30 +1774,50 @@ function weekEmoji(d){
 function renderWeekMini(daily){
   const el = document.getElementById('week-mini');
   if (!el) return;
+  const ENG = currentLang === 'eng';
   if (!daily || !daily.length){
-    el.innerHTML = `<div style="font-size:11px;color:var(--mu)">${currentLang==='eng'?'Weekly data unavailable':'კვირის მონაცემები მიუწვდომელია'}</div>`;
+    el.innerHTML = `<div style="font-size:12px;color:var(--mu)">${_t('no_week_data')}</div>`;
     return;
   }
-  const WD = currentLang==='eng'
-    ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-    : ['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
-  el.innerHTML = daily.slice(0,7).map((d,i)=>{
-    const dateObj = new Date(d.date+'T00:00');
-    const wd = WD[dateObj.getDay()];
-    const dm = d.date.slice(5).replace('-','.');
-    const mw = Math.max(d.wind_max||0, d.gust_max||0);
-    const wc = mw>=THR.suspended?'var(--txt-danger)': mw>=THR.vessel?'var(--txt-alert)': mw>=THR.barge?'var(--txt-warn)':'var(--txt-ok)';
-    const tmin = d.temp_min!=null ? Math.round(d.temp_min) : '--';
-    const tmax = d.temp_max!=null ? Math.round(d.temp_max) : '--';
-    const isToday = i===0;
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;${isToday?'background:var(--ov2);':''}font-size:13px;">
-      <span style="min-width:74px;font-weight:${isToday?'700':'500'};color:${isToday?'var(--tl)':'var(--tx)'}">${wd} ${dm}${isToday?(currentLang==='eng'?' •':' •'):''}</span>
-      <span style="font-size:15px;min-width:24px;text-align:center">${weekEmoji(d)}</span>
-      <span style="min-width:58px;text-align:right;color:${wc};font-weight:600">${fmt(d.wind_max)} <span style="font-size:10px;color:var(--mu)">${currentLang==='eng'?'m/s':'მ/წ'}</span></span>
-      <span style="min-width:44px;text-align:right;color:var(--tl)">${fmt(d.wave_max)}<span style="font-size:10px;color:var(--mu)">${currentLang==='eng'?'m':'მ'}</span></span>
-      <span style="min-width:56px;text-align:right;"><span style="color:var(--txt-cold)">${tmin}°</span><span style="color:var(--mu)">/</span><span style="color:var(--txt-hot)">${tmax}°</span></span>
-    </div>`;
+  const WD = ENG ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+                 : ['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
+  const head = ENG
+    ? ['Day','','Wind','Gust','Wave','Precip','Temp','Status']
+    : ['დღე','','ქარი','ქროლვა','ტალღა','ნალექი','ტემპ.','სტატუსი'];
+
+  // ზოლის სიგრძე ზღვართან მიმართებაში — ციფრზე სწრაფად იკითხება
+  const bar = (v, max, col) => {
+    const w = Math.max(0, Math.min(v / max, 1)) * 100;
+    return `<span class="wk-bar"><i style="width:${w.toFixed(0)}%;background:${col}"></i></span>`;
+  };
+
+  const rows = daily.slice(0,7).map((d,i)=>{
+    const dt   = new Date(d.date+'T00:00');
+    const mw   = Math.max(d.wind_max||0, d.gust_max||0);
+    const wCol = mw>=THR.suspended?'var(--rd)': mw>=THR.vessel?'var(--or)': mw>=THR.barge?'var(--yw)':'var(--gn)';
+    const vCol = (d.wave_max||0)>=THR.wave?'var(--rd)': (d.wave_max||0)>=1.2?'var(--yw)':'var(--tl)';
+    const rn   = d.precip_sum||0;
+    const rCol = rn>=25?'var(--rd)': rn>=10?'var(--or)': rn>=1?'var(--bl)':'var(--mu)';
+    const pill = (ENG?PILL_ENG:PILL)[d.status||'operational']||'';
+    return `<tr class="${i===0?'wk-now':''}">
+      <td class="wk-day">${WD[dt.getDay()]} ${d.date.slice(5).replace('-','.')}</td>
+      <td class="wk-ico">${weekEmoji(d)}</td>
+      <td class="wk-n"><b style="color:${wCol}">${fmt(d.wind_max,1)}</b>
+          <span class="wk-u">${ENG?'m/s':'მ/წმ'}</span>${bar(d.wind_max||0, 25, wCol)}</td>
+      <td class="wk-n"><b style="color:${wCol}">${fmt(d.gust_max,1)}</b>
+          <span class="wk-u">${ENG?'m/s':'მ/წმ'}</span></td>
+      <td class="wk-n"><b style="color:${vCol}">${fmt(d.wave_max)}</b>
+          <span class="wk-u">${ENG?'m':'მ'}</span>${bar(d.wave_max||0, 3, vCol)}</td>
+      <td class="wk-n"><b style="color:${rCol}">${fmt(rn,1)}</b>
+          <span class="wk-u">${ENG?'mm':'მმ'}</span></td>
+      <td class="wk-n"><span style="color:var(--txt-cold)">${d.temp_min!=null?Math.round(d.temp_min):'--'}°</span><span
+          style="color:var(--mu)">/</span><span style="color:var(--txt-hot)">${d.temp_max!=null?Math.round(d.temp_max):'--'}°</span></td>
+      <td>${pill}</td>
+    </tr>`;
   }).join('');
+
+  el.innerHTML = `<table class="wk"><thead><tr>${
+    head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function buildWeekTable(daily) {
