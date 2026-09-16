@@ -196,6 +196,15 @@ header{
   border-style:dashed;
   opacity:.94;
 }
+/* ტალღა ქარიდან შეფასებულია — ზოლში ჩარჩო არაა, ამიტომ
+   წყვეტილი ხაზი ზემოდან აღნიშნავს, რომ ციფრი გაზომილი არაა */
+.mx.estimated{opacity:.94;}
+.mx.estimated::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:repeating-linear-gradient(90deg,
+    var(--yw) 0 5px, transparent 5px 10px);
+  opacity:.7;
+}
 .logo-icon{
   cursor:pointer;
   user-select:none;-webkit-user-select:none;
@@ -1468,7 +1477,10 @@ function render(d) {
   }
   // ფერი: ცივი=ლურჯი, ზომიერი=მწვანე, ცხელი=ნარინჯი
   const tLevel = airT == null ? 'neutral' : airT < 5 ? 'warn' : airT > 30 ? 'alert' : 'ok';
-  document.getElementById('card-airtemp').className = 'card '+tLevel;
+  // ⚠ ადრე პირდაპირ 'card '+tLevel ეწერებოდა, setCard-ის გვერდის ავლით —
+  //   v2-ში ამ უჯრას `mx` კლასი ეხსნებოდა და ერთადერთი რჩებოდა
+  //   ბარათის ფონით. ახლა იმავე კლასს იყენებს, რასაც დანარჩენები.
+  document.getElementById('card-airtemp').className = 'mx lvl-'+tLevel;
   // ბარი: 0°C=0%, 40°C=100%
   setBar('bar-airtemp', airT != null ? Math.min(Math.max(airT,0)/40,1) : 0,
     airT == null ? 'gn' : airT < 5 ? 'yw' : airT > 30 ? 'or' : 'gn');
