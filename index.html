@@ -410,7 +410,17 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 /* ── რეკაპი: ცხრილი ფიქსირებული სვეტებით ──
    ციფრები მარჯვნივ გასწორებული და ტაბულარული — თვალი სვეტს
    ვერტიკალურად ეშვება და ტენდენციას მაშინვე ხედავს. */
-table.rc{width:100%;border-collapse:collapse;}
+/* table-layout:fixed — თორემ ცხრილი შიგთავსის სიგანეზე იკუმშება
+   და მობილურზე მარჯვნივ ცარიელი ზოლი რჩება, ბეჯები კი კიდეზე ეჭედება */
+table.rc{width:100%;border-collapse:collapse;table-layout:fixed;}
+table.rc col.c-t  {width:15%;}
+table.rc col.c-w  {width:12%;}
+table.rc col.c-g  {width:12%;}
+table.rc col.c-d  {width:10%;}
+table.rc col.c-tp {width:12%;}
+table.rc col.c-r  {width:21%;}
+table.rc col.c-wv {width:14%;}
+table.rc col.c-p  {width:14%;}
 table.rc th{
   font-size:10px;font-weight:500;color:var(--mu);padding:0 8px 7px;
   text-align:right;white-space:nowrap;border-bottom:1px solid var(--br);
@@ -440,26 +450,41 @@ table.rc b.v-crit {color:var(--txt-danger);font-weight:700;font-size:15px;}
 .rc-r{font-size:13px;text-align:right;}
 .rc-p{text-align:right;}
 .rc-vis{font-size:10px;margin-top:3px;font-family:'JetBrains Mono',monospace;}
+/* ვიწრო ეკრანზე ტემპერატურა ქრება: მთელ დღეს თითქმის უცვლელია
+   და ყველაზე ნაკლებ ინფორმაციას ატარებს. ქარი, ტალღა და ნალექი
+   რჩება — ესენი განსაზღვრავს სტატუსს. */
 @media(max-width:820px){
-  table.rc th:nth-child(5),table.rc td:nth-child(5){display:none;}
+  table.rc th:nth-child(5),table.rc td:nth-child(5),
+  table.rc col.c-tp{display:none;}
+  table.rc col.c-r{width:26%;}
+  table.rc col.c-wv{width:17%;}
+  table.rc td{padding:8px 5px;}
+  .rc-t{font-size:14px;}
 }
 
 /* ── 7 დღე: სრული სიგანის ცხრილი ──
    ადრე ვიწრო სვეტში ეტეოდა მხოლოდ ქარი, ტალღა და ტემპერატურა.
    გათავისუფლებულ სიგანეზე ემატება ქროლვა, ნალექი და სტატუსი,
    ხოლო ზოლები ზღვართან სიახლოვეს ციფრზე სწრაფად აჩვენებს. */
-table.wk{width:100%;border-collapse:collapse;}
+table.wk{width:100%;border-collapse:collapse;table-layout:fixed;}
+table.wk col.k-d{width:17%;} table.wk col.k-i{width:7%;}
+table.wk col.k-w{width:13%;} table.wk col.k-g{width:13%;}
+table.wk col.k-v{width:13%;} table.wk col.k-r{width:12%;}
+table.wk col.k-t{width:13%;} table.wk col.k-s{width:12%;}
 table.wk th{
-  font-size:11px;font-weight:500;color:var(--mu);text-align:left;
+  font-size:11px;font-weight:500;color:var(--mu);text-align:right;
   padding:0 10px 8px;border-bottom:1px solid var(--br);white-space:nowrap;
 }
 table.wk td{padding:9px 10px;border-bottom:1px solid var(--ov1);vertical-align:middle;}
+table.wk th:nth-child(1),table.wk th:nth-child(2){text-align:left;}
+table.wk td:last-child{text-align:right;}
+.wk-bar{margin-left:auto;}
 table.wk tr:last-child td{border-bottom:none;}
 table.wk tr.wk-now td{background:var(--ov1);}
 table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 .wk-day{font-size:13px;white-space:nowrap;}
 .wk-ico{font-size:17px;width:1px;}
-.wk-n{font-family:'JetBrains Mono',monospace;font-size:14px;
+.wk-n{font-family:'JetBrains Mono',monospace;font-size:14px;text-align:right;
   font-variant-numeric:tabular-nums;white-space:nowrap;}
 .wk-n b{font-weight:700;}
 /* მწვანე = ნორმა → ჩაწეული ტონი, რომ გადახრა გამოირჩეოდეს */
@@ -468,10 +493,20 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 .wk-bar{display:block;height:3px;border-radius:2px;background:var(--ov2);
   margin-top:5px;overflow:hidden;max-width:96px;}
 .wk-bar i{display:block;height:100%;border-radius:2px;}
-@media(max-width:700px){
+/* ქროლვა და ნალექი რჩება — ესენი გახდა ინფორმაციული.
+   ქრება ტემპერატურა: მთელ კვირას თითქმის უცვლელია. */
+@media(max-width:760px){
+  table.wk th:nth-child(7), table.wk td:nth-child(7),
+  table.wk col.k-t{display:none;}
+  table.wk col.k-w{width:16%;} table.wk col.k-g{width:16%;}
+  table.wk col.k-v{width:16%;} table.wk col.k-r{width:14%;}
+  table.wk td{padding:9px 5px;}
+  .wk-n{font-size:13px;}
+  .wk-bar{max-width:100%;}
+}
+@media(max-width:480px){
   table.wk th:nth-child(4), table.wk td:nth-child(4),
-  table.wk th:nth-child(6), table.wk td:nth-child(6){display:none;}
-  .wk-bar{display:none;}
+  table.wk col.k-g{display:none;}
 }
 
 /* ── CARDS (legacy) ── */
@@ -1673,7 +1708,7 @@ function render(d) {
       // ⚠ ეს ᲛᲮᲝᲚᲝᲓ ᲬᲐᲠᲬᲔᲠᲐᲐ: ნალექი THRESHOLDS-ში არ შედის და
       //   სტატუსზე გავლენას არ ახდენს (ქარი, ტალღა, ხილვადობა).
       const rainTxt = v =>
-          v < 0.1  ? [ENG?'no precip':'უნალექო',   'v-ok']
+          v < 0.1  ? [ENG?'dry':'უნალექო',         'v-ok']
         : v < 0.5  ? [ENG?'drizzle':'ჟინჟლი',      'v-ok']
         : v < 2.5  ? [ENG?'light':'მსუბუქი',       'v-ok']
         : v < 7.0  ? [ENG?'moderate':'ზომიერი',    'v-warn']
@@ -1726,8 +1761,11 @@ function render(d) {
         </tr>`;
       }).join('');
 
-      recapEl.innerHTML = `<table class="rc"><thead><tr>${
-        head.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
+      recapEl.innerHTML = `<table class="rc">
+        <colgroup><col class="c-t"><col class="c-w"><col class="c-g"><col class="c-d">
+          <col class="c-tp"><col class="c-r"><col class="c-wv"><col class="c-p"></colgroup>
+        <thead><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr></thead>
+        <tbody>${body}</tbody></table>`;
     }
   }
 
@@ -1861,8 +1899,11 @@ function renderWeekMini(daily){
     </tr>`;
   }).join('');
 
-  el.innerHTML = `<table class="wk"><thead><tr>${
-    head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+  el.innerHTML = `<table class="wk">
+    <colgroup><col class="k-d"><col class="k-i"><col class="k-w"><col class="k-g">
+      <col class="k-v"><col class="k-r"><col class="k-t"><col class="k-s"></colgroup>
+    <thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${rows}</tbody></table>`;
 }
 
 function buildWeekTable(daily) {
