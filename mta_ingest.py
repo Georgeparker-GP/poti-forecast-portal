@@ -191,6 +191,30 @@ def _circ_delta(a, b):
         return None
 
 
+def _fnum(v):
+    """ნებისმიერი მნიშვნელობა → float ან None.
+
+    ⚠ 2026-09-16: MTA-ს PDF-ებში რიცხვები ხანდახან ტექსტად მოდის —
+    მძიმით ("5,0"), ჰარეებით, ან ერთეულთან ერთად. აქამდე ასეთი ველი
+    პირდაპირ გამოკლებაში ხვდებოდა და მთელი გაშვება ვარდებოდა:
+
+        TypeError: unsupported operand type(s) for -: 'str' and 'float'
+
+    შედეგად `_save_log` არ სრულდებოდა და ᲡᲐᲛᲝᲪᲘ ᲩᲐᲜᲐᲬᲔᲠᲘ ᲘᲙᲐᲠᲒᲔᲑᲝᲓᲐ
+    ერთი ველის გამო. სწორედ ეს იყო 09-01 → 09-16 ხვრელის მიზეზი.
+    """
+    if v is None or isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    try:
+        t = str(v).strip().replace(",", ".")
+        m = re.search(r"-?\d+(?:\.\d+)?", t)
+        return float(m.group()) if m else None
+    except Exception:
+        return None
+
+
 def _compare_to_portal(parsed: dict, portal: dict) -> dict:
     """actual/storm nowcast-ის ფოთის ქარი/ტალღა vs პორტალი. მხოლოდ ჩაწერისთვის."""
     cmp = {}
@@ -201,19 +225,20 @@ def _compare_to_portal(parsed: dict, portal: dict) -> dict:
         mta_gust = poti["wind_max"]
     elif isinstance(poti.get("wind_range"), (list, tuple)):
         mta_gust = poti["wind_range"][1]
-    if mta_gust is not None and portal.get("wind_gusts") is not None:
+    mta_gust, p_gust = _fnum(mta_gust), _fnum(portal.get("wind_gusts"))
+    if mta_gust is not None and p_gust is not None:
         cmp["wind_mta"]    = mta_gust
-        cmp["wind_portal"] = portal["wind_gusts"]
-        cmp["wind_delta"]  = round(mta_gust - portal["wind_gusts"], 2)
+        cmp["wind_portal"] = p_gust
+        cmp["wind_delta"]  = round(mta_gust - p_gust, 2)
 
     # საშუალო ქარიც — MTA-ს wind_avg vs პორტალის wind_speed.
     # აქამდე მხოლოდ პიკი ედარებოდა; საშუალო ცალკე სიდიდეა და
     # ტალღის წარმოქმნისთვის სწორედ ის არის განმსაზღვრელი.
-    mta_avg = poti.get("wind_avg")
-    if mta_avg is not None and portal.get("wind_speed") is not None:
+    mta_avg, p_avg = _fnum(poti.get("wind_avg")), _fnum(portal.get("wind_speed"))
+    if mta_avg is not None and p_avg is not None:
         cmp["wind_avg_mta"]    = mta_avg
-        cmp["wind_avg_portal"] = portal["wind_speed"]
-        cmp["wind_avg_delta"]  = round(mta_avg - portal["wind_speed"], 2)
+        cmp["wind_avg_portal"] = p_avg
+        cmp["wind_avg_delta"]  = round(mta_avg - p_avg, 2)
     # ტალღა — MTA სმ→მ, დიაპაზონის შუა
     wave_m = wave_cm_to_m(poti.get("wave_cm"))
     if isinstance(wave_m, (list, tuple)):
@@ -222,42 +247,43 @@ def _compare_to_portal(parsed: dict, portal: dict) -> dict:
         mta_wave = wave_m
     else:
         mta_wave = None
-    if mta_wave is not None and portal.get("wave_height") is not None:
+    mta_wave, p_wave = _fnum(mta_wave), _fnum(portal.get("wave_height"))
+    if mta_wave is not None and p_wave is not None:
         cmp["wave_mta"]    = mta_wave
-        cmp["wave_portal"] = portal["wave_height"]
-        cmp["wave_delta"]  = round(mta_wave - portal["wave_height"], 2)
+        cmp["wave_portal"] = p_wave
+        cmp["wave_delta"]  = round(mta_wave - p_wave, 2)
 
     # ── მიმართულება (წრფივი) ──
-    if poti.get("wind_dir") is not None and portal.get("wind_direction") is not None:
-        d = _circ_delta(poti["wind_dir"], portal["wind_direction"])
+    _md, _pd = _fnum(poti.get("wind_dir")), _fnum(portal.get("wind_direction"))
+    if _md is not None and _pd is not None:
+        d = _circ_delta(_md, _pd)
         if d is not None:
-            cmp["dir_mta"]    = poti["wind_dir"]
-            cmp["dir_portal"] = portal["wind_direction"]
+            cmp["dir_mta"]    = _md
+            cmp["dir_portal"] = _pd
             cmp["dir_delta"]  = d
 
     # ── ხილვადობა: მილი → კმ, წაღების გათვალისწინებით ──
-    vm = poti.get("vis_miles")
-    if isinstance(vm, (int, float)) and portal.get("visibility_km") is not None:
-        vis_km = round(float(vm) * MILE_KM, 2)
-        capped = float(vm) >= VIS_CAP_MILES
+    vm, p_vis = _fnum(poti.get("vis_miles")), _fnum(portal.get("visibility_km"))
+    if vm is not None and p_vis is not None:
+        vis_km = round(vm * MILE_KM, 2)
+        capped = vm >= VIS_CAP_MILES
         cmp["vis_mta_km"]   = vis_km
-        cmp["vis_portal_km"] = portal["visibility_km"]
+        cmp["vis_portal_km"] = p_vis
         cmp["vis_capped"]   = capped
         if capped:
             # MTA ამბობს "≥ 18.5 კმ". ღირსებულია მხოლოდ იმ შემთხვევაში,
             # თუ პორტალი ამაზე დაბლავს — ეს ნამდვილი შეუსაბამობაა.
-            cmp["vis_flag"] = ("portal_below" if portal["visibility_km"] < vis_km
-                               else "ok_capped")
+            cmp["vis_flag"] = ("portal_below" if p_vis < vis_km else "ok_capped")
         else:
-            cmp["vis_delta"] = round(vis_km - portal["visibility_km"], 2)
+            cmp["vis_delta"] = round(vis_km - p_vis, 2)
 
     # ── ნალექი: ორობითი შედარება ──
     dry = _mta_is_dry(poti.get("precip"))
-    pp = portal.get("precipitation")
+    pp = _fnum(portal.get("precipitation"))
     if dry is not None and pp is not None:
-        portal_wet = float(pp) >= 0.1
+        portal_wet = pp >= 0.1
         cmp["precip_mta"]    = "dry" if dry else "wet"
-        cmp["precip_portal"] = round(float(pp), 2)
+        cmp["precip_portal"] = round(pp, 2)
         if dry and portal_wet:
             cmp["precip_verdict"] = "false_positive"     # პორტალი აწვიმებდა
         elif (not dry) and (not portal_wet):
@@ -272,11 +298,11 @@ def _compare_to_portal(parsed: dict, portal: dict) -> dict:
     # არა ბადის წერტილში.
     for mta_k, portal_k, out_k in (("air_temp", "air_temp", "air_temp"),
                                    ("sea_temp", "water_temp", "sea_temp")):
-        mv, pv = poti.get(mta_k), portal.get(portal_k)
-        if isinstance(mv, (int, float)) and isinstance(pv, (int, float)):
-            cmp[f"{out_k}_mta"]   = round(float(mv), 1)
-            cmp[f"{out_k}_portal"] = round(float(pv), 1)
-            cmp[f"{out_k}_delta"] = round(float(mv) - float(pv), 1)
+        mv, pv = _fnum(poti.get(mta_k)), _fnum(portal.get(portal_k))
+        if mv is not None and pv is not None:
+            cmp[f"{out_k}_mta"]   = round(mv, 1)
+            cmp[f"{out_k}_portal"] = round(pv, 1)
+            cmp[f"{out_k}_delta"] = round(mv - pv, 1)
 
     return cmp
 
@@ -515,21 +541,40 @@ def main():
         # actual/storm nowcast → პორტალთან შედარება.
         # პორტალის ჩანაწერი ᲗᲘᲗᲝᲔᲣᲚ ᲑᲘᲣᲚᲔᲢᲔᲜᲖᲔ ცალკე ირჩევა — მისი
         # საკუთარი საათის მიხედვით, არა ingest-ის მომენტის.
+        # ⚠ 2026-09-16: შედარება try-ში.
+        #
+        #   ერთმა ბიულეტენმა `wind_avg`-ში ტექსტი მოიტანა და გაშვება
+        #   TypeError-ით ჩავარდა `_compare_to_portal`-ში. `_save_log`
+        #   აღარ შესრულდა და ᲡᲐᲛᲝᲪᲘ ᲣᲙᲕᲔ ᲓᲐᲛᲣᲨᲐᲕᲔᲑᲣᲚᲘ ᲩᲐᲜᲐᲬᲔᲠᲘ
+        #   ᲓᲐᲘᲙᲐᲠᲒᲐ. ჟურნალი ორ კვირას გაყინული იდგა.
+        #
+        #   შედარება დამხმარეა და არა ჩაწერის პირობა: თუ ის ჩავარდა,
+        #   ბიულეტენი მაინც უნდა ჩაიწეროს — ნედლი მონაცემი მთავარია.
         if parsed.get("type") == "forecast":
-            fc_cmp = _compare_forecast_to_portal(parsed)
-            if fc_cmp:
-                entry["vs_portal_forecast"] = fc_cmp
+            try:
+                fc_cmp = _compare_forecast_to_portal(parsed)
+                if fc_cmp:
+                    entry["vs_portal_forecast"] = fc_cmp
+            except Exception as e:
+                log.warning(f"პროგნოზის შედარება ჩავარდა "
+                            f"[{os.path.basename(pdf)}] — {e}")
+                entry["compare_error"] = f"forecast: {e}"
 
         # storm_cancel შეიცავს ფაქტიურ ამინდს — დამატებითი ground truth
         # წერტილი ორ რეგულარულ ფაქტიურ ბიულეტენს გარდა.
         if parsed.get("type") in ("actual", "storm_warning", "storm_cancel"):
-            portal, portal_time, exact = _portal_at(parsed)
-            if portal:
-                entry["vs_portal"] = _compare_to_portal(parsed, portal)
-                entry["portal_time"] = portal_time
-                # exact=False → შედარება ერთსაათიან ცდომილებას შეიცავს.
-                # ოქტომბრის სტატისტიკაში ასეთი ჩანაწერები უნდა გამოირიცხოს.
-                entry["portal_hour_exact"] = exact
+            try:
+                portal, portal_time, exact = _portal_at(parsed)
+                if portal:
+                    entry["vs_portal"] = _compare_to_portal(parsed, portal)
+                    entry["portal_time"] = portal_time
+                    # exact=False → შედარება ერთსაათიან ცდომილებას შეიცავს.
+                    # ოქტომბრის სტატისტიკაში ასეთი ჩანაწერები უნდა გამოირიცხოს.
+                    entry["portal_hour_exact"] = exact
+            except Exception as e:
+                log.warning(f"პორტალთან შედარება ჩავარდა "
+                            f"[{os.path.basename(pdf)}] — {e}")
+                entry["compare_error"] = str(e)
 
         # თავდაცვითი ნაგულისხმევი: შედარება ველის გარეშე არ უნდა დარჩეს,
         # თორემ ოქტომბრის ფილტრი მას ხმაურთან ერთად გაატარებს.
