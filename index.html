@@ -418,11 +418,24 @@ table.rc th{
 table.rc th:first-child,table.rc th:last-child{text-align:left;}
 table.rc td{padding:8px;border-bottom:1px solid var(--ov1);white-space:nowrap;}
 table.rc tr:last-child td{border-bottom:none;}
+/* დრო — ნავიგაციაა და არა მონაცემი, ამიტომ თეთრი რჩება */
 .rc-t{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;
   color:var(--tx);letter-spacing:-0.02em;}
 .rc-n{font-family:'JetBrains Mono',monospace;font-size:14px;text-align:right;
   font-variant-numeric:tabular-nums;}
-.rc-n b{font-weight:700;}
+
+/* ═══ იერარქია: ნორმა მშვიდი, გადახრა ნათელი ═══
+   ადრე ყველა ციფრი ერთნაირად თეთრი იყო და ფერითი კოდირება
+   იკარგებოდა. ახლა ექვსი მშვიდი სტრიქონიდან პრობლემური
+   თვითონ ამოხტება — თვალს ძებნა აღარ სჭირდება. */
+table.rc b.v-ok   {color:var(--sb);font-weight:500;}
+table.rc b.v-warn {color:var(--txt-warn);font-weight:700;}
+table.rc b.v-alert{color:var(--txt-alert);font-weight:700;}
+table.rc b.v-crit {color:var(--txt-danger);font-weight:700;font-size:15px;}
+/* ტემპერატურას ზღვარი არ აქვს — ნეიტრალური რჩება */
+.rc-n b:not([class]){color:var(--sb);font-weight:500;}
+/* ნალექი: „უნალექო“ ფონურია, წვიმა — გამოკვეთილი */
+.rc-r b.v-ok{color:var(--mu);font-weight:400;}
 .rc-d{font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--sb);}
 .rc-r{font-size:13px;text-align:right;}
 .rc-p{text-align:right;}
@@ -449,6 +462,8 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 .wk-n{font-family:'JetBrains Mono',monospace;font-size:14px;
   font-variant-numeric:tabular-nums;white-space:nowrap;}
 .wk-n b{font-weight:700;}
+/* მწვანე = ნორმა → ჩაწეული ტონი, რომ გადახრა გამოირჩეოდეს */
+.wk-n b[style*="--gn"]{font-weight:500;}
 .wk-u{font-size:10px;color:var(--mu);margin-left:3px;}
 .wk-bar{display:block;height:3px;border-radius:2px;background:var(--ov2);
   margin-top:5px;overflow:hidden;max-width:96px;}
