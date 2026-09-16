@@ -1,0 +1,46 @@
+name: შედარებების backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: 'ჩაწერა (false = მშრალი გაშვება)'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 აუცილებელია — პორტალის ისტორია data.json-ის
+      # commit-ებშია და shallow clone მხოლოდ ბოლოს იღებს.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Backfill
+        run: |
+          if [ "${{ github.event.inputs.write }}" = "true" ]; then
+            python3 backfill_compare.py --write
+          else
+            python3 backfill_compare.py
+          fi
+
+      - name: Commit
+        if: ${{ github.event.inputs.write == 'true' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mta_log.json
+          if git diff --cached --quiet; then
+            echo "ცვლილება არ არის."
+          else
+            git commit -m "backfill: vs_portal გადათვლილია git-ის ისტორიიდან"
+            git push
+          fi
