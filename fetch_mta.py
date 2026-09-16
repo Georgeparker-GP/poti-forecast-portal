@@ -47,10 +47,14 @@ SUBJECT_TAG = "MTA"              # Power Automate-ის პრეფიქს�
 DEST_DIR = pathlib.Path("mta_bulletins")
 STATE_FILE = pathlib.Path("mta_mail_state.json")
 
-MAX_PER_RUN = 25
+# ⚠ 60 და არა 25: ხვრელის შემდეგ 14 დღეში ~56 წერილი გროვდება
+#   (დღეში ოთხი) და ერთ გაშვებაში უნდა ამოივსოს.
+MAX_PER_RUN = 60
 MAX_STATE = 400
 MAX_BYTES = 25 * 1024 * 1024
-LOOKBACK_DAYS = 14               # ამაზე ძველს არ ვეხებით
+# 21 და არა 14: 09-01 → 09-14 ხვრელი 13 დღეა, ანუ ზუსტად ზღვარზე.
+# მარაგი საჭიროა, თორემ შემდეგი ხვრელი ნაწილობრივ დაიკარგება.
+LOOKBACK_DAYS = 21               # ამაზე ძველს არ ვეხებით
 PDF_MAGIC = b"%PDF"
 
 TBILISI_TZ = timezone(timedelta(hours=4))
@@ -197,24 +201,39 @@ def main() -> None:
         pick_mailbox(mail)
 
         since = (datetime.now(timezone.utc) - timedelta(days=LOOKBACK_DAYS)).strftime("%d-%b-%Y")
-        # UNSEEN — რომ იგივე წერილი ორჯერ არ დამუშავდეს.
-        # SINCE — ძველ არქივს არ ვეხებით.
-        typ, data = mail.search(None, f'(UNSEEN SINCE {since})')
+        # ⚠ 2026-09-14: UNSEEN მოხსნილია.
+        #
+        #   ადრე იყო `(UNSEEN SINCE ...)` — ანუ სკრიპტი მხოლოდ
+        #   ᲬᲐᲣᲙᲘᲗᲮᲐᲕ წერილებს ხედავდა. საკმარისი იყო წერილი ერთხელ
+        #   გახსნილიყო ტელეფონზე ან ბრაუზერში, რომ სამუდამოდ
+        #   ამოვარდნილიყო ფილტრიდან. შეცდომა არ ჩნდებოდა — ლოგში
+        #   უბრალოდ ეწერა "ახალი წერილი არ არის".
+        #
+        #   ᲝᲠᲘ ᲮᲕᲠᲔᲚᲘ ᲡᲬᲝᲠᲔᲓ ᲐᲡᲔ ᲒᲐᲩᲜᲓᲐ:
+        #     2026-07-28 → 08-26 (30 დღე)
+        #     2026-09-01 → 09-14 (13 დღე, ნისლის სეზონის დასაწყისი)
+        #
+        #   ᲐᲮᲚᲐ: ძებნა მხოლოდ თარიღზეა, დუბლიკატს კი Message-ID-ის
+        #   state ფარავს. წერილის წაკითხვა, გადატანა ან სხვა შემთხვევითი
+        #   მოქმედება პაიპლაინს ვეღარ გატეხავს.
+        typ, data = mail.search(None, f'(SINCE {since})')
         if typ != "OK":
             log("ძებნა ჩავარდა")
             return
 
         ids = data[0].split()
         if not ids:
-            log("ახალი წერილი არ არის")
+            log(f"ბოლო {LOOKBACK_DAYS} დღეში წერილი არ არის")
             return
 
-        log(f"{len(ids)} წაუკითხავი წერილი")
+        log(f"{len(ids)} წერილი ბოლო {LOOKBACK_DAYS} დღეში "
+            f"(state-ში უკვე {len(seen_set)})")
         if len(ids) > MAX_PER_RUN:
-            log(f"იზღუდება {MAX_PER_RUN}-მდე")
-            ids = ids[-MAX_PER_RUN:]
+            log(f"იზღუდება {MAX_PER_RUN}-მდე (დანარჩენი შემდეგ გაშვებაზე)")
+            ids = ids[:MAX_PER_RUN]   # ᲫᲕᲔᲚᲘᲓᲐᲜ — ხვრელი ქრონოლოგიურად ივსება
 
         saved = 0
+        skipped = 0
         for num in ids:
             try:
                 typ, raw = mail.fetch(num, "(RFC822)")
@@ -226,13 +245,21 @@ def main() -> None:
                 continue
 
             subject = decode_mime(msg.get("Subject", ""))
-            msg_id = (msg.get("Message-ID") or "").strip() or f"noid-{num.decode()}"
+            # Message-ID-ის გარეშე ვაგებთ სტაბილურ იდენტიფიკატორს.
+            # ⚠ ადრე `noid-{num}` იყო — IMAP-ის თანმიმდევრობის ნომერი,
+            #   რომელიც საქაღალდის შეცვლისას იცვლება და dedup ვერ მუშაობს.
+            msg_id = (msg.get("Message-ID") or "").strip()
+            if not msg_id:
+                import hashlib
+                base = f"{subject}|{msg.get('Date','')}"
+                msg_id = "noid-" + hashlib.sha1(base.encode("utf-8", "replace")).hexdigest()[:16]
 
             # მხოლოდ ჩვენი პრეფიქსი (ინბოქსზე გადასვლის შემთხვევისთვის)
             if SUBJECT_TAG not in subject:
                 continue
 
             if msg_id in seen_set:
+                skipped += 1
                 continue
 
             pdfs = extract_pdfs(msg, seen_set)
@@ -262,7 +289,7 @@ def main() -> None:
                 pass
 
         save_state(seen)
-        log(f"დასრულდა: {saved} PDF → {DEST_DIR}/")
+        log(f"დასრულდა: {saved} ახალი PDF · {skipped} უკვე ნანახი → {DEST_DIR}/")
 
     finally:
         try:
