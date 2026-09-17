@@ -177,13 +177,32 @@ def parse_storm_cancellation(pdf_path: str) -> dict:
     if m:
         out["bulletin_no"] = m.group(1)
 
-    # გაუქმებული გაფრთხილების ნომერი
-    m = re.search(r"STORM\s+WARNING\s+([\d/]+)\s+CANCEL", text, re.I)
-    if m:
-        out["cancels"] = m.group(1)
+    # ── აკვატორიის ამოცნობა ──
+    # ⚠ დაემატა 2026-09-16. MTA ᲑᲐᲗᲣᲛᲘᲡ ბიულეტენებსაც აგზავნის იმავე
+    #   ფოსტაზე, ნომრები კი თანმიმდევრულია (ფოთი 14/7588, ბათუმი 14/7589).
+    #   თუ ბათუმის ბიულეტენი ფოთის მონაცემად ჩაიწერება, კალიბრაცია
+    #   დაბინძურდება. `area` ველი ამას გამორიცხავს.
+    low = text.lower()
+    has_poti = ("poti" in low) or ("ფოთ" in text)
+    has_batumi = ("batumi" in low) or ("ბათუმ" in text)
+    out["area"] = "poti" if has_poti else ("batumi" if has_batumi else "unknown")
 
-    # თარიღი და დრო: "26.08.2026  09:20"
-    m = re.search(r"(\d{2})\.(\d{2})\.(\d{4})\s+(\d{1,2}):(\d{2})", text)
+    # ── გაუქმებული გაფრთხილების ნომერი ──
+    # ᲝᲠᲘ ᲤᲝᲠᲛᲐᲢᲘ გვხვდება:
+    #   "STORM WARNING 14/6882 CANCELATION"
+    #   "CANCELLATION THE STORM WARNING 14/7589"   ← 2026-09-16-ზე დაფიქსირდა
+    for pat in (r"STORM\s+WARNING\s+([\d/]+)\s+CANCEL",
+                r"CANCEL\w*\s+(?:THE\s+)?STORM\s+WARNING\s+([\d/]+)",
+                r"საშტორმო\s+გაფრთხილება\s+([\d/]+)\s*-?ის\s+გაუქმება"):
+        m = re.search(pat, text, re.I)
+        if m:
+            out["cancels"] = m.group(1)
+            break
+
+    # ── თარიღი და დრო ──
+    # "26.08.2026  09:20"  და  "16.09.2026წ. 14:20სთ."
+    m = re.search(r"(\d{2})\.(\d{2})\.(\d{4})\s*წ?\.?\s*(\d{1,2})[:.](\d{2})",
+                  text)
     if m:
         out["date"] = f"{m.group(1)}/{m.group(2)}/{m.group(3)}"
         out["time"] = f"{int(m.group(4)):02d}:{m.group(5)}"
@@ -199,6 +218,21 @@ def parse_storm_cancellation(pdf_path: str) -> dict:
         # _compare_to_portal-ის კონტრაქტი: საშუალო და მაქსიმუმი
         out["poti"]["wind_avg"] = lo
         out["poti"]["wind_max"] = hi
+    else:
+        # ── ალტერნატიული ფორმატი (2026-09-16) ──
+        #   "A.W. Wind : NW 3 m/sec."      — ერთი მნიშვნელობა
+        #   "A.W. Wind : NW 3-4 m/sec."    — დიაპაზონი
+        m = re.search(r"A\.?\s*W\.?\s*Wind\s*[:\-–]\s*([NSEW]{1,3})\s*"
+                      r"(\d+)(?:\s*-\s*(\d+))?\s*m/sec", text, re.I)
+        if m:
+            d = m.group(1).upper()
+            lo = float(m.group(2))
+            hi = float(m.group(3)) if m.group(3) else lo
+            out["poti"]["wind_dir_txt"] = d
+            if d in COMPASS_DEG:
+                out["poti"]["wind_dir"] = COMPASS_DEG[d]
+            out["poti"]["wind_avg"] = lo
+            out["poti"]["wind_max"] = hi
 
     # ── ტალღა: "Sea swell 3 state (W.H. 74-119 cm)" ──
     m = re.search(r"Sea\s+swell\s+(\d+)\s*state\s*\(?\s*W\.?H\.?\s*(\d+)\s*-\s*(\d+)\s*cm",
@@ -206,6 +240,23 @@ def parse_storm_cancellation(pdf_path: str) -> dict:
     if m:
         out["poti"]["sea_state"] = float(m.group(1))
         out["poti"]["wave_cm"] = (float(m.group(2)), float(m.group(3)))
+    else:
+        # "Sea 3 state. w.h. ( 50-125 cm.)" — პროგნოზის ნაწილი
+        m = re.search(r"Sea\s+(\d+)\s*state\.?\s*w\.?h\.?\s*\(?\s*"
+                      r"(\d+)\s*-\s*(\d+)\s*cm", text, re.I)
+        if m:
+            fc_sea = (float(m.group(1)), float(m.group(2)), float(m.group(3)))
+        else:
+            fc_sea = None
+        # "A.W. ... Sea : 3 state." — ფაქტიური ბალიანობა, სიმაღლის გარეშე
+        m = re.search(r"Sea\s*[:\-–]\s*(\d+)\s*state", text, re.I)
+        if m:
+            out["poti"]["sea_state"] = float(m.group(1))
+        elif fc_sea:
+            out["poti"]["sea_state"] = fc_sea[0]
+        if fc_sea:
+            out.setdefault("forecast", {})["sea_state"] = fc_sea[0]
+            out["forecast"]["wave_cm"] = (fc_sea[1], fc_sea[2])
 
     # ── ყულევი: "Kulevi - NE  2-4 m/sec" ──
     m = re.search(r"Kulevi\s*[-–:]\s*([NSEW]{1,3})\s*(\d+)\s*-\s*(\d+)\s*m/sec", text, re.I)
@@ -248,6 +299,7 @@ def parse_storm_warning(pdf_path: str) -> dict:
     if m:
         fc["sea_state"] = float(m.group(1))
         fc["wave_cm"] = (float(m.group(2)), float(m.group(3)))
+    out["forecast"] = fc
 
     # ── nowcast ნაწილი: a.w. (Poti) ──
     m = re.search(r"a\.w\.\s*\(Poti\)\s*Wind-?\s*([NSEW]{1,2})\s*(\d+)-(\d+)\s*m/sec", text, re.I)
@@ -260,59 +312,6 @@ def parse_storm_warning(pdf_path: str) -> dict:
         out["poti"]["sea_state"] = float(m.group(1))
         out["poti"]["wave_cm"] = (float(m.group(2)), float(m.group(3)))
 
-    # ── ხილვადობა ──
-    # ⚠ დაემატა 2026-09-14. აქამდე პარსერი მხოლოდ ქარსა და ტალღას
-    #   კითხულობდა: ოთხი storm_warning-იდან სამს `poti` ბლოკი ცარიელი
-    #   დარჩა, რადგან ნისლის გაფრთხილებაში ქარი საერთოდ არ იწერება.
-    #
-    #   ბიულეტენი 14/7539 (14.09.2026, 07:20) ასე გამოიყურება:
-    #     "In the area of Poti-Kulevi In the next 2-3 hours will be
-    #      remained fog. time to time heavi fog. visibility 0.1-0.5 miles."
-    #     "A.W. Poti  - visibility 200 meter."
-    #     "kulevi- 10 miles."
-    #
-    #   ორი განსხვავებული ერთეულია — მეტრი ფოთზე, მილი აკვატორიაზე.
-    #   ორივეს ვკითხულობთ და კმ-ში ვაერთიანებთ.
-    _MI_KM = 1.852
-
-    # A.W. Poti — visibility NNN meter (nowcast, ყველაზე ღირებული)
-    m = re.search(r"A\.?W\.?\s*\(?\s*Poti\s*\)?\s*[-–]?\s*visibility\s*"
-                  r"(\d+(?:[.,]\d+)?)\s*(?:meter|metre|m\b)", text, re.I)
-    if m:
-        out["poti"]["vis_km"] = round(float(m.group(1).replace(",", ".")) / 1000.0, 3)
-        out["poti"]["vis_src"] = "meter"
-    else:
-        # A.W. Poti — visibility N miles
-        m = re.search(r"A\.?W\.?\s*\(?\s*Poti\s*\)?\s*[-–]?\s*visibility\s*"
-                      r"(\d+(?:[.,]\d+)?)\s*(?:mile|mi\b)", text, re.I)
-        if m:
-            out["poti"]["vis_km"] = round(float(m.group(1).replace(",", ".")) * _MI_KM, 3)
-            out["poti"]["vis_src"] = "mile"
-
-    # აკვატორიის პროგნოზი: visibility 0.1-0.5 miles
-    m = re.search(r"visibility\s*(\d+(?:[.,]\d+)?)\s*[-–]\s*(\d+(?:[.,]\d+)?)\s*"
-                  r"(?:mile|mi\b)", text, re.I)
-    if m:
-        lo = float(m.group(1).replace(",", ".")) * _MI_KM
-        hi = float(m.group(2).replace(",", ".")) * _MI_KM
-        fc["vis_km"] = (round(lo, 3), round(hi, 3))
-
-    # kulevi- 10 miles  (ან meter)
-    m = re.search(r"kulevi\s*[-–:]?\s*(\d+(?:[.,]\d+)?)\s*(mile|mi\b|meter|metre|m\b)",
-                  text, re.I)
-    if m:
-        v = float(m.group(1).replace(",", "."))
-        unit = m.group(2).lower()
-        out.setdefault("kulevi", {})["vis_km"] = round(
-            v * _MI_KM if unit.startswith("mi") else v / 1000.0, 3)
-
-    # ნისლის დროშა — გაფრთხილების ტიპის ამოცნობისთვის
-    if re.search(r"\bfog\b|ნისლ", text, re.I):
-        out["hazard"] = "fog"
-    elif fc.get("wind_range") or out["poti"].get("wind_range"):
-        out["hazard"] = "wind"
-
-    out["forecast"] = fc
     return out
 
 
