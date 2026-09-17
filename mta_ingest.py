@@ -15,6 +15,7 @@ MTA ბიულეტენების ingest — observation-only.
 """
 
 import json, os, glob, sys, logging, re
+from collections import Counter
 from datetime import datetime, timezone, timedelta
 
 from mta_parser import parse_mta_pdf, wave_cm_to_m
@@ -45,6 +46,113 @@ def _load_log() -> dict:
             return json.load(f)
     except (FileNotFoundError, ValueError):
         return {"entries": []}
+
+
+
+def _dt_of(entry):
+    """ჩანაწერის დრო datetime-ად. date: '16/09/2026' ან '16 / სექტემბერი / 2026'."""
+    ds = (entry.get("date") or "").strip()
+    ts = (entry.get("time") or "").strip()
+    if not ds or not ts:
+        return None
+    try:
+        parts = [x.strip() for x in ds.split("/")]
+        if len(parts) != 3:
+            return None
+        day = int(parts[0])
+        mon = GEO_MONTHS.get(parts[1])
+        if mon is None and parts[1].isdigit():
+            mon = int(parts[1])
+        year = int(parts[2].replace("წ.", "").strip())
+        hh, mm = ts.split(":")[0], ts.split(":")[1][:2]
+        return datetime(year, mon, day, int(hh), int(mm), tzinfo=TBILISI_TZ)
+    except Exception:
+        return None
+
+
+def _build_storm_windows(dblog: dict, portal_hours: dict) -> list:
+    """საშტორმოს ფანჯრები: გამოცხადებიდან გაუქმებამდე.
+
+    ═══ რატომ ═══
+    MTA-ს საშტორმო ᲛᲓᲒᲝᲛᲐᲠᲔᲝᲑᲘᲡ დეკლარაციაა და არა პირობის გაზომვა.
+    ის ძალაში რჩება, სანამ გაუქმება არ გამოვა — ეს კი სინოპტიკოსის
+    გადაწყვეტილებაა და დაგვიანებით მოდის. ამასობაში რეალური ამინდი
+    უკვე დაწყნარებულია და პორტი მუშაობს ფაქტიური ამინდით.
+
+    სამი სხვადასხვა რამაა და აქამდე ერთმანეთში ერეოდა:
+      • ᲞᲘᲠᲝᲑᲐ        — რა ხდება ზღვაზე ახლა (პორტალის ამოცანა)
+      • ᲓᲔᲙᲚᲐᲠᲐᲪᲘᲐ    — MTA-ს საშტორმოს ფორმალური სტატუსი
+      • ᲒᲐᲓᲐᲬᲧᲕᲔᲢᲘᲚᲔᲑᲐ — მანევრი შესრულდა თუ არა (პორტ-კონტროლი)
+
+    ⚠ ᲗᲣ ᲡᲐᲨᲢᲝᲠᲛᲝ ᲛᲝᲥᲛᲔᲓᲔᲑᲡ ᲓᲐ ᲞᲝᲠᲢᲐᲚᲘ ᲛᲨᲕᲘᲓ ᲞᲘᲠᲝᲑᲔᲑᲡ ᲐᲩᲕᲔᲜᲔᲑᲡ,
+      ᲔᲡ ᲐᲕᲢᲝᲛᲐᲢᲣᲠᲐᲓ ᲨᲔᲪᲓᲝᲛᲐ ᲐᲠ ᲐᲠᲘᲡ — შესაძლოა ზუსტად ის მომენტია,
+      როცა პორტალი დეკლარაციაზე უფრო სწორია.
+
+    `calm_tail_h` — რამდენი საათი იდგა პორტალი `operational`-ზე
+    გაუქმებამდე. ეს არის ის რიცხვი, რომელიც პორტალის ღირებულებას
+    რაოდენობრივად ზომავს.
+    """
+    ents = dblog.get("entries", [])
+    warns, cancels = [], []
+    for e in ents:
+        if e.get("type") not in ("storm_warning", "storm_cancel"):
+            continue
+        if (e.get("area") or "poti") != "poti":
+            continue
+        (cancels if e.get("cancels") else warns).append(e)
+
+    by_no = {w.get("bulletin_no"): w for w in warns if w.get("bulletin_no")}
+    windows = []
+    used = set()
+
+    for c in cancels:
+        tgt = c.get("cancels")
+        w = by_no.get(tgt)
+        t0 = _dt_of(w) if w else None
+        t1 = _dt_of(c)
+        win = {
+            "warning": tgt,
+            "cancel": c.get("bulletin_no"),
+            "issued": t0.strftime("%Y-%m-%dT%H:%M") if t0 else None,
+            "cancelled": t1.strftime("%Y-%m-%dT%H:%M") if t1 else None,
+        }
+        if t0 and t1:
+            win["duration_h"] = round((t1 - t0).total_seconds() / 3600, 1)
+            # პორტალის სტატუსი ფანჯრის განმავლობაში
+            cur, calm_tail, seen_h = t0, 0, 0
+            seq = []
+            while cur <= t1:
+                st = portal_hours.get(cur.strftime("%Y-%m-%dT%H:00"))
+                if st:
+                    seen_h += 1
+                    seq.append(st)
+                cur += timedelta(hours=1)
+            if seq:
+                win["portal_hours"] = seen_h
+                win["portal_statuses"] = dict(Counter(seq))
+                for st in reversed(seq):
+                    if st == "operational":
+                        calm_tail += 1
+                    else:
+                        break
+                win["calm_tail_h"] = calm_tail
+        if tgt:
+            used.add(tgt)
+        windows.append(win)
+
+    # ღია ფანჯრები — გაუქმება ჯერ არ მოსულა
+    for w in warns:
+        no = w.get("bulletin_no")
+        if no and no not in used:
+            t0 = _dt_of(w)
+            windows.append({
+                "warning": no, "cancel": None,
+                "issued": t0.strftime("%Y-%m-%dT%H:%M") if t0 else None,
+                "cancelled": None, "open": True,
+            })
+
+    windows.sort(key=lambda x: x.get("issued") or "")
+    return windows
 
 
 def _save_log(dblog: dict):
@@ -562,7 +670,18 @@ def main():
 
         # storm_cancel შეიცავს ფაქტიურ ამინდს — დამატებითი ground truth
         # წერტილი ორ რეგულარულ ფაქტიურ ბიულეტენს გარდა.
-        if parsed.get("type") in ("actual", "storm_warning", "storm_cancel"):
+        # ⚠ MTA ᲑᲐᲗᲣᲛᲘᲡ ბიულეტენებსაც აგზავნის იმავე ფოსტაზე და ნომრები
+        #   თანმიმდევრულია (ფოთი 14/7588, ბათუმი 14/7589). ბათუმის
+        #   მონაცემი ფოთის პორტალს არ უნდა შეედაროს — 55 კმ სხვაობაა.
+        #   ჩანაწერი ინახება (`area` ველით), შედარება — არა.
+        _area = parsed.get("area")
+        if _area and _area != "poti":
+            entry["skip_compare"] = f"area={_area}"
+            log.info(f"შედარება გამოტოვებულია — აკვატორია: {_area} "
+                     f"({os.path.basename(pdf)})")
+
+        if parsed.get("type") in ("actual", "storm_warning", "storm_cancel") \
+                and not entry.get("skip_compare"):
             try:
                 portal, portal_time, exact = _portal_at(parsed)
                 if portal:
@@ -590,6 +709,27 @@ def main():
 
     if added:
         dblog["last_ingest"] = datetime.now(TBILISI_TZ).strftime("%Y-%m-%d %H:%M")
+        # ── საშტორმოს ფანჯრები ──
+        # პორტალის საათობრივი სტატუსი data.json-იდან (მიმდინარე 48 სთ).
+        # ძველ ფანჯრებს backfill_compare.py-ის ლოგიკა მოგვიანებით შეავსებს.
+        try:
+            with open(DATA_FILE, encoding="utf-8") as _f:
+                _pd = json.load(_f)
+            _ph = {}
+            for _h in (_pd.get("forecast") or []):
+                _t = (_h.get("time") or "")[:16]
+                if _t and _h.get("status"):
+                    _ph[_t] = _h["status"]
+            _cur = _pd.get("current") or {}
+            if _cur.get("time") and _cur.get("status"):
+                _ph[_cur["time"][:16]] = _cur["status"]
+            dblog["storm_windows"] = _build_storm_windows(dblog, _ph)
+            _open = sum(1 for w in dblog["storm_windows"] if w.get("open"))
+            log.info(f"საშტორმოს ფანჯარა: {len(dblog['storm_windows'])} "
+                     f"(ღია: {_open})")
+        except Exception as exc:
+            log.warning(f"ფანჯრების აგება ჩავარდა: {exc}")
+
         _save_log(dblog)
         log.info(f"✓ {added} ახალი ჩანაწერი → {LOG_FILE}")
     else:
