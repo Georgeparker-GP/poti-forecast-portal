@@ -413,14 +413,16 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 /* table-layout:fixed — თორემ ცხრილი შიგთავსის სიგანეზე იკუმშება
    და მობილურზე მარჯვნივ ცარიელი ზოლი რჩება, ბეჯები კი კიდეზე ეჭედება */
 table.rc{width:100%;border-collapse:collapse;table-layout:fixed;}
-table.rc col.c-t  {width:15%;}
-table.rc col.c-w  {width:12%;}
-table.rc col.c-g  {width:12%;}
-table.rc col.c-d  {width:10%;}
-table.rc col.c-tp {width:12%;}
-table.rc col.c-r  {width:21%;}
-table.rc col.c-wv {width:14%;}
-table.rc col.c-p  {width:14%;}
+/* დროს მეტი ადგილი სჭირდება: "02:00" 15px მონოსივრცულით
+   15%-ში არ ეტეოდა და ქარის სვეტს ეჯახებოდა. */
+table.rc col.c-t  {width:17%;}
+table.rc col.c-w  {width:11%;}
+table.rc col.c-g  {width:11%;}
+table.rc col.c-d  {width:9%;}
+table.rc col.c-tp {width:11%;}
+table.rc col.c-r  {width:20%;}
+table.rc col.c-wv {width:11%;}
+table.rc col.c-p  {width:10%;}
 table.rc th{
   font-size:10px;font-weight:500;color:var(--mu);padding:0 8px 7px;
   text-align:right;white-space:nowrap;border-bottom:1px solid var(--br);
@@ -456,10 +458,16 @@ table.rc b.v-crit {color:var(--txt-danger);font-weight:700;font-size:15px;}
 @media(max-width:820px){
   table.rc th:nth-child(5),table.rc td:nth-child(5),
   table.rc col.c-tp{display:none;}
-  table.rc col.c-r{width:26%;}
-  table.rc col.c-wv{width:17%;}
-  table.rc td{padding:8px 5px;}
+  table.rc col.c-t {width:18%;}
+  table.rc col.c-w {width:11%;}
+  table.rc col.c-g {width:11%;}
+  table.rc col.c-d {width:9%;}
+  table.rc col.c-r {width:26%;}
+  table.rc col.c-wv{width:14%;}
+  table.rc col.c-p {width:11%;}
+  table.rc td{padding:8px 4px;}
   .rc-t{font-size:14px;}
+  .rc-n,.rc-r{font-size:13px;}
 }
 
 /* ── 7 დღე: სრული სიგანის ცხრილი ──
@@ -467,8 +475,8 @@ table.rc b.v-crit {color:var(--txt-danger);font-weight:700;font-size:15px;}
    გათავისუფლებულ სიგანეზე ემატება ქროლვა, ნალექი და სტატუსი,
    ხოლო ზოლები ზღვართან სიახლოვეს ციფრზე სწრაფად აჩვენებს. */
 table.wk{width:100%;border-collapse:collapse;table-layout:fixed;}
-table.wk col.k-d{width:17%;} table.wk col.k-i{width:7%;}
-table.wk col.k-w{width:13%;} table.wk col.k-g{width:13%;}
+table.wk col.k-d{width:17%;} table.wk col.k-i{width:8%;}
+table.wk col.k-w{width:13%;} table.wk col.k-g{width:12%;}
 table.wk col.k-v{width:13%;} table.wk col.k-r{width:12%;}
 table.wk col.k-t{width:13%;} table.wk col.k-s{width:12%;}
 table.wk th{
@@ -482,8 +490,14 @@ table.wk td:last-child{text-align:right;}
 table.wk tr:last-child td{border-bottom:none;}
 table.wk tr.wk-now td{background:var(--ov1);}
 table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
-.wk-day{font-size:13px;white-space:nowrap;}
-.wk-ico{font-size:17px;width:1px;}
+/* თარიღი ოდნავ პატარა, ემოჯი შემცირებული — "Thu 09.17" და
+   ხატულა ერთმანეთს ეხებოდა ვიწრო ეკრანზე. */
+/* ⚠ "Thu 09.17" და ხატულა ერთმანეთს ეხებოდა: `width:1px` ემოჯის
+   უჯრას ნულოვან სიგანეს აძლევდა და ის მეზობელში იჭრებოდა.
+   ახლა ორივეს საკუთარი ადგილი აქვს. */
+.wk-day{font-size:12.5px;white-space:nowrap;padding-right:6px;
+  overflow:hidden;text-overflow:ellipsis;}
+.wk-ico{font-size:15px;text-align:center;line-height:1;padding:0 2px;}
 .wk-n{font-family:'JetBrains Mono',monospace;font-size:14px;text-align:right;
   font-variant-numeric:tabular-nums;white-space:nowrap;}
 .wk-n b{font-weight:700;}
@@ -498,15 +512,34 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 @media(max-width:760px){
   table.wk th:nth-child(7), table.wk td:nth-child(7),
   table.wk col.k-t{display:none;}
-  table.wk col.k-w{width:16%;} table.wk col.k-g{width:16%;}
+  table.wk col.k-d{width:20%;} table.wk col.k-i{width:9%;}
+  table.wk col.k-w{width:16%;} table.wk col.k-g{width:14%;}
   table.wk col.k-v{width:16%;} table.wk col.k-r{width:14%;}
-  table.wk td{padding:9px 5px;}
+  table.wk col.k-s{width:11%;}
+  table.wk td{padding:9px 4px;}
   .wk-n{font-size:13px;}
+  .wk-u{margin-left:2px;}
   .wk-bar{max-width:100%;}
 }
 @media(max-width:480px){
   table.wk th:nth-child(4), table.wk td:nth-child(4),
   table.wk col.k-g{display:none;}
+  table.wk col.k-d{width:23%;} table.wk col.k-i{width:10%;}
+  table.wk col.k-w{width:19%;} table.wk col.k-v{width:19%;}
+  table.wk col.k-r{width:17%;} table.wk col.k-s{width:12%;}
+  .wk-day{font-size:12px;}
+}
+/* ძალიან ვიწრო ეკრანი: მიმართულება ქრება — კომპასი ზემოთ ისედაც არის */
+@media(max-width:430px){
+  table.rc th:nth-child(4),table.rc td:nth-child(4),
+  table.rc col.c-d{display:none;}
+  table.rc col.c-t {width:19%;}
+  table.rc col.c-w {width:12%;}
+  table.rc col.c-g {width:12%;}
+  table.rc col.c-r {width:28%;}
+  table.rc col.c-wv{width:16%;}
+  table.rc col.c-p {width:13%;}
+  .rc-r{font-size:12px;}
 }
 
 /* ── CARDS (legacy) ── */
@@ -1707,13 +1740,15 @@ function render(d) {
       // გადაილახებოდა და წითელი ფერი უსარგებლო გახდებოდა.
       // ⚠ ეს ᲛᲮᲝᲚᲝᲓ ᲬᲐᲠᲬᲔᲠᲐᲐ: ნალექი THRESHOLDS-ში არ შედის და
       //   სტატუსზე გავლენას არ ახდენს (ქარი, ტალღა, ხილვადობა).
+      // ⚠ წარწერები ᲛᲝᲙᲚᲔᲐ: "moderate" + პროცენტი ვიწრო სვეტში
+      //   ერთმანეთს ეჯახებოდა. მნიშვნელობა არ იცვლება.
       const rainTxt = v =>
-          v < 0.1  ? [ENG?'dry':'უნალექო',         'v-ok']
-        : v < 0.5  ? [ENG?'drizzle':'ჟინჟლი',      'v-ok']
-        : v < 2.5  ? [ENG?'light':'მსუბუქი',       'v-ok']
-        : v < 7.0  ? [ENG?'moderate':'ზომიერი',    'v-warn']
-        : v < 18.5 ? [ENG?'heavy':'ძლიერი',        'v-alert']
-        :            [ENG?'violent':'კოკისპირული', 'v-crit'];
+          v < 0.1  ? [ENG?'dry':'უნალექო',       'v-ok']
+        : v < 0.5  ? [ENG?'drizzle':'ჟინჟლი',    'v-ok']
+        : v < 2.5  ? [ENG?'light':'მსუბუქი',     'v-ok']
+        : v < 7.0  ? [ENG?'moder.':'ზომიერი',    'v-warn']
+        : v < 18.5 ? [ENG?'heavy':'ძლიერი',      'v-alert']
+        :            [ENG?'violent':'კოკისპ.',   'v-crit'];
 
       // ═══ ცხრილი ფიქსირებული სვეტებით ═══
       // ადრე flex-ის ჯაჭვი იყო: ყოველი სტრიქონი სხვა სიგანისა,
