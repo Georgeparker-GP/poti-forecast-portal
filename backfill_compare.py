@@ -18,7 +18,10 @@ git-ში ჩადის. ეს სკრიპტი commit-ებიდა�
   1. git-ის ისტორიიდან აგებს {საათი → current-ბლოკი} ინდექსს
   2. ჟურნალის ყველა `exact: false` ჩანაწერს ხელახლა ითვლის
   3. წარმატებისას `portal_hour_exact: true` და `backfilled: true`
-  4. ᲬᲘᲜᲐ ᲕᲔᲠᲡᲘᲐᲡ ᲘᲜᲐᲮᲐᲕᲡ — `mta_log.json.bak`
+  4. ᲡᲐᲨᲢᲝᲠᲛᲝᲡ ᲤᲐᲜᲯᲠᲔᲑᲡ თავიდან აგებს ისტორიული სტატუსებით
+     (`calm_tail_h` — რამდენ ხანს რჩება დეკლარაცია ძალაში მას შემდეგ,
+      რაც პორტალი უკვე მშვიდ პირობებს აჩვენებს)
+  5. ᲬᲘᲜᲐ ᲕᲔᲠᲡᲘᲐᲡ ᲘᲜᲐᲮᲐᲕᲡ — `mta_log.json.bak`
 
 ⚠ ᲐᲠᲐᲤᲔᲠᲡ ᲨᲚᲘᲡ. ვერ იპოვა — ჩანაწერი უცვლელი რჩება.
 ⚠ `THRESHOLDS`, `BASE_WEIGHTS` და კონსენსუსი არ ეხება.
@@ -148,6 +151,45 @@ def main():
 
     now_exact = sum(1 for e in entries if e.get("portal_hour_exact") is True)
     print(f"\n  ზუსტი შედარება: {now_exact - fixed} → {now_exact}")
+
+    # ═══ საშტორმოს ფანჯრები — ისტორიული პორტალის სტატუსით ═══
+    #
+    # `mta_ingest.py` ფანჯრებს მიმდინარე data.json-იდან აგებს, ანუ
+    # მხოლოდ ბოლო 48 საათს ფარავს. აქ იმავე ლოგიკას ვიყენებთ, ოღონდ
+    # git-ის სრულ ისტორიაზე — ძველი ფანჯრებიც ივსება.
+    #
+    # `calm_tail_h` — რამდენი საათი იდგა პორტალი `operational`-ზე
+    # გაუქმებამდე. ეს ზომავს, რამდენად აგვიანებს დეკლარაცია რეალობას.
+    if hasattr(MI, "_build_storm_windows"):
+        status_hours = {h: (c.get("status") or "") for h, c in idx.items()
+                        if c.get("status")}
+        try:
+            wins = MI._build_storm_windows(data, status_hours)
+            data["storm_windows"] = wins
+            closed = [w for w in wins if w.get("duration_h") is not None]
+            with_tail = [w for w in closed if w.get("calm_tail_h") is not None]
+            print(f"\n═══ საშტორმოს ფანჯრები ═══")
+            print(f"  სულ: {len(wins)}  ·  დახურული: {len(closed)}  ·  "
+                  f"ღია: {sum(1 for w in wins if w.get('open'))}")
+            if closed:
+                dur = [w["duration_h"] for w in closed]
+                print(f"  ხანგრძლივობა: საშ {sum(dur)/len(dur):.1f} სთ  "
+                      f"[{min(dur):.1f}, {max(dur):.1f}]")
+            if with_tail:
+                tails = [w["calm_tail_h"] for w in with_tail]
+                print(f"  calm_tail_h:   საშ {sum(tails)/len(tails):.1f} სთ  "
+                      f"[{min(tails)}, {max(tails)}]  (n={len(tails)})")
+                print("\n  ფანჯრები:")
+                for w in closed:
+                    print(f"    {w.get('issued','?')} → {w.get('cancelled','?')}  "
+                          f"{w.get('duration_h','?'):>5} სთ  "
+                          f"მშვიდი ბოლოს: {w.get('calm_tail_h','—')} სთ  "
+                          f"[{w.get('warning')} → {w.get('cancel')}]")
+        except Exception as exc:
+            print(f"\n  ⚠ ფანჯრების აგება ჩავარდა: {exc}")
+    else:
+        print("\n  ⚠ mta_ingest-ში _build_storm_windows არ არის — "
+              "ატვირთე ახალი ვერსია")
 
     if not write:
         print("\n(მშრალი გაშვება — ჩასაწერად: --write)")
