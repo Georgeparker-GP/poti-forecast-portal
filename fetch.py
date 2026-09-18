@@ -57,6 +57,13 @@ LOCATION   = {"name": "ფოთის პორტი", "lat": 42.15, "lon": 41
 TBILISI_TZ = timezone(timedelta(hours=4))   # საქართველოს დროის ზონა (UTC+4, DST არ აქვს)
 
 FORECAST_HOURS      = 48
+# ⚠ 2026-09-16 აუდიტი: პარსერები პირველ 48 ჩანაწერს იღებდნენ — ანუ
+#   ᲨᲣᲐᲦᲐᲛᲘᲓᲐᲜ. 20:00 საათზე წინ მხოლოდ 28 საათი რჩებოდა და
+#   „48-საათიანი პროგნოზი“ ნახევრად წარსული იყო.
+#   API-დან 72 საათი მოდის (forecast_days=3); ახლა ყველა ინახება,
+#   ხოლო წინ მიმავალი ფანჯარა მიმდინარე საათიდან ითვლება
+#   (`build_output`-ის `fwd`). ასე 48 სთ ᲧᲝᲕᲔᲚᲗᲕᲘᲡ სრულია.
+PARSE_HOURS         = 72
 DAILY_FORECAST_DAYS = 7   # კვირის ხედი — დღიური აგრეგატები, საათობრივი ჩაშლის გარეშე
 REQUEST_TIMEOUT     = 30  # 15→30წმ: Open-Meteo timeout-ის წინააღმდეგ
 OUTPUT_FILE         = "data.json"
@@ -271,7 +278,7 @@ def fetch_stormglass():
         return cached
     now   = datetime.now(timezone.utc)
     start = now.strftime("%Y-%m-%dT%H:%M:%SZ")
-    end   = (now + timedelta(hours=FORECAST_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    end   = (now + timedelta(hours=PARSE_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
     params = {
         "lat": LOCATION["lat"], "lng": LOCATION["lon"],
         "params": "waveHeight,wavePeriod,waveDirection,swellHeight,"
@@ -479,7 +486,7 @@ def build_daily_summary(daily_atmo, daily_marine):
     return result
 
 
-def parse_open_meteo_atmosphere(raw, hours=FORECAST_HOURS):
+def parse_open_meteo_atmosphere(raw, hours=PARSE_HOURS):
     h = raw["hourly"]
     return [
         {
@@ -503,7 +510,7 @@ def parse_open_meteo_atmosphere(raw, hours=FORECAST_HOURS):
     ]
 
 
-def parse_open_meteo_marine(raw, hours=FORECAST_HOURS):
+def parse_open_meteo_marine(raw, hours=PARSE_HOURS):
     h = raw["hourly"]
     return [
         {
@@ -521,7 +528,7 @@ def parse_open_meteo_marine(raw, hours=FORECAST_HOURS):
     ]
 
 
-def parse_wave_models(raw, hours=FORECAST_HOURS):
+def parse_wave_models(raw, hours=PARSE_HOURS):
     """DWD EWAM/GWAM პარსინგი — DAKVIRVEBIS ფაზა.
 
     Open-Meteo multi-model პასუხში თითო მოდელი ცალკე სვეტია სუფიქსით:
@@ -580,7 +587,7 @@ def _sg_time(raw: str) -> str:
         return raw[:16].replace(" ", "T")
 
 
-def parse_stormglass(raw, hours=FORECAST_HOURS):
+def parse_stormglass(raw, hours=PARSE_HOURS):
     result = []
     for entry in raw.get("hours", [])[:hours]:
         def sg(key, default=0.0):
@@ -625,7 +632,7 @@ def parse_stormglass(raw, hours=FORECAST_HOURS):
     return result
 
 
-def parse_windy(raw, hours=FORECAST_HOURS):
+def parse_windy(raw, hours=PARSE_HOURS):
     ts_list   = raw.get("ts", [])
     u_list    = raw.get("wind_u-surface", [])
     v_list    = raw.get("wind_v-surface", [])
@@ -653,7 +660,7 @@ def parse_windy(raw, hours=FORECAST_HOURS):
     return result
 
 
-def parse_openweathermap(raw, hours=FORECAST_HOURS):
+def parse_openweathermap(raw, hours=PARSE_HOURS):
     result = []
     for entry in raw.get("list", [])[:16]:
         dt_str = entry["dt_txt"]
@@ -677,7 +684,7 @@ def parse_openweathermap(raw, hours=FORECAST_HOURS):
     return result[:hours]
 
 
-def parse_yr_no(raw, hours=FORECAST_HOURS):
+def parse_yr_no(raw, hours=PARSE_HOURS):
     """
     yr.no compact პასუხი:
       properties.timeseries[]:
@@ -693,7 +700,28 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
     result = []
     timeseries = raw.get("properties", {}).get("timeseries", [])
 
-    for entry in timeseries[:hours]:
+    # ═══ ნალექის ინტერვალის გასწორება ═══
+    # ⚠ 2026-09-16 აუდიტი: ორი წყარო ᲡᲮᲕᲐᲓᲐᲡᲮᲕᲐ ᲘᲜᲢᲔᲠᲕᲐᲚᲡ ნიშნავს
+    #   ერთი და იმავე დროის ნიშნულით:
+    #     Open-Meteo — ᲬᲘᲜᲐ საათის ჯამი   (T−1 → T)
+    #     yr.no next_1_hours — ᲛᲝᲛᲓᲔᲕᲜᲝ საათისა (T → T+1)
+    #   ანუ yr.no-ს T-ზე მოცემული ნალექი Open-Meteo-ს T+1-ს შეესაბამება.
+    #   შეწონილ საშუალოში ისინი ერთ საათს ეჯახებოდნენ და 1 სთ-ით
+    #   აცდენილი სიგნალი „თანხმობას“ ამახინჯებდა — ეს პირდაპირ
+    #   კვებავს ჟურნალში დაფიქსირებულ false positive-ებს.
+    #
+    #   ᲒᲐᲡᲬᲝᲠᲔᲑᲐ: yr.no-ს ნალექი ერთი საათით წინ იწევს — T-ის
+    #   მნიშვნელობად ვიღებთ T−1-ის `next_1_hours`-ს. პირველ ჩანაწერს
+    #   წინამორბედი არ ჰყავს, ამიტომ მისი ნალექი None-ია და პულიდან
+    #   ვარდება (ყალბი ნული აღარ ემატება).
+    def _prev_precip(idx):
+        if idx == 0:
+            return None
+        d = timeseries[idx - 1].get("data", {}).get("next_1_hours", {}).get("details", {})
+        v = d.get("precipitation_amount")
+        return round(float(v), 2) if v is not None else None
+
+    for _i, entry in enumerate(timeseries[:hours]):
         # yr.no დროს UTC-ში აბრუნებს ("...Z") — გადავიყვანოთ თბილისის დროზე,
         # რომ Open-Meteo-ს ლოკალურ ღერძს დაემთხვეს.
         _t_raw = entry.get("time", "")
@@ -708,7 +736,7 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
 
         wind_speed = round(float(instant.get("wind_speed", 0) or 0), 2)
         wind_dir   = round(float(instant.get("wind_from_direction", 0) or 0), 1)
-        precip     = round(float(next1h.get("precipitation_amount", 0) or 0), 2)
+        precip     = _prev_precip(_i)   # იხ. კომენტარი ზემოთ
 
         # ნისლი → ხილვადობა: fog_area_fraction 0-100%
         # ⚠ ეს ხილვადობა НЕ არის: fog_area_fraction მხოლოდ ნისლს ზომავს.
@@ -807,7 +835,8 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             f"გადავდივართ ({len(atmo_pool)} წყარო)"
         )
 
-    hours   = min(FORECAST_HOURS, len(atmo_best))
+    # ყველა მიღებული საათი ითვლება; წინ მიმავალ 48-ს build_output ჭრის
+    hours   = min(PARSE_HOURS, len(atmo_best))
     result  = []
 
     for i in range(hours):
