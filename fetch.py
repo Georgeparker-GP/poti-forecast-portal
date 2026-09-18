@@ -30,7 +30,9 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 import urllib3
-urllib3.disable_warnings()
+# ⚠ 2026-09-16: verify=False მოხსნილია — სერტიფიკატები
+#   ისევ მოწმდება. disable_warnings() აღარ საჭიროა.
+# urllib3.disable_warnings()
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -151,7 +153,7 @@ def fetch_open_meteo_daily():
     }
     try:
         r = requests_session.get("https://api.open-meteo.com/v1/forecast",
-                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
+                         params=params, timeout=REQUEST_TIMEOUT)
         r.raise_for_status()
         log.info("Open-Meteo Daily ✓")
         return r.json()
@@ -170,7 +172,7 @@ def fetch_open_meteo_marine_daily():
     }
     try:
         r = requests_session.get("https://marine-api.open-meteo.com/v1/marine",
-                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
+                         params=params, timeout=REQUEST_TIMEOUT)
         r.raise_for_status()
         log.info("Open-Meteo Marine Daily ✓")
         return r.json()
@@ -201,7 +203,7 @@ def fetch_open_meteo_atmosphere(model: str):
         params["models"] = model
     try:
         r = requests_session.get("https://api.open-meteo.com/v1/forecast",
-                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
+                         params=params, timeout=REQUEST_TIMEOUT)
         r.raise_for_status()
         log.info(f"Open-Meteo [{model}] ✓")
         return r.json()
@@ -221,7 +223,7 @@ def fetch_open_meteo_marine():
     }
     try:
         r = requests_session.get("https://marine-api.open-meteo.com/v1/marine",
-                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
+                         params=params, timeout=REQUEST_TIMEOUT)
         r.raise_for_status()
         log.info("Open-Meteo Marine ✓")
         return r.json()
@@ -250,7 +252,7 @@ def fetch_wave_models():
     }
     try:
         r = requests_session.get("https://marine-api.open-meteo.com/v1/marine",
-                         params=params, timeout=REQUEST_TIMEOUT, verify=False)
+                         params=params, timeout=REQUEST_TIMEOUT)
         r.raise_for_status()
         log.info(f"Wave models [{','.join(WAVE_MODELS)}] ✓")
         return r.json()
@@ -486,7 +488,10 @@ def parse_open_meteo_atmosphere(raw, hours=FORECAST_HOURS):
             "wind_gusts":     _safe(h["wind_gusts_10m"], i),
             "wind_direction": _safe(h.get("wind_direction_10m", []), i),
             "precipitation":  _safe(h["precipitation"], i),
-            "visibility_km":  _safe(h["visibility"], i, scale=0.001),
+            # ⚠ default=None და არა 0.0: null ხილვადობა 0.0 კმ-ად
+            #   იქცეოდა და suspended-ს რთავდა. უცნობი მონაცემი ნისლი
+            #   არ არის — `_vis_pool` None-ს ისედაც გამოტოვებს.
+            "visibility_km":  _safe(h["visibility"], i, scale=0.001, default=None),
             "weather_code":   _safe(h.get("weather_code", []), i, default=0),
             "humidity":       _safe(h.get("relative_humidity_2m", []), i),
             "dew_point":      _safe(h.get("dew_point_2m", []), i),
@@ -557,25 +562,58 @@ def parse_wave_models(raw, hours=FORECAST_HOURS):
     return out
 
 
+def _sg_time(raw: str) -> str:
+    """Stormglass-ის ISO დრო → თბილისის ლოკალური "YYYY-MM-DDTHH:MM".
+
+    SG აბრუნებს timezone-aware ISO-ს ("...+00:00"). მისი მოჭრა
+    დროის სარტყლის გარეშე 4-საათიან აცდენას იძლევა.
+    """
+    if not raw:
+        return ""
+    try:
+        t = raw.strip().replace("Z", "+00:00")
+        dt = datetime.fromisoformat(t)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(TBILISI_TZ).strftime("%Y-%m-%dT%H:%M")
+    except Exception:
+        return raw[:16].replace(" ", "T")
+
+
 def parse_stormglass(raw, hours=FORECAST_HOURS):
     result = []
     for entry in raw.get("hours", [])[:hours]:
-        def sg(key):
+        def sg(key, default=0.0):
+            """დაკარგული მნიშვნელობა → default.
+
+            ⚠ ხილვადობაზე default=None: 0.0 კმ ნისლს ნიშნავს და
+              მონაცემის არქონა შეჩერებას რთავდა.
+            """
             d = entry.get(key, {})
-            if not isinstance(d, dict): return 0.0
+            if not isinstance(d, dict): return default
             for src in ["sg", "noaa", "icon", "dwd", "meto"]:
                 if src in d and d[src] is not None:
                     return round(float(d[src]), 3)
             vals = [v for v in d.values() if v is not None]
-            return round(float(vals[0]), 3) if vals else 0.0
+            return round(float(vals[0]), 3) if vals else default
 
         result.append({
-            "time":           entry.get("time", "")[:16].replace(" ", "T"),
+            # ⚠ 2026-09-16 აუდიტი: დრო 4 საათით აცდენილი იყო.
+            #   Stormglass აბრუნებს "2026-09-16T12:00:00+00:00" (UTC).
+            #   [:16]-ით იჭრებოდა "2026-09-16T12:00" და ლოკალურად
+            #   ითვლებოდა — თბილისში ეს 16:00-ია. ანუ ტალღის ერთ-ერთი
+            #   ხუთი წყარო მთელი დროის განმავლობაში 4 საათით იყო
+            #   გადაწეული და ᲧᲕᲔᲚᲐ ᲨᲔᲓᲐᲠᲔᲑᲐᲡ ᲐᲑᲘᲜᲫᲣᲠᲔᲑᲓᲐ.
+            "time":           _sg_time(entry.get("time", "")),
             "wind_speed":     sg("windSpeed"),
             "wind_gusts":     sg("gust"),
             "wind_direction": sg("windDirection"),
-            "precipitation":  0.0,
-            "visibility_km":  sg("visibility"),
+            # ⚠ ნალექი მოთხოვნაში არ შედის. ადრე 0.0 ეწერა და ეს
+            #   „მშრალი“ ხმა კონსენსუსში ითვლებოდა — ანუ დაკარგული
+            #   პარამეტრი უნალექობის მტკიცებულებად აღიქმებოდა.
+            #   None → precip_pool-ში არ ხვდება.
+            "precipitation":  None,
+            "visibility_km":  sg("visibility", default=None),
             "wave_height":    sg("waveHeight"),
             "wave_period":    sg("wavePeriod"),
             "wave_direction": sg("waveDirection"),
@@ -707,25 +745,39 @@ def parse_yr_no(raw, hours=FORECAST_HOURS):
 def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormglass, yr_no, owm,
                       wave_models=None, copernicus=None):
     # 1. ძირითადი სრული აუზი (ნალექისთვის, ხილვადობისთვის და ფოლბექისთვის)
+    # ⚠ 2026-09-16 აუდიტი: ერთი და იგივე წყარო ორი სახელით შეიძლება
+    #   მოვიდეს (მაგ. yr.no `atmo_best`-ის როლშიც). ასეთი დუბლიკატი
+    #   source_count-ს ბერავდა და `confidence: high`-ს იძლეოდა ერთ
+    #   რეალურ წყაროზე. იდენტობით ვფილტრავთ — დაცვა გამომძახებელზე
+    #   დამოუკიდებლად მუშაობს.
     atmo_pool = []
+    _seen_src = []
     for src, key in [
         (atmo_best,  "best_match"), (atmo_gfs,    "gfs"),
         (atmo_icon,  "icon_eu"),    (yr_no,        "yr_no"),
         (atmo_ecmwf, "ecmwf"),      (stormglass,   "stormglass"),
         (owm,        "owm"),
     ]:
-        if src:
-            atmo_pool.append((src, BASE_WEIGHTS[key]))
+        if not src:
+            continue
+        if any(src is other for other in _seen_src):
+            log.warning(f"წყარო '{key}' დუბლიკატია — აუზში არ ემატება")
+            continue
+        _seen_src.append(src)
+        atmo_pool.append((src, BASE_WEIGHTS[key]))
 
     total_w = sum(w for _, w in atmo_pool)
 
     # 2. ქარის "ელიტური სამეული" (ნამდვილი ECMWF/Open-Meteo, yr.no/MET Norway, ICON-EU)
     elite_wind_pool = []
+    _seen_elite = []
     for src, key in [
         (atmo_ecmwf, "ecmwf"), (yr_no, "yr_no"), (atmo_icon, "icon_eu")
     ]:
-        if src:
-            elite_wind_pool.append((src, BASE_WEIGHTS[key]))
+        if not src or any(src is other for other in _seen_elite):
+            continue
+        _seen_elite.append(src)
+        elite_wind_pool.append((src, BASE_WEIGHTS[key]))
 
     elite_w = sum(w for _, w in elite_wind_pool)
 
@@ -745,23 +797,41 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
     # ეს მხოლოდ დეგრადირებულ მდგომარეობაში ირთვება, სადაც ალტერნატივა
     # ერთწყაროიანი "კონსენსუსია".
     ELITE_MIN = 2
-    if len(elite_wind_pool) >= ELITE_MIN:
-        active_wind_pool, active_wind_w = elite_wind_pool, elite_w
-        wind_pool_mode = "elite"
-    else:
-        active_wind_pool, active_wind_w = atmo_pool, total_w
-        wind_pool_mode = "degraded"
+    # გლობალური შემოწმება — მხოლოდ ლოგისთვის. ნამდვილი არჩევანი
+    # ᲡᲐᲐᲗᲝᲑᲠᲘᲕᲐᲓ ხდება ქვემოთ (იხ. `_vals`).
+    active_wind_pool, active_wind_w = elite_wind_pool, elite_w
+    if len(elite_wind_pool) < ELITE_MIN:
         log.warning(
             f"ქარის ელიტური აუზი დეგრადირებულია "
-            f"({len(elite_wind_pool)}/3) — ვფართოვდებით სრულ აუზზე "
-            f"({len(atmo_pool)} წყარო)"
+            f"({len(elite_wind_pool)}/3) — საათობრივად სრულ აუზზე "
+            f"გადავდივართ ({len(atmo_pool)} წყარო)"
         )
 
     hours   = min(FORECAST_HOURS, len(atmo_best))
     result  = []
 
     for i in range(hours):
-        # ─── ქარის ლოგიკა (მხოლოდ ელიტური აუზიდან) ───
+        # ═══ აუზის არჩევა ᲐᲛ ᲡᲐᲐᲗᲘᲡᲗᲕᲘᲡ ═══
+        # ⚠ 2026-09-16 აუდიტი: აუზი მხოლოდ ერთხელ ირჩეოდა, სიის
+        #   არსებობის მიხედვით. თუ ელიტურ წყაროს კონკრეტულ საათზე
+        #   ჩანაწერი აკლდა, ქარი ᲛᲗᲚᲘᲐᲜᲐᲓ ᲘᲙᲐᲠᲒᲔᲑᲝᲓᲐ (0.0 მ/წმ,
+        #   source_count=0), მაშინაც კი, როცა სხვა წყაროს მონაცემი იყო.
+        #   ᲐᲮᲚᲐ ᲗᲘᲗᲝ ᲡᲐᲐᲗᲖᲔ მოწმდება რეალურად ვალიდური მნიშვნელობები.
+        def _vals(pool, _i=None):
+            _i = i if _i is None else _i
+            return [(src[_i]["wind_speed"], w) for src, w in pool
+                    if _i < len(src) and src[_i]
+                    and src[_i].get("wind_speed") is not None]
+
+        _elite_h = _vals(elite_wind_pool)
+        if len(_elite_h) >= ELITE_MIN:
+            _wind_h, hour_pool_mode = _elite_h, "elite"
+        else:
+            _wind_h, hour_pool_mode = _vals(atmo_pool), "degraded"
+        active_wind_pool = elite_wind_pool if hour_pool_mode == "elite" else atmo_pool
+        active_wind_w    = sum(w for _, w in _wind_h)
+
+        # ─── ქარის ლოგიკა ───
 
         # 1. საშუალო სიჩქარე (Weighted average მხოლოდ ელიტებიდან)
         wind_speed = _wavg(active_wind_pool, i, "wind_speed", active_wind_w)
@@ -812,11 +882,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
 
         # 4. Confidence — წყაროებს შორის ქარის სიჩქარის გაფანტვა (std dev).
         #    დაბალი gap = წყაროები თანხმდებიან = მაღალი ნდობა.
-        wind_values = [
-            src[i].get("wind_speed")
-            for src, _ in active_wind_pool
-            if i < len(src) and src[i].get("wind_speed") is not None
-        ]
+        wind_values = [v for v, _ in _wind_h]
         wind_spread = _stddev(wind_values)
 
         # ─── დანარჩენი პარამეტრები ───
@@ -832,6 +898,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         precip_all = [v for v, _ in precip_pool]
         precip = max(precip_all) if precip_all else 0.0
         precip_sources = sum(1 for v in precip_all if v >= 0.1)
+        precip_total   = len(precip_all)   # რამდენმა წყარომ მოგვცა ნალექი საერთოდ
 
         # თანხმობის ხარისხი: რამდენი "წონა" ხედავს ნალექს მთლიანი წონიდან.
         # ეს არ არის წვიმის ალბათობა (PoP) — ეს მოდელთა შეთანხმების ზომაა.
@@ -968,6 +1035,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "wind_direction": _r(wind_direction, 0),
             "precipitation": _r(precip),
             "precip_sources": precip_sources,
+            "precip_total":   precip_total,
             "precip_agreement": precip_agreement,
             "visibility_km": _r(visibility),
             "visibility_min": _r(visibility_min),
@@ -1002,7 +1070,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "source_count": len(wind_values),
             # "degraded" → ქარი სრული აუზიდან ითვლება, არა ელიტურიდან.
             # ოქტომბრის ანალიზში ასეთი საათები ცალკე უნდა გამოიყოს.
-            "wind_pool": wind_pool_mode,
+            "wind_pool": hour_pool_mode,
         })
     return result
 
@@ -1477,8 +1545,8 @@ def send_telegram(output: dict):
         f"{' <i>(შეფასება — საზღვაო წყარო მიუწვდომელია)</i>' if c.get('wave_estimated') else ''}"
         f" | პერიოდი: {c['wave_period']} წმ"
         f"{_cop_str(c)}\n"
-        f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>{_vis_range_str(c)}\n"
-        f"─────────────────\n"
+        + _vis_line(c)
+        + f"─────────────────\n"
         f"⏱ შეჩერება 48h: <b>{s['suspended_hours']}სთ</b> | "
         f"სიფრთხილე: <b>{s['warning_hours']}სთ</b>\n"
     )
@@ -1488,20 +1556,14 @@ def send_telegram(output: dict):
     if c["alerts"]:
         text += "⚡ " + " | ".join(c["alerts"]) + "\n"
 
-    try:
-        r = requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"},
-            timeout=10,
-        )
-        if r.ok:
-            log.info(f"Telegram ✓ — გაიგზავნა: {old_status} → {new_status}")
-        else:
-            log.warning(f"Telegram ✗ — {r.status_code}: {r.text[:100]}")
-    except Exception as e:
-        log.warning(f"Telegram ✗ — {e}")
-
-    _save_status_cache(new_status)
+    # ⚠ ქეში ᲛᲮᲝᲚᲝᲓ ᲓᲐᲓᲐᲡᲢᲣᲠᲔᲑᲣᲚᲘ ᲒᲐᲒᲖᲐᲕᲜᲘᲡ ᲨᲔᲛᲓᲔᲒ. ადრე
+    #   უპირობოდ ინახებოდა და HTTP შეცდომის შემდეგ სისტემა იმავე
+    #   სტატუსზე მეორედ აღარ ცდიდა — გაფრთხილება იკარგებოდა.
+    #   ჩავარდნისას ქეში უცვლელი რჩება და შემდეგი გაშვება ისევ სცდის.
+    if _send_telegram_text(text, f"სტატუსი {old_status}→{new_status}"):
+        _save_status_cache(new_status)
+    else:
+        log.warning("სტატუსის ქეში არ განახლდა — შემდეგ გაშვებაზე ხელახლა")
 
 
 DIGEST_HOURS          = {2, 5, 11, 14, 17, 23}   # 08:00/20:00 ცვლის რეპორტს ეთმობა
@@ -1510,6 +1572,10 @@ DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პ
 
 # ნალექის “შესაძლებელია” პრეფიქსის ზღვარი.
 # → ზუსტად უნდა ემთხვეოდებოდეს index.html-ის `rAgr < 50` შემოწმებას.
+# ხილვადობა შეტყობინებაში მხოლოდ ამ ზღვრის ქვემოთ ჩნდება.
+# 1 კმ — ნისლის საყურადღებო ზონის დასაწყისი.
+VIS_NOTE_KM = 1.0
+
 PRECIP_HEDGE_PCT = 50
 
 
@@ -1540,6 +1606,34 @@ def _tstorm_str(c: dict, output: dict = None) -> str:
     if not parts:
         return ""
     return "⚡ <b>ჭექა-ქუხილი მოსალოდნელია</b> (" + " + ".join(parts) + ")\n"
+
+
+def _vis_line(c: dict) -> str:
+    """ხილვადობის სტრიქონი — ᲛᲮᲝᲚᲝᲓ ᲛᲐᲨᲘᲜ, ᲠᲝᲪᲐ ᲛᲜᲘᲨᲕᲜᲔᲚᲝᲕᲐᲜᲘᲐ.
+
+    ⚠ 2026-09-17: ადრე ყოველ შეტყობინებაში იწერებოდა — „19.47 კმ“
+      ყოველდღე, რაც ინფორმაციას არ ატარებდა და ტექსტს აგრძელებდა.
+      ახლა ჩნდება მხოლოდ მაშინ, როცა უარესი წყარო ნისლის ზონას
+      უახლოვდება (≤1 კმ) ან ზღვრებს კვეთს.
+
+    ვერდიქტი `visibility_min`-ზეა, როგორც სტატუსშიც: ნისლი
+    მინიმუმის ტიპის სიდიდეა და საშუალო მას ანზავებს.
+    """
+    v  = c.get("visibility_km")
+    mn = c.get("visibility_min")
+    eff = min([x for x in (v, mn) if x is not None], default=None)
+    if eff is None or eff > VIS_NOTE_KM:
+        return ""
+    m = int(round(eff * 1000))
+    if eff <= THRESHOLDS["vis_cranes"]:
+        tag = " — ამწე ჩერდება"
+    elif eff <= THRESHOLDS["vis_vessel"]:
+        tag = " — გემების მანევრირება შეზღუდულია"
+    else:
+        tag = " — ნისლი ახლოვდება"
+    extra = (f" <i>(კონსენსუსი {v} კმ)</i>"
+             if v is not None and mn is not None and mn < v * 0.7 else "")
+    return f"👁 ხილვადობა: <b>{m} მ</b>{tag}{extra}\n"
 
 
 def _vis_range_str(c: dict) -> str:
@@ -1597,27 +1691,40 @@ def _wave_range_str(c: dict) -> str:
     return f" <i>(მაქს. {mx} მ)</i>"
 
 
-def _precip_label(mm: float, sources: int = None, agreement: int = None) -> str:
+def _precip_label(mm: float, sources: int = None, agreement: int = None,
+                  total: int = None) -> str:
     """მმ/სთ მნიშვნელობას ადამიანისთვის გასაგებ აღწერად გარდაქმნის.
 
     sources   — რამდენი მოდელი "ხედავს" ამ ნალექს (≥0.1 მმ).
     agreement — მოდელთა შეთანხმება პროცენტში (BASE_WEIGHTS-ით შეწონილი).
 
-    ყურადღება: agreement ≠ წვიმის ალბათობა. ეს არის მოდელთა თანხმობის ზომა.
-    დაბალი პროცენტი ნიშნავს, რომ სიგნალი ერთეულ წყაროს ეყრდნობა და
-    დამოუკიდებელ დადასტურებას საჭიროებს, და არა იმას, რომ წვიმა "16%-ითაა"
-    მოსალოდნელი. სიგნალი არ იკარგება — ის უბრალოდ სწორად ფასდება.
+    total     — რამდენმა წყარომ მოგვცა ნალექის მონაცემი საერთოდ.
+
+    ⚠ agreement ᲐᲠ ᲐᲠᲘᲡ ᲬᲕᲘᲛᲘᲡ ᲐᲚᲑᲐᲗᲝᲑᲐ. ის მოდელთა თანხმობის ზომაა:
+      70% ნიშნავს, რომ წყაროების უმეტესობა ხედავს ნალექს, და არა იმას,
+      რომ „70%-ით იწვიმებს“. ყველა მოდელი შეიძლება ერთად ცდებოდეს —
+      ჟურნალში 16 false positive სწორედ მაღალ თანხმობაზე დაფიქსირდა.
+      ნამდვილი ალბათობა (PoP) ცალკე პროდუქტია და დათვლით არ გამოდის.
+
+    2026-09-17: ეკრანზე აბსტრაქტული „თანხმობა %“ შეიცვალა კონკრეტული
+    „5/7 წყარო“-თი — იგივე ინფორმაცია, ახსნის გარეშე.
     """
     if mm is None: return "—"
     if mm < 0.1:     return "მოსალოდნელი არ არის"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
 
-    if   mm < 1.0:   desc = "ჟინჟლი"
+    if   mm < 1.0:   desc = "უმნიშვნელო ნალექი"
     elif mm < 5.0:   desc = "მსუბუქი წვიმა"
     elif mm < 10.0:  desc = "ზომიერი წვიმა"
     elif mm < 20.0:  desc = "ძლიერი წვიმა"
     else:            desc = "ინტენსიური წვიმა ⚠️"
 
-    pct = f" · თანხმობა {agreement}%" if agreement is not None else ""
+    # წყაროების თანაფარდობა აბსტრაქტული პროცენტის ნაცვლად
+    if sources is not None and total:
+        pct = f" · {sources}/{total} წყარო"
+    elif agreement is not None:
+        pct = f" · {agreement}%"
+    else:
+        pct = ""
 
     # “შესაძლებელია” — შეწონილი თანხმობის მიხედვით, არა წყაროთა
     # რაოდენობით (2026-08-22).
@@ -1668,15 +1775,12 @@ def send_digest_telegram(output: dict):
            if c.get('feels_like') is not None and c.get('air_temp') is not None
            and abs(c['feels_like'] - c['air_temp']) >= 2 else "")
         + "\n"
-        f"🌧 ნალექი: <b>{_precip_label(c['precipitation'], c.get('precip_sources'), c.get('precip_agreement'))}</b>\n"
-        # 24სთ ჯამი — ეზოს დატბორვისა და დრენაჟისთვის პიკურ სიჩქარეზე
-        # მნიშვნელოვანია; ჩნდება მხოლოდ როცა ნალექი ოპერაციულად საგრძნობია.
-        + (f"💧 24სთ ჯამი: <b>{output['summary_24h']['total_precip_24h']} მმ</b>"
-           f" ({output['summary_24h']['rain_hours']}სთ, "
-           f"პიკი {output['summary_24h']['max_precip_rate']} მმ/სთ)\n"
-           if (output.get('summary_24h', {}).get('total_precip_24h') or 0) >= 5 else "")
-        + f"👁 ხილვადობა: <b>{c['visibility_km']} კმ</b>{_vis_range_str(c)}\n"
-        f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
+        f"🌧 ნალექი: <b>{_precip_label(c['precipitation'], c.get('precip_sources'),
+                                   c.get('precip_agreement'), c.get('precip_total'))}</b>\n"
+        # 24სთ ჯამი მოხსნილია 2026-09-17: შეტყობინება მიმდინარე
+        # ვითარებაზეა და დღიური ჯამი მას ხმაურს მატებდა.
+        + _vis_line(c)
+        + f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
     )
     if c.get("alerts"):
         text += "⚡ " + " | ".join(c["alerts"]) + "\n"
@@ -1688,7 +1792,8 @@ def send_digest_telegram(output: dict):
             t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
             hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
             temp_str = f"{h['air_temp']}°C, " if h.get("air_temp") is not None else ""
-            rain_str = _precip_label(h.get("precipitation", 0), h.get("precip_sources"), h.get("precip_agreement"))
+            rain_str = _precip_label(h.get("precipitation", 0), h.get("precip_sources"),
+                                       h.get("precip_agreement"), h.get("precip_total"))
             text += (
                 f"{hem} {t_label} — {temp_str}ქარი {h['wind_speed']} მ/წმ, "
                 f"ტალღა {h['wave_height']} მ\n"
@@ -1849,8 +1954,12 @@ def send_squall_alert(output: dict):
         f"გადაამოწმეთ MTA-ს ოფიციალური ბიულეტენი."
     )
 
-    _send_telegram_text(text, label="Squall")
-    _save_squall_cache(target_time)
+    # ⚠ ქეში მხოლოდ დადასტურებული გაგზავნის შემდეგ — იხ. #05.
+    #   ჩავარდნისას შემდეგი გაშვება ხელახლა სცდის.
+    if _send_telegram_text(text, label="Squall"):
+        _save_squall_cache(target_time)
+    else:
+        log.warning("შკვალის ქეში არ განახლდა — ხელახლა შემდეგ გაშვებაზე")
     log.info(f"შკვალის ალერტი გაიგზავნა — {t_label}, "
              f"gusts={squall['g_next']}, factor={squall['gust_factor']}, "
              f"delta={squall['delta']}, precip={squall['p_next']}")
@@ -1996,11 +2105,24 @@ def send_shift_handover_telegram(output: dict):
 
     text += f"─────────────────\nდეტალური მონაცემებისთვის გადადით პორტალზე:\n{PORTAL_URL}"
 
-    _send_telegram_text(text, label="Shift-handover")
-    _save_shift_cache(now.isoformat())
+    # ⚠ ქეში მხოლოდ დადასტურებული გაგზავნის შემდეგ — იხ. #05.
+    #   ჩავარდნისას შემდეგი გაშვება ხელახლა სცდის.
+    if _send_telegram_text(text, label="Shift-handover"):
+        _save_shift_cache(now.isoformat())
+    else:
+        log.warning("ცვლის ქეში არ განახლდა — ხელახლა შემდეგ გაშვებაზე")
 
 
-def _send_telegram_text(text: str, label: str = "Telegram"):
+def _send_telegram_text(text: str, label: str = "Telegram") -> bool:
+    """აბრუნებს True-ს მხოლოდ დადასტურებული გაგზავნისას.
+
+    ⚠ 2026-09-16 აუდიტი: ადრე არაფერს აბრუნებდა და ქეში მაინც
+      ახლდებოდა. HTTP 500-ის შემდეგ სისტემა თვლიდა, რომ შეტყობინება
+      გაიგზავნა, და იმავე მდგომარეობაზე მეორედ აღარ ცდიდა —
+      ᲒᲐᲤᲠᲗᲮᲘᲚᲔᲑᲐ ᲣᲮᲛᲝᲓ ᲘᲙᲐᲠᲒᲔᲑᲝᲓᲐ.
+    """
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return False
     try:
         r = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -2009,10 +2131,12 @@ def _send_telegram_text(text: str, label: str = "Telegram"):
         )
         if r.ok:
             log.info(f"{label} Telegram ✓ — გაიგზავნა")
-        else:
-            log.warning(f"{label} Telegram ✗ — {r.status_code}: {r.text[:100]}")
+            return True
+        log.warning(f"{label} Telegram ✗ — {r.status_code}: {r.text[:100]}")
+        return False
     except Exception as e:
         log.warning(f"{label} Telegram ✗ — {e}")
+        return False
 
 
 def _load_status_cache() -> str:
@@ -2084,14 +2208,18 @@ def send_sos_alert(output: dict):
         f"💨 ქარი: <b>{next_h['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{next_h['wind_gusts']} მ/წმ</b> | "
         f"მიმართ: <b>{_compass_full(next_h['wind_direction'])}</b>\n"
         f"🌊 ტალღა: <b>{next_h['wave_height']} მ</b>\n"
-        f"👁 ხილვადობა: <b>{next_h['visibility_km']} კმ</b>\n"
+        + _vis_line(next_h)
     )
     if next_h.get("alerts"):
         text += "⚡ " + " | ".join(next_h["alerts"]) + "\n"
     text += "─────────────────\nსასურველია დროულად მოემზადოთ საოპერაციო შეჩერებისთვის."
 
-    _send_telegram_text(text, label="SOS")
-    _save_sos_cache(target_time)
+    # ⚠ ქეში მხოლოდ დადასტურებული გაგზავნის შემდეგ — იხ. #05.
+    #   ჩავარდნისას შემდეგი გაშვება ხელახლა სცდის.
+    if _send_telegram_text(text, label="SOS"):
+        _save_sos_cache(target_time)
+    else:
+        log.warning("SOS-ის ქეში არ განახლდა — ხელახლა შემდეგ გაშვებაზე")
 
 
 def _deg_to_compass(deg: float) -> str:
@@ -2203,10 +2331,21 @@ def _model_snapshot(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no, marine, s
 
 
 def build_output(consensus, sources_used, daily=None, models_now=None):
-    now  = consensus[_current_hour_index(consensus)] if consensus else {}
-    susp   = sum(1 for h in consensus if h["status"] == "suspended")
-    vessel = sum(1 for h in consensus if h["status"] == "vessel")
-    barge  = sum(1 for h in consensus if h["status"] in ("barge", "warning"))
+    _i = _current_hour_index(consensus) if consensus else 0
+    now  = consensus[_i] if consensus else {}
+
+    # ═══ შეჯამების ფანჯრები ═══
+    # ⚠ 2026-09-16 აუდიტი: შეჯამება ერევებოდა — ნალექი `consensus[:24]`-ზე
+    #   ჯამდებოდა (ანუ ᲨᲣᲐᲦᲐᲛᲘᲓᲐᲜ), დანარჩენი მაქსიმუმები კი მთელ 48-საათიან
+    #   სიაზე. 20:00-ზე „24 საათის ჯამში“ მხოლოდ ᲬᲐᲠᲡᲣᲚᲘ წვიმა რჩებოდა,
+    #   ხოლო დილის suspended საათი საერთო სტატუსზე მოქმედებდა.
+    #   ᲐᲮᲚᲐ ᲝᲠᲘᲕᲔ ᲤᲐᲜᲯᲐᲠᲐ ᲛᲘᲛᲓᲘᲜᲐᲠᲔ ᲡᲐᲐᲗᲘᲓᲐᲜ იწყება.
+    fwd   = consensus[_i:] if consensus else []
+    w24   = fwd[:24]
+    w48   = fwd[:48]
+    susp   = sum(1 for h in w48 if h["status"] == "suspended")
+    vessel = sum(1 for h in w48 if h["status"] == "vessel")
+    barge  = sum(1 for h in w48 if h["status"] in ("barge", "warning"))
     warn   = vessel + barge          # ნებისმიერი შეზღუდვა, შეჩერების გარდა
     return {
         "meta": {
@@ -2230,6 +2369,7 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "wind_spread": 0, "confidence": "unknown", "source_count": 0,
             "dir_agreement": 1.0, "dir_fallback": False,
             "precip_sources": 0,
+            "precip_total": 0,
             "precip_agreement": 0,
             "wave_estimated": False, "gust_estimated": False,
             "wave_max": 0, "wave_min": 0, "wave_sources": 0,
@@ -2239,20 +2379,27 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "thunderstorm": False,
         }.items()},
         "summary_24h": {
-            "max_wave_height":   _r(max((h["wave_height"] for h in consensus), default=0)),
-            "max_wind_gusts":    _r(max((h["wind_gusts"]  for h in consensus), default=0)),
+            # ფანჯრის საზღვრები ᲐᲨᲙᲐᲠᲐᲓ — რომ მომხმარებელმა იცოდეს,
+            # რომელ პერიოდს ეხება რიცხვები (აუდიტის რეკომენდაცია).
+            "window_start":      (w24[0].get("time") if w24 else None),
+            "window_end":        (w24[-1].get("time") if w24 else None),
+            "window_hours":      len(w24),
+            "max_wave_height":   _r(max((h["wave_height"] for h in w24), default=0)),
+            "max_wind_gusts":    _r(max((h["wind_gusts"]  for h in w24), default=0)),
             # ─── ნალექი (დაემატა 2026-08-17) ───
             # აქამდე დღიური შეჯამება ნალექს საერთოდ არ ასახავდა: 22 მმ ღამის
             # განმავლობაში სრულიად უხილავი რჩებოდა. ეზოს დატბორვისა და
             # დრენაჟისთვის ჯამი უფრო მნიშვნელოვანია, ვიდრე პიკური სიჩქარე,
             # თან მოდელები ჯამს უკეთ იჭერენ, ვიდრე მყისიერ ინტენსივობას.
-            "total_precip_24h":  _r(sum((h.get("precipitation") or 0) for h in consensus[:24])),
-            "max_precip_rate":   _r(max((h.get("precipitation") or 0 for h in consensus), default=0)),
-            "rain_hours":        sum(1 for h in consensus[:24] if (h.get("precipitation") or 0) >= 0.1),
-            "min_visibility":    _r(min((h.get("visibility_km") or 99 for h in consensus), default=99)),
+            "total_precip_24h":  _r(sum((h.get("precipitation") or 0) for h in w24)),
+            "max_precip_rate":   _r(max((h.get("precipitation") or 0 for h in w24), default=0)),
+            "rain_hours":        sum(1 for h in w24 if (h.get("precipitation") or 0) >= 0.1),
+            "min_visibility":    _r(min((h.get("visibility_km") or 99 for h in w24), default=99)),
+            # შეზღუდვების საათები — 48-საათიან ფანჯარაზე, მიმდინარედან წინ
             "suspended_hours":   susp,
             "warning_hours":     warn,
-            "operational_hours": len(consensus) - susp - warn,
+            "operational_hours": max(0, len(w48) - susp - warn),
+            "forward_hours":     len(w48),
             "restricted_hours":  {"barge": barge, "vessel": vessel},
             "overall_status":    ("suspended" if susp else "vessel" if vessel
                                   else "barge" if barge else "operational"),
@@ -2353,16 +2500,34 @@ def main():
         # compute_consensus მის გარეშეც ფუნქციონირებს, თუ სხვა წყარო მაინც არსებობს.
         atmo_sources = [x for x in [atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, yr_no] if x]
         if not atmo_sources:
-            # სრულიად ყველა ატმოსფეროული წყარო ჩავარდა — ეს ნამდვილად კრიტიკულია
+            # ⚠ 2026-09-16 აუდიტი: აქ `sys.exit(1)` იძახებოდა, `except
+            #   SystemExit: raise` კი მას გამონაკლისების დამჭერს ასცდენდა —
+            #   ანუ ᲧᲕᲔᲚᲐᲖᲔ ᲙᲠᲘᲢᲘᲙᲣᲚᲘ ᲩᲐᲕᲐᲠᲓᲜᲐ ᲣᲮᲛᲝ ᲠᲩᲔᲑᲝᲓᲐ.
+            #   გაფრთხილება ახლა გასვლამდე იგზავნება.
             log.error("კრიტიკული: ყველა ატმოსფეროული წყარო (Open-Meteo + yr.no) მიუწვდომელია.")
             log.error("sources_used=%s — pipeline ჩერდება.", sources_used)
+            send_failure_alert(
+                "🚨 <b>ფოთის პორტი — ყველა ატმოსფერული წყარო მიუწვდომელია</b>\n"
+                f"მცდელობა: Open-Meteo (best/GFS/ICON/ECMWF), yr.no\n"
+                f"მიღებული: <code>{', '.join(sources_used) or '—'}</code>\n"
+                "მონაცემები გაჩერებულია ბოლო წარმატებულ მნიშვნელობაზე."
+            )
             sys.exit(1)
 
         # compute_consensus-ს atmo_best-ად ვაძლევთ პირველ ხელმისაწვდომ ატმოსფეროულ წყაროს
+        # ⚠ 2026-09-16 აუდიტი: `effective_best`-ად სხვა წყაროს გადასვლისას
+        #   ის ᲝᲠᲘ ᲡᲐᲮᲔᲚᲘᲗ ხვდებოდა აუზში — საკუთარითაც და best-ითაც.
+        #   ერთი yr.no იძლეოდა source_count=2 და confidence=high.
+        #   ახლა დროის ღერძი და წყაროთა აუზი გამიჯნულია: best-ის
+        #   როლში გადასული წყარო საკუთარი სახელიდან ამოდის.
         effective_best  = atmo_best or atmo_ecmwf or atmo_gfs or atmo_icon or yr_no
-        effective_ecmwf = atmo_ecmwf if atmo_ecmwf else None
-        effective_gfs   = atmo_gfs   if atmo_gfs   else None
-        effective_icon  = atmo_icon  if atmo_icon  else None
+        _dup = (effective_best is not atmo_best)
+        effective_ecmwf = None if (_dup and effective_best is atmo_ecmwf) else atmo_ecmwf
+        effective_gfs   = None if (_dup and effective_best is atmo_gfs)   else atmo_gfs
+        effective_icon  = None if (_dup and effective_best is atmo_icon)  else atmo_icon
+        if _dup:
+            log.warning("best_match მიუწვდომელია — მის როლში გადავიდა სხვა "
+                        "წყარო; დუბლირება მოხსნილია (source_count არ იბერება)")
 
         # ─── დროის ღერძის გასწორება (კრიტიკული) ───
         # ყველა წყარო ერთსა და იმავე დროის ღერძზე გადმოგვაქვს — ინდექსით
