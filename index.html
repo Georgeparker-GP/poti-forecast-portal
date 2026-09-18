@@ -459,12 +459,12 @@ table.rc b.v-crit {color:var(--txt-danger);font-weight:700;font-size:15px;}
   table.rc th:nth-child(5),table.rc td:nth-child(5),
   table.rc col.c-tp{display:none;}
   table.rc col.c-t {width:18%;}
-  table.rc col.c-w {width:11%;}
-  table.rc col.c-g {width:11%;}
-  table.rc col.c-d {width:9%;}
-  table.rc col.c-r {width:26%;}
-  table.rc col.c-wv{width:14%;}
-  table.rc col.c-p {width:11%;}
+  table.rc col.c-w {width:12%;}
+  table.rc col.c-g {width:12%;}
+  table.rc col.c-d {width:10%;}
+  table.rc col.c-r {width:20%;}
+  table.rc col.c-wv{width:16%;}
+  table.rc col.c-p {width:12%;}
   table.rc td{padding:8px 4px;}
   .rc-t{font-size:14px;}
   .rc-n,.rc-r{font-size:13px;}
@@ -512,10 +512,10 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 @media(max-width:760px){
   table.wk th:nth-child(7), table.wk td:nth-child(7),
   table.wk col.k-t{display:none;}
-  table.wk col.k-d{width:20%;} table.wk col.k-i{width:9%;}
-  table.wk col.k-w{width:16%;} table.wk col.k-g{width:14%;}
-  table.wk col.k-v{width:16%;} table.wk col.k-r{width:14%;}
-  table.wk col.k-s{width:11%;}
+  table.wk col.k-d{width:24%;} table.wk col.k-i{width:8%;}
+  table.wk col.k-w{width:15%;} table.wk col.k-g{width:13%;}
+  table.wk col.k-v{width:15%;} table.wk col.k-r{width:13%;}
+  table.wk col.k-s{width:12%;}
   table.wk td{padding:9px 4px;}
   .wk-n{font-size:13px;}
   .wk-u{margin-left:2px;}
@@ -524,20 +524,21 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 @media(max-width:480px){
   table.wk th:nth-child(4), table.wk td:nth-child(4),
   table.wk col.k-g{display:none;}
-  table.wk col.k-d{width:23%;} table.wk col.k-i{width:10%;}
-  table.wk col.k-w{width:19%;} table.wk col.k-v{width:19%;}
-  table.wk col.k-r{width:17%;} table.wk col.k-s{width:12%;}
+  table.wk col.k-d{width:27%;} table.wk col.k-i{width:9%;}
+  table.wk col.k-w{width:18%;} table.wk col.k-v{width:18%;}
+  table.wk col.k-r{width:16%;} table.wk col.k-s{width:12%;}
   .wk-day{font-size:12px;}
+  .wk-u{font-size:9px;margin-left:1px;}
 }
 /* ძალიან ვიწრო ეკრანი: მიმართულება ქრება — კომპასი ზემოთ ისედაც არის */
 @media(max-width:430px){
   table.rc th:nth-child(4),table.rc td:nth-child(4),
   table.rc col.c-d{display:none;}
-  table.rc col.c-t {width:19%;}
-  table.rc col.c-w {width:12%;}
-  table.rc col.c-g {width:12%;}
-  table.rc col.c-r {width:28%;}
-  table.rc col.c-wv{width:16%;}
+  table.rc col.c-t {width:20%;}
+  table.rc col.c-w {width:14%;}
+  table.rc col.c-g {width:14%;}
+  table.rc col.c-r {width:21%;}
+  table.rc col.c-wv{width:18%;}
   table.rc col.c-p {width:13%;}
   .rc-r{font-size:12px;}
 }
@@ -722,9 +723,11 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--mu);border-top:
 /* ეტიკეტები და ერთეულები მკრთალდება — ციფრები წინ გამოდის */
 .recap-metrics .rl{font-size:11px;color:var(--mu);}
 .recap-metrics .ru{font-size:11px;color:var(--mu);}
-/* ნალექის თანხმობა — სიტყვას ეწებებოდა ("ჟინჟლი52%"). საკუთარი
-   დაშორება და უფრო მკრთალი ტონი: ციფრი ჩანს, სიტყვას არ ეჯიბრება. */
-.recap-metrics .rp{font-size:10px;color:var(--mu);margin-left:5px;opacity:.85;}
+/* წყაროების თანაფარდობა — დამხმარე ინფორმაციაა და ყურადღებას არ
+   უნდა იპყრობდეს: მცირე, მკრთალი, ციფრის ქვეშ. */
+.recap-metrics .rp{font-size:9px;color:var(--mu);margin-left:5px;opacity:.6;}
+table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
+  font-family:'JetBrains Mono',monospace;line-height:1.1;}
 .recap-metrics b{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;}
 /* ზღვრებთან მიმართებაში — 1.33 და 15.0 ვიზუალურად აღარ ერთია */
 .recap-metrics b.v-ok  {color:var(--tl);}
@@ -1210,6 +1213,16 @@ function findNowIndex(fc) {
 }
 
 // ═══ COMPUTE STATUS ═══
+/* ეფექტური ხილვადობა — ᲔᲠᲗᲘ ᲬᲧᲐᲠᲝ სტატუსისა და პანელებისთვის.
+   ხილვადობა მინიმუმის ტიპის სიდიდეა: ნისლი ან არის, ან არა.
+   შეწონილი საშუალო მას ანზავებს, ამიტომ ვერდიქტი უარეს წყაროზე ითვლება. */
+function effVis(h) {
+  if (!h) return 99;
+  const c = h.visibility_km  != null ? Number(h.visibility_km)  : 99;
+  const m = h.visibility_min != null ? Number(h.visibility_min) : c;
+  return Math.min(c, m);
+}
+
 function computeStatus(h) {
   const w = h.wind_speed  || 0;
   const g = h.wind_gusts  || 0;
@@ -1219,9 +1232,7 @@ function computeStatus(h) {
   // 09-14 05:38: კონსენსუსი 11.07 კმ, worst source 0.14 კმ, სტატუსი
   // operational. ვიზუალურად 0.14 სწორი აღმოჩნდა. ᲔᲙᲠᲐᲜᲖᲔ ᲘᲡᲔᲕ
   // ᲙᲝᲜᲡᲔᲜᲡᲣᲡᲘ ᲘᲬᲔᲠᲔᲑᲐ — მხოლოდ ვერდიქტი იცვლება.
-  const vCons = h.visibility_km  != null ? h.visibility_km  : 99;
-  const vMin  = h.visibility_min != null ? h.visibility_min : vCons;
-  const v = Math.min(vCons, vMin);
+  const v = effVis(h);
   const maxWind = Math.max(w, g);
 
   if (maxWind >= THR.suspended || wv >= THR.wave || v <= THR.visCranes)
@@ -1438,7 +1449,12 @@ function render(d) {
   // ops panel — 2 panels: cranes & vessel maneuvering (with barge sub-state)
   const w = Math.max(c.wind_speed||0, c.wind_gusts||0);
   const wv= c.wave_height||0;
-  const vis= c.visibility_km!=null ? c.visibility_km : 99;
+  // ⚠ 2026-09-16 აუდიტი: პანელები `visibility_km`-ს იყენებდნენ,
+  //   computeStatus() კი `min(კონსენსუსი, visibility_min)`-ს. საშუალო
+  //   10 კმ და მინიმუმი 0.05 კმ იძლეოდა ურთიერთგამომრიცხავ ეკრანს:
+  //   მთავარი სტატუსი suspended, პანელები კი მწვანე.
+  //   ᲔᲠᲗᲘ ᲬᲧᲐᲠᲝ — effVis() — ორივეს ემსახურება.
+  const vis = effVis(c);
   const isEng = currentLang==='eng';
 
   // ამწეები — მხოლოდ suspended ზღვარზე იცვლება
@@ -1534,6 +1550,7 @@ function render(d) {
   const rn   = c.precipitation || 0;
   const rAgr = (c.precip_agreement != null) ? c.precip_agreement : null;
   const rSrc = (c.precip_sources   != null) ? c.precip_sources   : null;
+  const rTot = (c.precip_total     != null) ? c.precip_total     : null;
 
   let rLvl = rn >= 5 ? 'danger' : rn >= 2 ? 'warn' : 'ok';
   // სუსტი თანხმობა (<50%) → კრიტიკულამდე არ ადის
@@ -1546,17 +1563,19 @@ function render(d) {
   const rNote = document.getElementById('c-rain-note');
   if (rNote) {
     const ENG = currentLang === 'eng';
-    if (rn < 0.1 || rAgr === null) {
+    const ratio = rTot ? `${rSrc}/${rTot} ${ENG ? 'sources' : 'წყარო'}`
+                       : (rAgr != null ? `${rAgr}%` : '');
+    if (rn < 0.1 || !ratio) {
       rNote.textContent = '';
-    } else if (rAgr < 50) {
-      rNote.textContent = (ENG ? 'possible \u00b7 model agreement ' : '\u10e8\u10d4\u10e1\u10d0\u10eb\u10da\u10d4\u10d1\u10d4\u10da\u10d8\u00a0\u00b7 \u10db\u10dd\u10d3\u10d4\u10da\u10d7\u10d0 \u10d7\u10d0\u10dc\u10ee\u10db\u10dd\u10d1\u10d0 ')
-                        + rAgr + '%' + (rSrc ? (ENG ? ' (' + rSrc + ' src)' : ' (' + rSrc + ' \u10ec\u10e7\u10d0\u10e0\u10dd)') : '');
+    } else if (rAgr != null && rAgr < 50) {
+      rNote.textContent = (ENG ? 'possible · ' : 'შესაძლებელია · ') + ratio;
       rNote.style.color = 'var(--txt-warn)';
     } else {
-      rNote.textContent = (ENG ? 'model agreement ' : '\u10db\u10dd\u10d3\u10d4\u10da\u10d7\u10d0 \u10d7\u10d0\u10dc\u10ee\u10db\u10dd\u10d1\u10d0 ') + rAgr + '%';
+      rNote.textContent = ratio;
       rNote.style.color = 'var(--sb)';
     }
   }
+
 
   // ჰაერის ტემპ. ბარათი
   const airT = c.air_temp != null ? c.air_temp : null;
@@ -1744,7 +1763,7 @@ function render(d) {
       //   ერთმანეთს ეჯახებოდა. მნიშვნელობა არ იცვლება.
       const rainTxt = v =>
           v < 0.1  ? [ENG?'dry':'უნალექო',       'v-ok']
-        : v < 0.5  ? [ENG?'drizzle':'ჟინჟლი',    'v-ok']
+        : v < 0.5  ? [ENG?'slight':'უმნიშვნელო', 'v-ok']
         : v < 2.5  ? [ENG?'light':'მსუბუქი',     'v-ok']
         : v < 7.0  ? [ENG?'moder.':'ზომიერი',    'v-warn']
         : v < 18.5 ? [ENG?'heavy':'ძლიერი',      'v-alert']
@@ -1766,8 +1785,13 @@ function render(d) {
         const [rTxt, rCls] = rainTxt(rn);
         const pill = (ENG ? PILL_ENG : PILL)[h.status] || '';
 
-        const agr = (rn >= 0.1 && h.precip_agreement != null)
-          ? `<span class="rp">${Math.round(h.precip_agreement)}%</span>` : '';
+        // ⚠ 2026-09-17: „თანხმობა %“ შეიცვალა თანაფარდობით — პროცენტი
+        //   ალბათობად იკითხებოდა. 70% ნიშნავს „5 წყარო 7-დან ხედავს“,
+        //   და არა „70%-ით იწვიმებს“.
+        const agr = (rn >= 0.1 && h.precip_sources != null && h.precip_total)
+          ? `<div class="rp">${h.precip_sources}/${h.precip_total}</div>`
+          : (rn >= 0.1 && h.precip_agreement != null
+             ? `<div class="rp">${Math.round(h.precip_agreement)}%</div>` : '');
 
         // ზღვიდან მომავალი ქარი ტალღას ზრდის — ისარი ამას პირდაპირ ამბობს
         const on = dir != null && isOnshore(dir);
@@ -1918,7 +1942,7 @@ function renderWeekMini(daily){
     const rCol = rn>=25?'var(--rd)': rn>=10?'var(--or)': rn>=1?'var(--bl)':'var(--mu)';
     const pill = (ENG?PILL_ENG:PILL)[d.status||'operational']||'';
     return `<tr class="${i===0?'wk-now':''}">
-      <td class="wk-day">${WD[dt.getDay()]} ${d.date.slice(5).replace('-','.')}</td>
+      <td class="wk-day">${WD[dt.getDay()]} ${d.date.slice(5).replace('-','.').replace(/^0/,'')}</td>
       <td class="wk-ico">${weekEmoji(d)}</td>
       <td class="wk-n"><b style="color:${wCol}">${fmt(d.wind_max,1)}</b>
           <span class="wk-u">${ENG?'m/s':'მ/წმ'}</span>${bar(d.wind_max||0, 25, wCol)}</td>
@@ -2226,7 +2250,21 @@ function renderSignal(c, fcFuture){
   const st  = c.status || 'operational';
   const vEl = document.getElementById('sig-verdict');
   const wEl = document.getElementById('sig-why');
-  if (vEl) vEl.textContent = (ENG ? STATUS_LBL_ENG : STATUS_LBL)[st] || st;
+  // ⚠ 2026-09-16 აუდიტი: `suspended` ერთ ტექსტს იყენებდა — „ამწე +
+  //   გემების გასვლა შეჩერებულია“ — მიზეზის მიუხედავად. ტალღა და
+  //   ნისლი ამწეს არ აჩერებს, ანუ ტექსტი ზედმეტს ამბობდა და
+  //   ოპერაციულ პანელსაც ეწინააღმდეგებოდა.
+  let verdict = (ENG ? STATUS_LBL_ENG : STATUS_LBL)[st] || st;
+  if (st === 'suspended') {
+    const mw = Math.max(c.wind_speed||0, c.wind_gusts||0);
+    const vv = effVis(c);
+    if (mw < THR.suspended && vv > THR.visCranes) {
+      // მიზეზი ტალღაა — ამწე მუშაობს, ნავიგაცია ჩერდება
+      verdict = ENG ? 'Vessel Departure Suspended'
+                    : 'გემების გასვლა შეჩერებულია';
+    }
+  }
+  if (vEl) vEl.textContent = verdict;
   if (!wEl) return;
 
   const a = c.alerts || [];
