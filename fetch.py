@@ -1789,6 +1789,11 @@ def send_digest_telegram(output: dict):
     em  = STATUS_EMOJI.get(c.get("status"), "ℹ️")
     now_str = output["meta"]["last_update"]
 
+    # ⚠ გამოსახულება ᲪᲐᲚᲙᲔ ᲪᲕᲚᲐᲓᲨᲘ: f-string-ის ფიგურულ ფრჩხილებში
+    #   ხაზის გადატანა მხოლოდ Python 3.12+-ში მუშაობს (PEP 701).
+    #   runner-ზე 3.11-ია და ეს SyntaxError-ს იძლეოდა.
+    _p_lbl = _precip_label(c['precipitation'], c.get('precip_sources'),
+                           c.get('precip_agreement'), c.get('precip_total'))
     text = (
         f"{em} <b>ფოთის პორტი — მიმდინარე მეტეო-მონაცემები</b>\n"
         f"🕐 {now_str}\n"
@@ -1804,8 +1809,7 @@ def send_digest_telegram(output: dict):
            if c.get('feels_like') is not None and c.get('air_temp') is not None
            and abs(c['feels_like'] - c['air_temp']) >= 2 else "")
         + "\n"
-        f"🌧 ნალექი: <b>{_precip_label(c['precipitation'], c.get('precip_sources'),
-                                   c.get('precip_agreement'), c.get('precip_total'))}</b>\n"
+        f"🌧 ნალექი: <b>{_p_lbl}</b>\n"
         # 24სთ ჯამი მოხსნილია 2026-09-17: შეტყობინება მიმდინარე
         # ვითარებაზეა და დღიური ჯამი მას ხმაურს მატებდა.
         + _vis_line(c)
