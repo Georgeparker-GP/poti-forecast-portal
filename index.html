@@ -415,17 +415,18 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 table.rc{width:100%;border-collapse:collapse;table-layout:fixed;}
 /* დროს მეტი ადგილი სჭირდება: "02:00" 15px მონოსივრცულით
    15%-ში არ ეტეოდა და ქარის სვეტს ეჯახებოდა. */
-table.rc col.c-t  {width:17%;}
+table.rc col.c-t  {width:15%;}
 table.rc col.c-w  {width:11%;}
 table.rc col.c-g  {width:11%;}
 table.rc col.c-d  {width:9%;}
-table.rc col.c-tp {width:11%;}
-table.rc col.c-r  {width:20%;}
-table.rc col.c-wv {width:11%;}
-table.rc col.c-p  {width:10%;}
+table.rc col.c-tp {width:10%;}
+table.rc col.c-r  {width:19%;}
+table.rc col.c-wv {width:10%;}
+table.rc col.c-p  {width:15%;}
 table.rc th{
-  font-size:10px;font-weight:500;color:var(--mu);padding:0 8px 7px;
+  font-size:10px;font-weight:500;color:var(--mu);padding:0 5px 7px 7px;
   text-align:right;white-space:nowrap;border-bottom:1px solid var(--br);
+  overflow:hidden;text-overflow:ellipsis;
 }
 table.rc th:first-child,table.rc th:last-child{text-align:left;}
 table.rc td{padding:8px;border-bottom:1px solid var(--ov1);white-space:nowrap;}
@@ -449,7 +450,8 @@ table.rc b.v-crit {color:var(--txt-danger);font-weight:700;font-size:15px;}
 /* ნალექი: „უნალექო“ ფონურია, წვიმა — გამოკვეთილი */
 .rc-r b.v-ok{color:var(--mu);font-weight:400;}
 .rc-d{font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--sb);}
-.rc-r{font-size:13px;text-align:right;}
+.rc-r{font-size:12.5px;text-align:right;overflow:hidden;
+  text-overflow:ellipsis;}
 .rc-p{text-align:right;}
 .rc-vis{font-size:10px;margin-top:3px;font-family:'JetBrains Mono',monospace;}
 /* ვიწრო ეკრანზე ტემპერატურა ქრება: მთელ დღეს თითქმის უცვლელია
@@ -458,13 +460,13 @@ table.rc b.v-crit {color:var(--txt-danger);font-weight:700;font-size:15px;}
 @media(max-width:820px){
   table.rc th:nth-child(5),table.rc td:nth-child(5),
   table.rc col.c-tp{display:none;}
-  table.rc col.c-t {width:18%;}
+  table.rc col.c-t {width:16%;}
   table.rc col.c-w {width:12%;}
   table.rc col.c-g {width:12%;}
-  table.rc col.c-d {width:10%;}
-  table.rc col.c-r {width:20%;}
-  table.rc col.c-wv{width:16%;}
-  table.rc col.c-p {width:12%;}
+  table.rc col.c-d {width:9%;}
+  table.rc col.c-r {width:21%;}
+  table.rc col.c-wv{width:12%;}
+  table.rc col.c-p {width:18%;}
   table.rc td{padding:8px 4px;}
   .rc-t{font-size:14px;}
   .rc-n,.rc-r{font-size:13px;}
@@ -475,13 +477,18 @@ table.rc b.v-crit {color:var(--txt-danger);font-weight:700;font-size:15px;}
    გათავისუფლებულ სიგანეზე ემატება ქროლვა, ნალექი და სტატუსი,
    ხოლო ზოლები ზღვართან სიახლოვეს ციფრზე სწრაფად აჩვენებს. */
 table.wk{width:100%;border-collapse:collapse;table-layout:fixed;}
-table.wk col.k-d{width:17%;} table.wk col.k-i{width:8%;}
-table.wk col.k-w{width:13%;} table.wk col.k-g{width:12%;}
-table.wk col.k-v{width:13%;} table.wk col.k-r{width:12%;}
-table.wk col.k-t{width:13%;} table.wk col.k-s{width:12%;}
+/* სტატუსის სვეტი განიერია: ქართული „შეჩერება“ ინგლისურ „Susp.“-ზე
+   ორჯერ გრძელია და ბეჯი მეზობელს აჭერდა. */
+table.wk col.k-d{width:16%;} table.wk col.k-i{width:6%;}
+table.wk col.k-w{width:12%;} table.wk col.k-g{width:11%;}
+table.wk col.k-v{width:12%;} table.wk col.k-r{width:12%;}
+table.wk col.k-t{width:12%;} table.wk col.k-s{width:19%;}
+/* padding-left აუცილებელია — ქართული სათაურები ("ნალექი" + "სტატუსი")
+   ერთმანეთს ეჯახებოდა ვიწრო ეკრანზე */
 table.wk th{
-  font-size:11px;font-weight:500;color:var(--mu);text-align:right;
-  padding:0 10px 8px;border-bottom:1px solid var(--br);white-space:nowrap;
+  font-size:10.5px;font-weight:500;color:var(--mu);text-align:right;
+  padding:0 6px 8px 8px;border-bottom:1px solid var(--br);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 table.wk td{padding:9px 10px;border-bottom:1px solid var(--ov1);vertical-align:middle;}
 table.wk th:nth-child(1),table.wk th:nth-child(2){text-align:left;}
@@ -512,10 +519,10 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 @media(max-width:760px){
   table.wk th:nth-child(7), table.wk td:nth-child(7),
   table.wk col.k-t{display:none;}
-  table.wk col.k-d{width:24%;} table.wk col.k-i{width:8%;}
-  table.wk col.k-w{width:15%;} table.wk col.k-g{width:13%;}
-  table.wk col.k-v{width:15%;} table.wk col.k-r{width:13%;}
-  table.wk col.k-s{width:12%;}
+  table.wk col.k-d{width:20%;} table.wk col.k-i{width:7%;}
+  table.wk col.k-w{width:13%;} table.wk col.k-g{width:12%;}
+  table.wk col.k-v{width:13%;} table.wk col.k-r{width:13%;}
+  table.wk col.k-s{width:22%;}
   table.wk td{padding:9px 4px;}
   .wk-n{font-size:13px;}
   .wk-u{margin-left:2px;}
@@ -524,9 +531,9 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 @media(max-width:480px){
   table.wk th:nth-child(4), table.wk td:nth-child(4),
   table.wk col.k-g{display:none;}
-  table.wk col.k-d{width:27%;} table.wk col.k-i{width:9%;}
-  table.wk col.k-w{width:18%;} table.wk col.k-v{width:18%;}
-  table.wk col.k-r{width:16%;} table.wk col.k-s{width:12%;}
+  table.wk col.k-d{width:22%;} table.wk col.k-i{width:8%;}
+  table.wk col.k-w{width:15%;} table.wk col.k-v{width:15%;}
+  table.wk col.k-r{width:15%;} table.wk col.k-s{width:25%;}
   .wk-day{font-size:12px;}
   .wk-u{font-size:9px;margin-left:1px;}
 }
@@ -534,12 +541,12 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 @media(max-width:430px){
   table.rc th:nth-child(4),table.rc td:nth-child(4),
   table.rc col.c-d{display:none;}
-  table.rc col.c-t {width:20%;}
-  table.rc col.c-w {width:14%;}
-  table.rc col.c-g {width:14%;}
-  table.rc col.c-r {width:21%;}
-  table.rc col.c-wv{width:18%;}
-  table.rc col.c-p {width:13%;}
+  table.rc col.c-t {width:17%;}
+  table.rc col.c-w {width:13%;}
+  table.rc col.c-g {width:13%;}
+  table.rc col.c-r {width:24%;}
+  table.rc col.c-wv{width:13%;}
+  table.rc col.c-p {width:20%;}
   .rc-r{font-size:12px;}
 }
 
@@ -697,7 +704,9 @@ svg.chart{width:100%;overflow:visible;}
 .t-num{font-family:'JetBrains Mono',monospace;font-size:12px;}
 .t-cold{color:var(--txt-cold)}
 .t-rd{color:var(--txt-danger);font-weight:600}.t-or{color:var(--txt-alert);font-weight:600}.t-yw{color:var(--txt-warn);font-weight:600}.t-gn{color:var(--txt-ok)}.t-mu{color:var(--sb)}
-.pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:3px;}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;
+  border-radius:3px;white-space:nowrap;max-width:100%;overflow:hidden;
+  text-overflow:ellipsis;vertical-align:middle;}
 .pill-op  {background:rgba(45,212,160,.12);color:var(--txt-ok);}
 .pill-bg  {background:rgba(245,200,66,.12);color:var(--txt-warn);}
 .pill-vs  {background:rgba(245,146,58,.15);color:var(--txt-alert);}
@@ -1774,8 +1783,8 @@ function render(d) {
       // თვალი ვერტიკალურად ვერ ეშვებოდა და მარჯვნივ ცარიელი
       // ადგილი რჩებოდა. ახლა თითოეული მაჩვენებელი თავის სვეტშია.
       const head = ENG
-        ? ['', 'Wind', 'Gust', 'Dir', 'Temp', 'Precip', 'Wave', '']
-        : ['', 'ქარი', 'ქროლვა', 'მიმართ.', 'ტემპ.', 'ნალექი', 'ტალღა', ''];
+        ? ['', 'Wind m/s', 'Gust', 'Dir', 'Temp', 'Precip', 'Wave m', '']
+        : ['', 'ქარი მ/წმ', 'ქროლვა', 'მიმართ.', 'ტემპ.', 'ნალექი', 'ტალღა მ', ''];
 
       const body = next6.map(h=>{
         const t  = (h.time||'').slice(11,16) || '--:--';
@@ -1815,7 +1824,7 @@ function render(d) {
           <td class="rc-d">${dirCell}</td>
           <td class="rc-n"><b>${tp!=null?fmt(tp,1):'--'}</b><span class="ru">°</span></td>
           <td class="rc-r"><b class="${rCls}">${rTxt}</b>${agr}</td>
-          <td class="rc-n"><b class="${vLvl(wv)}">${fmt(wv)}</b><span class="ru">${ENG?'m':'მ'}</span>${visNote}</td>
+          <td class="rc-n"><b class="${vLvl(wv)}">${fmt(wv)}</b>${visNote}</td>
           <td class="rc-p">${pill}</td>
         </tr>`;
       }).join('');
@@ -1923,9 +1932,13 @@ function renderWeekMini(daily){
   }
   const WD = ENG ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
                  : ['კვი','ორშ','სამ','ოთხ','ხუთ','პარ','შაბ'];
+  // ⚠ 2026-09-19: ერთეული სათაურშია და არა ყოველ უჯრაში.
+  //   ქართული ტექსტი ინგლისურზე ~30%-ით განიერია; „8.6 მ/წმ“ +
+  //   „0.70 მ“ მეზობელ სვეტებს ეჯახებოდა. ერთეულის ერთხელ ჩვენება
+  //   სამ სვეტში ათავისუფლებს ადგილს და ცხრილს ასუფთავებს.
   const head = ENG
-    ? ['Day','','Wind','Gust','Wave','Precip','Temp','Status']
-    : ['დღე','','ქარი','ქროლვა','ტალღა','ნალექი','ტემპ.','სტატუსი'];
+    ? ['Day','','Wind m/s','Gust','Wave m','Precip mm','Temp','Status']
+    : ['დღე','','ქარი მ/წმ','ქროლვა','ტალღა მ','ნალექი მმ','ტემპ.','სტატუსი'];
 
   // ზოლის სიგრძე ზღვართან მიმართებაში — ციფრზე სწრაფად იკითხება
   const bar = (v, max, col) => {
@@ -1944,14 +1957,10 @@ function renderWeekMini(daily){
     return `<tr class="${i===0?'wk-now':''}">
       <td class="wk-day">${WD[dt.getDay()]} ${d.date.slice(5).replace('-','.').replace(/^0/,'')}</td>
       <td class="wk-ico">${weekEmoji(d)}</td>
-      <td class="wk-n"><b style="color:${wCol}">${fmt(d.wind_max,1)}</b>
-          <span class="wk-u">${ENG?'m/s':'მ/წმ'}</span>${bar(d.wind_max||0, 25, wCol)}</td>
-      <td class="wk-n"><b style="color:${wCol}">${fmt(d.gust_max,1)}</b>
-          <span class="wk-u">${ENG?'m/s':'მ/წმ'}</span></td>
-      <td class="wk-n"><b style="color:${vCol}">${fmt(d.wave_max)}</b>
-          <span class="wk-u">${ENG?'m':'მ'}</span>${bar(d.wave_max||0, 3, vCol)}</td>
-      <td class="wk-n"><b style="color:${rCol}">${fmt(rn,1)}</b>
-          <span class="wk-u">${ENG?'mm':'მმ'}</span></td>
+      <td class="wk-n"><b style="color:${wCol}">${fmt(d.wind_max,1)}</b>${bar(d.wind_max||0, 25, wCol)}</td>
+      <td class="wk-n"><b style="color:${wCol}">${fmt(d.gust_max,1)}</b></td>
+      <td class="wk-n"><b style="color:${vCol}">${fmt(d.wave_max)}</b>${bar(d.wave_max||0, 3, vCol)}</td>
+      <td class="wk-n"><b style="color:${rCol}">${fmt(rn,1)}</b></td>
       <td class="wk-n"><span style="color:var(--txt-cold)">${d.temp_min!=null?Math.round(d.temp_min):'--'}°</span><span
           style="color:var(--mu)">/</span><span style="color:var(--txt-hot)">${d.temp_max!=null?Math.round(d.temp_max):'--'}°</span></td>
       <td>${pill}</td>
