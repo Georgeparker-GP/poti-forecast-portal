@@ -1559,12 +1559,14 @@ def send_telegram(output: dict):
     s   = output["summary_24h"]
     now = output["meta"]["last_update"]
     em  = STATUS_EMOJI[new_status]
-    old_em = STATUS_EMOJI.get(old_status, "")
 
     # შეტყობინების ტექსტი
     text = (
         f"{em} <b>ფოთის პორტი — სტატუსის ცვლილება</b>\n"
-        f"{old_em} {STATUS_KA.get(old_status,'?')} → {em} <b>{STATUS_KA[new_status]}</b>\n"
+        # ⚠ 2026-09-19: ძველი სტატუსი და ისარი მოხსნილია — სათაური
+        #   ისედაც ამბობს, რომ ცვლილებაა, და ცვლას მხოლოდ ახალი
+        #   მდგომარეობა აინტერესებს.
+        f"{em} <b>{STATUS_KA[new_status]}</b>\n"
         f"─────────────────\n"
         f"🕐 {now}\n"
         f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
@@ -1572,18 +1574,18 @@ def send_telegram(output: dict):
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
         f"{_wave_range_str(c)}"
         f"{' <i>(შეფასება — საზღვაო წყარო მიუწვდომელია)</i>' if c.get('wave_estimated') else ''}"
-        f" | პერიოდი: {c['wave_period']} წმ"
-        f"{_cop_str(c)}\n"
+        f" | პერიოდი: {c['wave_period']} წმ\n"
+        # Copernicus-ის ცალკე სტრიქონი და „შეჩერება 48h“ მოხსნილია
+        # 2026-09-19: შეტყობინება მიმდინარე ვითარებაზეა, არა სტატისტიკაზე.
         + _vis_line(c)
-        + f"─────────────────\n"
-        f"⏱ შეჩერება 48h: <b>{s['suspended_hours']}სთ</b> | "
-        f"სიფრთხილე: <b>{s['warning_hours']}სთ</b>\n"
     )
 
+    # ჭექა-ქუხილი რჩება — ის დამოუკიდებელი სიგნალია და ციფრებში არ ჩანს.
     text += _tstorm_str(c, output)
 
-    if c["alerts"]:
-        text += "⚡ " + " | ".join(c["alerts"]) + "\n"
+    # ⚠ `alerts` მოხსნილია 2026-09-19: ისინი იმავე რიცხვებს იმეორებდნენ,
+    #   რაც ზემოთ უკვე წერია („ქარის სიჩქარე 10.3“ = „დაქროლვა 10.3“),
+    #   ხოლო სტატუსის სათაური მიზეზს ისედაც ასახელებს.
 
     # ⚠ ქეში ᲛᲮᲝᲚᲝᲓ ᲓᲐᲓᲐᲡᲢᲣᲠᲔᲑᲣᲚᲘ ᲒᲐᲒᲖᲐᲕᲜᲘᲡ ᲨᲔᲛᲓᲔᲒ. ადრე
     #   უპირობოდ ინახებოდა და HTTP შეცდომის შემდეგ სისტემა იმავე
@@ -1606,6 +1608,12 @@ DIGEST_INTERVAL_HOURS  = 3                        # მომდევნო პ
 VIS_NOTE_KM = 1.0
 
 PRECIP_HEDGE_PCT = 50
+# ⚠ 2026-09-18: „შესაძლებელია“ ახლა ᲬᲧᲐᲠᲝᲗᲐ ᲬᲘᲚᲖᲔᲪ ირთვება.
+#   მოთხოვნა: ნებისმიერი პროგნოზი, რომელსაც 4/5-ზე ნაკლები წყარო
+#   უჭერს მხარს, ჰეჯირებული უნდა იყოს. წილად ვინახავთ და არა
+#   აბსოლუტურ რიცხვად, რადგან ხელმისაწვდომი წყაროების რაოდენობა
+#   იცვლება (5–7) — 4/5 და 6/7 ერთსა და იმავე სანდოობას ნიშნავს.
+PRECIP_HEDGE_RATIO = 0.8
 
 
 def _tstorm_str(c: dict, output: dict = None) -> str:
@@ -1622,19 +1630,22 @@ def _tstorm_str(c: dict, output: dict = None) -> str:
     მხოლოდ რადარი ან ელჭექის დეტექტორი ადგენს. ეს გაფრთხილება
     "მოემზადეთ"-ია, არა "შეაჩერეთ ახლა".
     """
-    parts = []
-    if c.get("thunderstorm"):
-        parts.append("მოდელები")
+    model_hit = bool(c.get("thunderstorm"))
+    mta_hit = False
     if output:
         adv = output.get("mta_advisory") or {}
         for nt in (adv.get("notes") or []):
             t = str(nt).lower()
             if "thunder" in t or "ელჭ" in t or "ჭექ" in t:
-                parts.append("MTA")
+                mta_hit = True
                 break
-    if not parts:
+    if not (model_hit or mta_hit):
         return ""
-    return "⚡ <b>ჭექა-ქუხილი მოსალოდნელია</b> (" + " + ".join(parts) + ")\n"
+    # ⚠ „(მოდელები)“ მოხსნილია — ნაგულისხმევი წყაროა და ტექსტს ხმაურს
+    #   მატებდა. MTA რჩება: სინოპტიკოსის დადასტურება მოდელისგან
+    #   განსხვავებული წონის სიგნალია.
+    suffix = " (MTA)" if mta_hit else ""
+    return f"⚡ <b>მოსალოდნელია ჭექა-ქუხილი</b>{suffix}\n"
 
 
 def _vis_line(c: dict) -> str:
@@ -1761,9 +1772,19 @@ def _precip_label(mm: float, sources: int = None, agreement: int = None,
     # ორი სუსტი მოდელი (ICON 0.09 + OWM 0.08 = 19% თანხმობა) Telegram-ში
     # კატეგორიულად ვლინდებოდა, პორტალზე — “შესაძლებელია”-დ.
     # რაოდენობა წყაროს წონას არ ითვალისწინებს; თანხმობა — ითვალისწინებს.
-    if agreement is not None:
+    # ᲝᲠᲘ ᲙᲠᲘᲢᲔᲠᲘᲣᲛᲘ, ᲠᲝᲛᲔᲚᲘᲛᲔ ᲡᲐᲙᲛᲐᲠᲘᲡᲘᲐ:
+    #   • წყაროთა წილი 4/5-ზე ნაკლები — „რამდენი ხედავს“
+    #   • შეწონილი თანხმობა 50%-ზე ნაკლები — „რამდენად სანდოა ის,
+    #     ვინც ხედავს“ (ორი სუსტი მოდელი 2/5-ს იძლევა, მაგრამ
+    #     წონით მხოლოდ 19%-ს)
+    # ორივე საჭიროა: რაოდენობა წონას არ ითვალისწინებს, წონა კი
+    # იმას, რომ უმრავლესობა საერთოდ ვერ ხედავს ნალექს.
+    hedge = False
+    if sources is not None and total:
+        hedge = (sources / total) < PRECIP_HEDGE_RATIO
+    if not hedge and agreement is not None:
         hedge = agreement < PRECIP_HEDGE_PCT
-    else:
+    if not hedge and agreement is None and total in (None, 0):
         hedge = sources is not None and sources <= 1
 
     if hedge:
@@ -1802,7 +1823,9 @@ def send_digest_telegram(output: dict):
         f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
         f"{_wave_range_str(c)}"
         f"{' <i>(შეფასება)</i>' if c.get('wave_estimated') else ''}"
-        f"{_cop_str(c)}\n"
+        # ⚠ 2026-09-19: Copernicus-ის ცალკე სტრიქონი მოხსნილია —
+        #   ის კონსენსუსში უკვე შედის და ტექსტს მეორე რიცხვს ამატებდა.
+        f"\n"
         f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>"
         + (f" <i>(იგრძნობა {c['feels_like']}°C)</i>"
            if c.get('feels_like') is not None and c.get('air_temp') is not None
@@ -1814,8 +1837,9 @@ def send_digest_telegram(output: dict):
         + _vis_line(c)
         + f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
     )
-    if c.get("alerts"):
-        text += "⚡ " + " | ".join(c["alerts"]) + "\n"
+    # ⚠ 2026-09-19: `alerts` მოხსნილია — ისინი იმავე რიცხვებს იმეორებდნენ,
+    #   რაც ზემოთ უკვე წერია („ქარის სიჩქარე 10.3“ = „დაქროლვა 10.3“),
+    #   ხოლო სტატუსი მიზეზს ისედაც ასახელებს.
 
     next_hours = fc[idx + 1 : idx + 1 + DIGEST_INTERVAL_HOURS]
     if next_hours:
@@ -2242,8 +2266,7 @@ def send_sos_alert(output: dict):
         f"🌊 ტალღა: <b>{next_h['wave_height']} მ</b>\n"
         + _vis_line(next_h)
     )
-    if next_h.get("alerts"):
-        text += "⚡ " + " | ".join(next_h["alerts"]) + "\n"
+    # alerts აქაც მოხსნილია — ციფრები ზემოთ უკვე წერია.
     text += "─────────────────\nსასურველია დროულად მოემზადოთ საოპერაციო შეჩერებისთვის."
 
     # ⚠ ქეში მხოლოდ დადასტურებული გაგზავნის შემდეგ — იხ. #05.
