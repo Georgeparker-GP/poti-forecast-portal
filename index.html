@@ -375,9 +375,12 @@ main{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24p
 
 /* ── header-ის მარჯვენა ნაწილი ── */
 .hdr-right{
-  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;
   margin-left:auto;justify-content:flex-end;
 }
+/* სათაურის ბლოკი ახლა ერთხაზიანია — header-ის სიმაღლე მცირდება */
+header{align-items:flex-start;}
+.hdr-btns{margin-top:2px;}
 .hdr-time{text-align:right;flex-shrink:0;line-height:1.25;}
 .hdr-btns{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 @media(max-width:700px){
@@ -907,7 +910,9 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
       <h1 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span data-i18n="title">APMT Poti — ამინდის კონსენსუს-პორტალი</span>
         <span id="hdr-confidence" style="display:none;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;"></span>
       </h1>
-      <p id="sources-line"><span data-i18n="src_loading">მონაცემები იტვირთება...</span></p>
+      <!-- ⚠ 2026-09-20: წყაროების ჩამონათვალი header-იდან მოხსნილია.
+           ის ცხრილის პანელში ისედაც წერია და აქ ორ ხაზს იკავებდა,
+           რის გამოც მარჯვენა ბლოკი ქვემოთ ეშვებოდა. -->
     </div>
   </div>
   <!-- ⚠ ღილაკების ჯგუფი `margin-left:auto`-თი მარჯვენა კიდეს ეკვრის;
@@ -1523,7 +1528,9 @@ function render(d) {
   document.getElementById('next-time').textContent    = _t('next_lbl')+' '+(m.next_update||'--');
   lastUpdateStr = m.last_update || null;
   checkStale();
-  document.getElementById('sources-line').textContent = src.join(' · ');
+  // sources-line header-იდან მოხსნილია; სია მხოლოდ ცხრილის პანელშია
+  const _sl = document.getElementById('sources-line');
+  if (_sl) _sl.textContent = src.join(' · ');
   document.getElementById('tbl-sources').textContent  = _t('sources_lbl')+' '+src.join(', ');
   document.getElementById('coords-lbl').textContent   = (m.lat||'')+'°N '+(m.lon||'')+'°E · '+(m.forecast_hours||fc.length)+'h';
 
