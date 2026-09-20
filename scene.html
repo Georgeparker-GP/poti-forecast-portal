@@ -55217,6 +55217,56 @@ $('mode').onchange=switchMode;$('hour').oninput=useData;$('import').onclick=()=>
 window.addEventListener('message',e=>{if(e.source!==parent||parent===window)return;if(location.protocol!=='file:'&&e.origin!==location.origin)return;if(e.data?.type==='poti-weather'){try{load(e.data.data,e.data.index);}catch(err){$('time').textContent=err.message;}}});try{if(parent!==window)parent.postMessage({type:'poti-3d-ready'},location.origin&&location.origin!=='null'&&location.protocol!=='file:'?location.origin:'*');}catch(e){}
 if(location.protocol==='http:'||location.protocol==='https:')if(parent===window)fetch('data.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('no data');return r.json();}).then(d=>load(d)).catch(()=>{});
 $('export').onclick=exportOBJ;
+
+/* ═══════════════════════════════════════════════════════════
+   ავტომატური ღამის რეჟიმი
+   ---------------------------------------------------------
+   საათი ᲜᲐᲩᲕᲔᲜᲔᲑᲘ ᲛᲝᲛᲔᲜᲢᲘᲓᲐᲜ იღება და არა კედლის საათიდან:
+   თუ სლაიდერით ხვალინდელ 02:00-ზე გადახვალ, სცენა ღამისა
+   უნდა იყოს. მონაცემის არარსებობისას ლოკალურ დროს ეყრდნობა.
+
+   ხელით გადართვა ᲣᲤᲠᲝ ᲫᲚᲘᲔᲠᲘᲐ: ღილაკზე დაჭერის შემდეგ
+   ავტომატიკა ითიშება და მომხმარებლის არჩევანი რჩება.
+   ═══════════════════════════════════════════════════════════ */
+(function(){
+  const NIGHT_FROM = 20, NIGHT_TO = 6;   // 20:00 – 06:00
+  let auto = true;
+
+  const btn = $('night');
+  const manual = btn.onclick;            // არსებული ლოგიკა უცვლელი რჩება
+  btn.onclick = function(e){ auto = false; manual.call(btn, e); };
+
+  function shownHour(){
+    try {
+      if (dataset) {
+        const list = dataset.forecast && dataset.forecast.length
+                   ? dataset.forecast : [dataset.current];
+        const c = list[+$('hour').value] || {};
+        const m = String(c.time || '').match(/[T ](\d{1,2}):/);
+        if (m) return +m[1];
+      }
+    } catch(_) {}
+    return new Date().getHours();
+  }
+
+  function sync(){
+    if (!auto) return;
+    const h = shownHour();
+    const want = (h >= NIGHT_FROM || h < NIGHT_TO);
+    if (want !== night) manual.call(btn);   // იმავე ღილაკის ლოგიკა
+  }
+
+  // საათის სლაიდერი
+  $('hour').addEventListener('input', sync);
+
+  // ახალი მონაცემის ჩატვირთვისას
+  const _load = load;
+  load = function(d, i){ _load(d, i); sync(); };
+
+  // კედლის საათის გადასვლა (მონაცემის გარეშე რომ მუშაობდეს)
+  setInterval(sync, 60000);
+  sync();
+})();
 function renderOps(){$('weather-fx-state').textContent=weather.precip===null?'ნალექი: მონაცემი უცნობია':weather.precip>0?(weather.precipType==='snow'?'თოვლი':'წვიმა')+' · '+weather.precip+' მმ/სთ':'ნალექის გარეშე';const o=PotiOps.evaluate(weather);$('op-title').textContent=(mode==='demo'?'DEMO':'DATA')+' / ზღვრები და მოქმედებები';
  const label=(id,item,active)=>{$(id).textContent=!item.known?'უცნობია · პაუზა':item.allowed?(paused?'საერთო პაუზა':active):'შეჩერებულია';$(id).style.color=item.allowed?'#75dfb9':'#ffb18f';};
  label('op-crane',o.cranes,'მუშაობს');label('op-tt',o.cranes,'მოძრაობს');$('tt-reason').textContent=o.cranes.allowed?'მონაცვლეობით 3 ამწესთან ტვირთდება; 2 reach stacker-ი ცლავს და სატვირთოებზე გადატვირთავს':'ჩერდება ამწის ზღვრებზე';label('op-vessel',o.vessel,motion.marineOwner==='dredger'?'BULK ელოდება · NIKO მოძრაობს':motion.vesselProgress>=1?'BULK — Berth 12-ზეა':'BULK → Berth 12 · NIKO ელოდება');
