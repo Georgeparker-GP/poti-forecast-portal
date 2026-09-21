@@ -55442,6 +55442,58 @@ $('mode').onchange=switchMode;$('hour').oninput=useData;$('import').onclick=()=>
 window.addEventListener('message',e=>{if(e.source!==parent||parent===window)return;if(location.protocol!=='file:'&&e.origin!==location.origin)return;if(e.data?.type==='poti-weather'){try{load(e.data.data,e.data.index);}catch(err){$('time').textContent=err.message;}}});try{if(parent!==window)parent.postMessage({type:'poti-3d-ready'},location.origin&&location.origin!=='null'&&location.protocol!=='file:'?location.origin:'*');}catch(e){}
 if(location.protocol==='http:'||location.protocol==='https:')if(parent===window)fetch('data.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('no data');return r.json();}).then(d=>load(d)).catch(()=>{});
 $('export').onclick=exportOBJ;
+
+/* ═══════════════════════════════════════════════════════════
+   ავტომატური ღამის რეჟიმი (პორტალის დამატება)
+   ---------------------------------------------------------
+   საათი ᲜᲐᲩᲕᲔᲜᲔᲑᲘ ᲛᲝᲛᲔᲜᲢᲘᲓᲐᲜ იღება და არა კედლის საათიდან:
+   სლაიდერით ხვალინდელ 02:00-ზე გადასვლისას სცენა ღამისა ხდება.
+   მონაცემის გარეშე ლოკალურ დროს ეყრდნობა.
+   ხელით გადართვა უფრო ძლიერია — ღილაკზე დაჭერის შემდეგ
+   ავტომატიკა ითიშება.
+
+   ⚠ სცენის ახალ ვერსიაზე გადასვლისას ეს ბლოკი ხელახლა უნდა
+     ჩაემატოს — ორიგინალ ფაილში ის არ არის.
+   ═══════════════════════════════════════════════════════════ */
+(function(){
+  const NIGHT_FROM = 20, NIGHT_TO = 6;
+  let auto = true;
+  const btn = $('night');
+  const manual = btn.onclick;
+  btn.onclick = function(e){ auto = false; manual.call(btn, e); };
+
+  function shownHour(){
+    try {
+      if (dataset) {
+        const list = dataset.forecast && dataset.forecast.length
+                   ? dataset.forecast : [dataset.current];
+        const c = list[+$('hour').value] || {};
+        const m = String(c.time || '').match(/[T ](\d{1,2}):/);
+        if (m) return +m[1];
+      }
+    } catch(_) {}
+    return new Date().getHours();
+  }
+  function sync(){
+    if (!auto) return;
+    try {
+      const h = shownHour();
+      const want = (h >= NIGHT_FROM || h < NIGHT_TO);
+      if (want !== night) manual.call(btn);
+    } catch (e) { console.warn('auto-night:', e); }
+  }
+  $('hour').addEventListener('input', sync);
+  const _load = load;
+  load = function(d, i){ _load(d, i); sync(); };
+  // ერთხელ მაშინვე და კიდევ რამდენჯერმე დაყოვნებით — თუ პირველ მომენტში
+  // რამე ჯერ არ იყო მზად, მომდევნო ცდა დაიჭერს. sync იდემპოტენტურია.
+  sync();
+  setTimeout(sync, 800);
+  window.addEventListener('load', () => setTimeout(sync, 300));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) sync(); });
+  setInterval(sync, 60000);
+  console.info('auto-night: on (20:00-06:00)');
+})();
 function renderOps(){$('weather-fx-state').textContent=weather.precip===null?'ნალექი: მონაცემი უცნობია':weather.precip>0?(weather.precipType==='snow'?'თოვლი':'წვიმა')+' · '+weather.precip+' მმ/სთ':'ნალექის გარეშე';const o=PotiOps.evaluate(weather);$('op-title').textContent=(mode==='demo'?'DEMO':'DATA')+' / ზღვრები და მოქმედებები';
  const label=(id,item,active)=>{$(id).textContent=!item.known?'უცნობია · პაუზა':item.allowed?(paused?'საერთო პაუზა':active):'შეჩერებულია';$(id).style.color=item.allowed?'#75dfb9':'#ffb18f';};
  label('op-crane',o.cranes,'მუშაობს');label('op-tt',o.cranes,'მოძრაობს');$('tt-reason').textContent=o.cranes.allowed?'მონაცვლეობით 3 ამწესთან ტვირთდება; 2 reach stacker-ი ცლავს და სატვირთოებზე გადატვირთავს':'ჩერდება ამწის ზღვრებზე';label('op-vessel',o.vessel,motion.marineOwner==='dredger'?'BULK ელოდება · NIKO მოძრაობს':motion.vesselProgress>1+PotiOps.CYCLE.dwell/PotiOps.CYCLE.run?'BULK — ბუქსირებით გასვლა':motion.vesselProgress>=1?'BULK — Berth 12-ზეა':(motion.vesselProgress>1+PotiOps.CYCLE.dwell/PotiOps.CYCLE.run?'BULK — გასვლა / დაბრუნება':'BULK → Berth 12'));
@@ -55555,7 +55607,11 @@ const PAIRS=[
 ['საერთო','Overview'],['ნალექი','Precipitation'],['ზღვარი','Limit'],['ზღვრები','Limits'],
 ['ტალღა','Wave'],['პაუზა','Pause'],['საათი','hour'],['ციკლი','cycle'],
 ['წვიმა','Rain'],['თოვლი','Snow'],['თოვა','Snowfall'],['მმ/სთ','mm/h'],['მ/წმ','m/s'],
-['გემი','Vessel'],['ამწე','Crane'],['ღამე','Night'],['დღე','Day'],['ქარი','Wind']
+['გემი','Vessel'],['ამწე','Crane'],['ღამე','Night'],['დღე','Day'],['ქარი','Wind'],
+// პორტალის დამატება 2026-09-21: ინგლისურ რეჟიმში ქართულად რჩებოდა
+['ხედვა და ხმა','View and sound'],['ამინდის პარამეტრები','Weather parameters'],
+['ბუქსირებით გასვლა','tug-assisted departure'],['-ის ფოტოს მიხედვით',' (based on a photo)'],
+['შემოსავლების სამსახური','Revenue Service']
 ].sort((a,b)=>b[0].length-a[0].length);
 const GEO=/[\u10A0-\u10FF]/;
 function toEn(s){for(const [k,e] of PAIRS)if(s.indexOf(k)>=0)s=s.split(k).join(e);
