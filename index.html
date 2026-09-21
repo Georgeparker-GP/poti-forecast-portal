@@ -433,6 +433,13 @@ header{align-items:flex-start;}
 .wind-key i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-left:5px;}
 @media(max-width:560px){ .wind-key{display:none;} .map-tab{padding:6px 10px;font-size:12px;} }
 
+/* ტალღის ნიშანი — წრე, ქარის ისრისგან განსხვავებული ფორმა */
+.wave-mark svg{display:block;margin:0 auto;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.7));}
+.wave-mark{pointer-events:auto;}
+.fld-toggle{display:inline-flex;gap:10px;font-size:11px;color:var(--sb);}
+.fld-toggle label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;user-select:none;}
+.fld-toggle input{accent-color:var(--tl);margin:0;}
+
 /* ── 3D სცენის მოდალი ── */
 #modal3d{position:fixed;inset:0;z-index:9999;}
 #modal3d[hidden]{display:none;}
@@ -1183,7 +1190,7 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
         <button class="map-tab on" id="tab-rain" role="tab" onclick="setMapMode('rain')">
           <span data-i18n="radar_title">წვიმის რადარი</span></button>
         <button class="map-tab" id="tab-wind" role="tab" onclick="setMapMode('wind')">
-          <span data-i18n="wind_title">ქარის ველი</span></button>
+          <span data-i18n="wind_title">ქარი და ტალღა</span></button>
       </div>
       <p id="map-legend"><span data-i18n="radar_legend">ცოცხალი რადარი · ბოლო ~30 წთ მოძრაობა · წყარო: RainViewer</span></p>
     </div>
@@ -1197,11 +1204,26 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
           <span id="wind-time" class="mono" style="font-size:12px;color:var(--tx);min-width:78px;">--</span>
           <input id="wind-hour" type="range" min="0" max="47" value="0" step="1"
                  oninput="windStop();windShow(+this.value)" style="flex:1;min-width:120px;max-width:340px;accent-color:var(--tl);">
-          <span class="wind-key">
+          <!-- ფენები: ქარი (ისარი) და ტალღა (წრე) — ცალ-ცალკე ირთვება -->
+          <span class="fld-toggle">
+            <label><input type="checkbox" id="fld-wind" checked onchange="fieldToggle()">
+              <svg width="14" height="14" viewBox="-7 -7 14 14"><line x1="0" y1="5" x2="0" y2="-3" stroke="#5ec8b4" stroke-width="2"/><path d="M0 -6L3.5 -1.5L-3.5 -1.5Z" fill="#5ec8b4"/></svg>
+              <span data-i18n="fld_wind">ქარი</span></label>
+            <label><input type="checkbox" id="fld-wave" checked onchange="fieldToggle()">
+              <svg width="14" height="14" viewBox="-7 -7 14 14"><circle r="5" fill="#4aa3ff"/></svg>
+              <span data-i18n="fld_wave">ტალღა</span></label>
+          </span>
+          <span class="wind-key" id="key-wind">
             <i style="background:#5ec8b4"></i>&lt;10
             <i style="background:#f0c24f"></i>10–17
             <i style="background:#f08a3c"></i>17–21.5
-            <i style="background:#ef5b5b"></i>≥21.5
+            <i style="background:#ef5b5b"></i>≥21.5 <span style="opacity:.7">მ/წმ</span>
+          </span>
+          <span class="wind-key" id="key-wave">
+            <i style="background:#7cc4ff;border-radius:50%"></i>&lt;0.5
+            <i style="background:#4aa3ff;border-radius:50%"></i>0.5–1
+            <i style="background:#f0c24f;border-radius:50%"></i>1–1.5
+            <i style="background:#ef5b5b;border-radius:50%"></i>≥1.5 <span style="opacity:.7">მ</span>
           </span>
         </div>
         <div id="rain-ctrl" style="display:flex;align-items:center;gap:10px;">
@@ -2557,8 +2579,10 @@ const I18N = {
   th_status:     {geo:'სტატუსი', eng:'Status'},
   chart_title:   {geo:'48-საათიანი ტრენდი', eng:'48-Hour Trend'},
   radar_title:   {geo:'წვიმის რადარი', eng:'Rain Radar'},
-  wind_title:    {geo:'ქარის ველი', eng:'Wind Field'},
-  wind_legend:   {geo:'მოდელის ქარი 10 მ-ზე · 48 სთ · წყარო: Open-Meteo', eng:'Model wind at 10 m · 48 h · source: Open-Meteo'},
+  wind_title:    {geo:'ქარი და ტალღა', eng:'Wind & Waves'},
+  fld_wind:      {geo:'ქარი', eng:'Wind'},
+  fld_wave:      {geo:'ტალღა', eng:'Waves'},
+  wind_legend:   {geo:'მოდელის ველი · 48 სთ · წყარო: Open-Meteo (ქარი 10 მ, ტალღა Marine)', eng:'Model field · 48 h · source: Open-Meteo (wind 10 m, Marine waves)'},
   radar_legend:  {geo:'ცოცხალი რადარი · ბოლო ~30 წთ მოძრაობა · წყარო: RainViewer', eng:'Live radar · last ~30 min movement · source: RainViewer'},
   radar_nodata:  {geo:'⚠️ ამ რეგიონში მიწისზედა რადარი შეზღუდულია — სატელიტ-შეფასება', eng:'⚠️ Ground radar limited in this region — satellite estimate'},
   radar_cov_off: {geo:'დაფარვა: გამორთ.', eng:'Coverage: off'},
@@ -2963,6 +2987,97 @@ loadData();
   // ანიმაციისას ყოველ წამში 28 მარკერის წაშლა-შექმნა ციმციმს იწვევდა.
   let windMarkers = [];
 
+  /* ═══ ტალღის ფენა ═══
+     წყარო: Open-Meteo Marine. ცალკე ბადე — მხოლოდ ზღვაზე და ქარის
+     ისრებს შორის ნახევარი ნაბიჯით წანაცვლებული, რომ ნიშნები
+     ერთმანეთს არ გადაეფაროს.
+
+     ⚠ ეს მოდელის ტალღაა. კალიბრაციამ აჩვენა, რომ საზღვაო მოდელები
+       ფოთთან MTA-ს გაზომვას ᲡᲘᲡᲢᲔᲛᲣᲠᲐᲓ ᲩᲐᲛᲝᲠᲩᲔᲑᲐ (43 შედარებაზე
+       საშ. 2.2×, 42/43 დაბლა). ფენის ღირებულება მიმართულებასა და
+       სივრცით განაწილებაშია — საიდან მოდის ტალღა და სად იზრდება —
+       და არა აბსოლუტურ სიმაღლეში.
+
+     ნაპირთან ახლოს მოდელი ხშირად null-ს აბრუნებს (ბადის უჯრა
+     ხმელეთს ემთხვევა) — ასეთი წერტილი უბრალოდ გამოტოვდება. */
+  const WAVE_LATS = [41.88, 42.15, 42.42];
+  const WAVE_LONS = [40.75, 41.05, 41.35, 41.58];
+  let waveData = null, waveFetchedAt = 0, waveMarkers = [];
+  let showWind = true, showWave = true;
+
+  async function fetchWave(){
+    if (waveData && (Date.now() - waveFetchedAt) < WIND_TTL) return waveData;
+    const lat = [], lon = [];
+    WAVE_LATS.forEach(a => WAVE_LONS.forEach(b => { lat.push(a); lon.push(b); }));
+    const url = 'https://marine-api.open-meteo.com/v1/marine'
+      + `?latitude=${lat.join(',')}&longitude=${lon.join(',')}`
+      + '&hourly=wave_height,wave_direction,wave_period'
+      + '&timezone=Asia%2FTbilisi&forecast_days=3';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    let j = await r.json();
+    if (!Array.isArray(j)) j = [j];
+    waveData = j; waveFetchedAt = Date.now();
+    return waveData;
+  }
+
+  // ფერი — პორტალის ტალღის ზღვრით (THR.wave = 1.5 მ)
+  function waveColor(h){
+    return h >= THR.wave ? '#ef5b5b'
+         : h >= 1.0      ? '#f0c24f'
+         : h >= 0.5      ? '#4aa3ff'
+         :                 '#7cc4ff';
+  }
+
+  // წრე სიმაღლით შიგნით + მიმართულების ისრისპირი გარეთ.
+  // ფორმა განზრახ განსხვავდება ქარის ხაზოვანი ისრისგან.
+  function waveIcon(h, dirFrom){
+    const to  = ((dirFrom || 0) + 180) % 360;
+    const col = waveColor(h);
+    const svg = `<svg width="38" height="38" viewBox="-19 -19 38 38">
+      <g style="transform:rotate(${to}deg)"><path d="M0 -18 L5 -10 L-5 -10Z" fill="${col}"/></g>
+      <circle r="10.5" fill="${col}" fill-opacity=".92" stroke="#0b1620" stroke-width="1.2"/>
+      <text y="3.4" text-anchor="middle" font-family="JetBrains Mono,monospace"
+            font-size="9" font-weight="700" fill="#0b1620">${h.toFixed(1)}</text></svg>`;
+    return L.divIcon({ className: 'wave-mark', html: svg, iconSize: [38, 38], iconAnchor: [19, 19] });
+  }
+
+  function drawWaves(timeKey){
+    if (!waveData || !windLayer) return;
+    const ENG = currentLang === 'eng';
+    waveData.forEach((pt, k) => {
+      const h = pt.hourly;
+      const i = h.time.indexOf(timeKey);          // იგივე საათი, რაც ქარზე
+      const v = i >= 0 ? h.wave_height[i] : null;
+      const d = i >= 0 ? h.wave_direction[i] : null;
+      const per = i >= 0 ? h.wave_period[i] : null;
+      if (v == null || d == null) {               // ნაპირთან null — გამოტოვება
+        if (waveMarkers[k]) { windLayer.removeLayer(waveMarkers[k]); waveMarkers[k] = null; }
+        return;
+      }
+      const icon = waveIcon(v, d);
+      const tip  = ENG ? `Wave ${v.toFixed(2)} m · ${per!=null?per.toFixed(1):'--'} s · from ${toCompass(d)}`
+                       : `ტალღა ${v.toFixed(2)} მ · ${per!=null?per.toFixed(1):'--'} წმ · ${toCompass(d)}-დან`;
+      if (waveMarkers[k]) {
+        waveMarkers[k].setIcon(icon); waveMarkers[k].setTooltipContent(tip);
+      } else {
+        waveMarkers[k] = L.marker([pt.latitude, pt.longitude], {
+          icon, pane: 'windPane', interactive: true, keyboard: false
+        }).bindTooltip(tip, { direction: 'top', offset: [0, -14] }).addTo(windLayer);
+      }
+    });
+  }
+
+  window.fieldToggle = function(){
+    showWind = document.getElementById('fld-wind').checked;
+    showWave = document.getElementById('fld-wave').checked;
+    const kw = document.getElementById('key-wind'), kv = document.getElementById('key-wave');
+    if (kw) kw.style.display = showWind ? '' : 'none';
+    if (kv) kv.style.display = showWave ? '' : 'none';
+    windMarkers.forEach(m => m && (showWind ? m.setOpacity(1) : m.setOpacity(0)));
+    waveMarkers.forEach(m => m && (showWave ? m.setOpacity(1) : m.setOpacity(0)));
+  };
+
   window.windShow = function(offset){
     if (!windData || !radarMap) return;
     const times = windData[0].hourly.time;
@@ -2995,6 +3110,10 @@ loadData();
     });
 
     const t = times[windIdx] || '';
+    drawWaves(t);
+    // ფენის გამორთვა ანიმაციისას უნდა დარჩეს — ახალი ხატულა ხილვადობას არ აბრუნებს
+    windMarkers.forEach(m => m && m.setOpacity(showWind ? 1 : 0));
+    waveMarkers.forEach(m => m && m.setOpacity(showWave ? 1 : 0));
     const el = document.getElementById('wind-time');
     if (el) {
       const day = t.slice(8,10) + '.' + t.slice(5,7);
@@ -3064,7 +3183,9 @@ loadData();
       try {
         const el = document.getElementById('wind-time');
         if (el && !windData) el.textContent = ENG ? 'loading…' : 'იტვირთება…';
-        await fetchWind();
+        // პარალელურად; ტალღის ჩავარდნა ქარის ფენას არ უნდა შეეხოს
+        const [wr] = await Promise.allSettled([fetchWind(), fetchWave()]);
+        if (wr.status === 'rejected') throw wr.reason;
         const sl = document.getElementById('wind-hour');
         if (sl && windData) {
           const tt = windData[0].hourly.time;
@@ -3078,7 +3199,7 @@ loadData();
       }
     } else {
       windStop();
-      if (windLayer) { radarMap.removeLayer(windLayer); windLayer = null; windMarkers = []; }
+      if (windLayer) { radarMap.removeLayer(windLayer); windLayer = null; windMarkers = []; waveMarkers = []; }
       if (rp) rp.style.display = '';
       radarPlaying = _rainWasPlaying;
     }
