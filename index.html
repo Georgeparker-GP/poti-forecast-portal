@@ -1192,9 +1192,11 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:10px;">
         <!-- ქარის ველის მართვა: საათის სლაიდერი + ფერების ლეგენდა -->
         <div id="wind-ctrl" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;flex:1;min-width:0;">
+          <button id="wind-play" onclick="toggleWindPlay()" title="Play / Pause"
+                  style="background:var(--sf);border:1px solid var(--br);color:var(--tx);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:13px;min-width:38px;">▶</button>
           <span id="wind-time" class="mono" style="font-size:12px;color:var(--tx);min-width:78px;">--</span>
           <input id="wind-hour" type="range" min="0" max="47" value="0" step="1"
-                 oninput="windShow(+this.value)" style="flex:1;min-width:120px;max-width:340px;accent-color:var(--tl);">
+                 oninput="windStop();windShow(+this.value)" style="flex:1;min-width:120px;max-width:340px;accent-color:var(--tl);">
           <span class="wind-key">
             <i style="background:#5ec8b4"></i>&lt;10
             <i style="background:#f0c24f"></i>10–17
@@ -2957,6 +2959,10 @@ loadData();
     return i >= 0 ? i : 0;
   }
 
+  // მარკერები ერთხელ იქმნება და შემდეგ მხოლოდ ხატულა იცვლება.
+  // ანიმაციისას ყოველ წამში 28 მარკერის წაშლა-შექმნა ციმციმს იწვევდა.
+  let windMarkers = [];
+
   window.windShow = function(offset){
     if (!windData || !radarMap) return;
     const times = windData[0].hourly.time;
@@ -2967,24 +2973,26 @@ loadData();
       radarMap.createPane('windPane');
       radarMap.getPane('windPane').style.zIndex = 225;   // რადარის ზემოთ, წარწერების ქვემოთ
     }
-    if (windLayer) radarMap.removeLayer(windLayer);
-    windLayer = L.layerGroup();
+    if (!windLayer) { windLayer = L.layerGroup().addTo(radarMap); windMarkers = []; }
 
     const ENG = currentLang === 'eng';
-    windData.forEach(pt => {
+    windData.forEach((pt, k) => {
       const h = pt.hourly;
       const v = h.wind_speed_10m[windIdx], d = h.wind_direction_10m[windIdx];
       const g = h.wind_gusts_10m[windIdx];
       if (v == null || d == null) return;
-      L.marker([pt.latitude, pt.longitude], {
-        icon: arrowIcon(v, d), pane: 'windPane', interactive: true, keyboard: false
-      }).bindTooltip(
-        (ENG ? `Wind ${v.toFixed(1)} · gust ${g!=null?g.toFixed(1):'--'} m/s · ${toCompass(d)}`
-             : `ქარი ${v.toFixed(1)} · ქროლვა ${g!=null?g.toFixed(1):'--'} მ/წმ · ${toCompass(d)}`),
-        { direction: 'top', offset: [0, -12] }
-      ).addTo(windLayer);
+      const icon = arrowIcon(v, d);
+      const tip  = ENG ? `Wind ${v.toFixed(1)} · gust ${g!=null?g.toFixed(1):'--'} m/s · ${toCompass(d)}`
+                       : `ქარი ${v.toFixed(1)} · ქროლვა ${g!=null?g.toFixed(1):'--'} მ/წმ · ${toCompass(d)}`;
+      if (windMarkers[k]) {
+        windMarkers[k].setIcon(icon);
+        windMarkers[k].setTooltipContent(tip);
+      } else {
+        windMarkers[k] = L.marker([pt.latitude, pt.longitude], {
+          icon, pane: 'windPane', interactive: true, keyboard: false
+        }).bindTooltip(tip, { direction: 'top', offset: [0, -12] }).addTo(windLayer);
+      }
     });
-    windLayer.addTo(radarMap);
 
     const t = times[windIdx] || '';
     const el = document.getElementById('wind-time');
@@ -2992,6 +3000,36 @@ loadData();
       const day = t.slice(8,10) + '.' + t.slice(5,7);
       el.textContent = (offset ? `${day} ` : (ENG ? 'now ' : 'ახლა ')) + t.slice(11,16);
     }
+  };
+
+  /* ── ანიმაცია: ყოველ ~0.9 წამში +1 საათი ──
+     ბოლოს მოკლე პაუზა და თავიდან — რომ ციკლის დასრულება ჩანდეს. */
+  const WIND_STEP_MS = 900, WIND_END_PAUSE = 3;
+  let windTimer = null, _endWait = 0;
+
+  window.windStop = function(){
+    if (windTimer) { clearInterval(windTimer); windTimer = null; }
+    const b = document.getElementById('wind-play'); if (b) b.textContent = '▶';
+  };
+
+  window.toggleWindPlay = function(){
+    if (windTimer) { windStop(); return; }
+    const sl = document.getElementById('wind-hour');
+    if (!sl || !windData) return;
+    const b = document.getElementById('wind-play'); if (b) b.textContent = '⏸';
+    _endWait = 0;
+    windTimer = setInterval(() => {
+      const max = +sl.max;
+      let v = +sl.value;
+      if (v >= max) {
+        if (++_endWait < WIND_END_PAUSE) return;   // ბოლო კადრზე შეყოვნება
+        _endWait = 0; v = 0;
+      } else {
+        v += 1;
+      }
+      sl.value = v;
+      windShow(v);
+    }, WIND_STEP_MS);
   };
 
   window.setMapMode = async function(mode){
@@ -3028,6 +3066,10 @@ loadData();
         if (el && !windData) el.textContent = ENG ? 'loading…' : 'იტვირთება…';
         await fetchWind();
         const sl = document.getElementById('wind-hour');
+        if (sl && windData) {
+          const tt = windData[0].hourly.time;
+          sl.max = Math.max(1, Math.min(47, tt.length - 1 - windNowIndex(tt)));
+        }
         windShow(sl ? +sl.value : 0);
       } catch (e) {
         console.warn('wind fetch failed', e);
@@ -3035,7 +3077,8 @@ loadData();
         if (el) el.textContent = ENG ? 'unavailable' : 'მიუწვდომელია';
       }
     } else {
-      if (windLayer) { radarMap.removeLayer(windLayer); windLayer = null; }
+      windStop();
+      if (windLayer) { radarMap.removeLayer(windLayer); windLayer = null; windMarkers = []; }
       if (rp) rp.style.display = '';
       radarPlaying = _rainWasPlaying;
     }
