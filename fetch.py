@@ -102,7 +102,7 @@ YR_NO_INTERVAL      = 1   # yr.no ყოველ საათში გან�
 THRESHOLDS = {
     "wind_barge":     10.0,   # ბორნის მანევრირება შეზღუდულია
     "wind_vessel":    17.0,   # გემების მანევრირება შეზღუდულია
-    "wind_suspended": 21.5,   # ამწეები + გემების გასვლა შეჩერებულია
+    "wind_suspended": 21.5,   # ამწეები + გემების მანევრირება შეჩერებულია
     "wave_height":     1.50,  # ტალღა → შეჩერება. დაწეულია 2.0-დან განზრახ:
                               # დადასტურებულია, რომ ტალღის კონსენსუსი
                               # სისტემატურად ანაკლებს (იხ. observations.md).
@@ -1498,6 +1498,11 @@ def _compute_status(wind, gusts, wave, vis, vis_min=None):
 STATUS_EMOJI = {"operational": "✅", "barge": "⚠️", "vessel": "🟠", "suspended": "🚨",
                 # უკუთავსებადობა: ძველი cache-ის ჩანაწერები
                 "warning": "⚠️"}
+STATUS_EN    = {"operational": "Standard operations",
+                "barge":       "Barge manoeuvring restricted",
+                "vessel":      "Vessel manoeuvring restricted",
+                "suspended":   "Operations suspended",
+                "warning":     "Caution — yellow zone"}
 STATUS_KA    = {"operational": "სტანდარტული რეჟიმი",
                 "barge":       "ბორნის მანევრირება შეზღუდულია",
                 "vessel":      "გემების მანევრირება შეზღუდულია",
@@ -1556,32 +1561,37 @@ def send_telegram(output: dict):
         return
 
     c   = output["current"]
-    s   = output["summary_24h"]
     now = output["meta"]["last_update"]
     em  = STATUS_EMOJI[new_status]
 
-    # შეტყობინების ტექსტი
-    text = (
-        f"{em} <b>ფოთის პორტი — სტატუსის ცვლილება</b>\n"
-        # ⚠ 2026-09-19: ძველი სტატუსი და ისარი მოხსნილია — სათაური
-        #   ისედაც ამბობს, რომ ცვლილებაა, და ცვლას მხოლოდ ახალი
-        #   მდგომარეობა აინტერესებს.
-        f"{em} <b>{STATUS_KA[new_status]}</b>\n"
-        f"─────────────────\n"
-        f"🕐 {now}\n"
-        f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
-        f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
-        f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
-        f"{_wave_range_str(c)}"
-        f"{' <i>(შეფასება — საზღვაო წყარო მიუწვდომელია)</i>' if c.get('wave_estimated') else ''}"
-        f" | პერიოდი: {c['wave_period']} წმ\n"
-        # Copernicus-ის ცალკე სტრიქონი და „შეჩერება 48h“ მოხსნილია
-        # 2026-09-19: შეტყობინება მიმდინარე ვითარებაზეა, არა სტატისტიკაზე.
-        + _vis_line(c)
-    )
+    # ⚠ 2026-09-19: ძველი სტატუსი და ისარი მოხსნილია; Copernicus-ის
+    #   სტრიქონი და „შეჩერება 48h“ — ასევე. ჭექა-ქუხილი რჩება.
+    def _body(lang):
+        en = (lang == "en")
+        est = ""
+        if c.get("wave_estimated"):
+            est = (" <i>(estimated — marine source unavailable)</i>" if en
+                   else " <i>(შეფასება — საზღვაო წყარო მიუწვდომელია)</i>")
+        head = "Poti Port — status change" if en else "ფოთის პორტი — სტატუსის ცვლილება"
+        st   = (STATUS_EN if en else STATUS_KA)[new_status]
+        w_lbl, g_lbl, d_lbl, u = (("Wind", "gust", "dir", "m/s") if en
+                                  else ("ქარი", "დაქროლვა", "მიმართ", "მ/წმ"))
+        wv_lbl, p_lbl, m, sec = (("Wave", "period", "m", "s") if en
+                                 else ("ტალღა", "პერიოდი", "მ", "წმ"))
+        return (
+            f"{em} <b>{head}</b>\n"
+            f"{em} <b>{st}</b>\n"
+            f"─────────────────\n"
+            f"🕐 {now}\n"
+            f"💨 {w_lbl}: <b>{c['wind_speed']} {u}</b> | {g_lbl}: <b>{c['wind_gusts']} {u}</b> | "
+            f"{d_lbl}: <b>{_compass_full(c['wind_direction'], lang)}</b>\n"
+            f"🌊 {wv_lbl}: <b>{c['wave_height']} {m}</b>{_wave_range_str(c, lang)}{est}"
+            f" | {p_lbl}: {c['wave_period']} {sec}\n"
+            + _vis_line(c, lang)
+            + _tstorm_str(c, output, lang)
+        )
 
-    # ჭექა-ქუხილი რჩება — ის დამოუკიდებელი სიგნალია და ციფრებში არ ჩანს.
-    text += _tstorm_str(c, output)
+    text = _with_english(_body("ka"), _body("en"))
 
     # ⚠ `alerts` მოხსნილია 2026-09-19: ისინი იმავე რიცხვებს იმეორებდნენ,
     #   რაც ზემოთ უკვე წერია („ქარის სიჩქარე 10.3“ = „დაქროლვა 10.3“),
@@ -1616,7 +1626,7 @@ PRECIP_HEDGE_PCT = 50
 PRECIP_HEDGE_RATIO = 0.8
 
 
-def _tstorm_str(c: dict, output: dict = None) -> str:
+def _tstorm_str(c: dict, output: dict = None, lang: str = "ka") -> str:
     """ჭექა-ქუხილის გაფრთხილება — ორი დამოუკიდებელი წყაროდან.
 
     ოპერაციული კონტექსტი: ამწე ეზოს ყველაზე მაღალი ლითონის კონსტრუქციაა.
@@ -1645,10 +1655,12 @@ def _tstorm_str(c: dict, output: dict = None) -> str:
     #   მატებდა. MTA რჩება: სინოპტიკოსის დადასტურება მოდელისგან
     #   განსხვავებული წონის სიგნალია.
     suffix = " (MTA)" if mta_hit else ""
+    if lang == "en":
+        return f"⚡ <b>Thunderstorm expected</b>{suffix}\n"
     return f"⚡ <b>მოსალოდნელია ჭექა-ქუხილი</b>{suffix}\n"
 
 
-def _vis_line(c: dict) -> str:
+def _vis_line(c: dict, lang: str = "ka") -> str:
     """ხილვადობის სტრიქონი — ᲛᲮᲝᲚᲝᲓ ᲛᲐᲨᲘᲜ, ᲠᲝᲪᲐ ᲛᲜᲘᲨᲕᲜᲔᲚᲝᲕᲐᲜᲘᲐ.
 
     ⚠ 2026-09-17: ადრე ყოველ შეტყობინებაში იწერებოდა — „19.47 კმ“
@@ -1665,14 +1677,19 @@ def _vis_line(c: dict) -> str:
     if eff is None or eff > VIS_NOTE_KM:
         return ""
     m = int(round(eff * 1000))
+    en = (lang == "en")
     if eff <= THRESHOLDS["vis_cranes"]:
-        tag = " — ამწე ჩერდება"
+        tag = " — cranes stop" if en else " — ამწე ჩერდება"
     elif eff <= THRESHOLDS["vis_vessel"]:
-        tag = " — გემების მანევრირება შეზღუდულია"
+        tag = (" — vessel manoeuvring restricted" if en
+               else " — გემების მანევრირება შეზღუდულია")
     else:
-        tag = " — ნისლი ახლოვდება"
-    extra = (f" <i>(კონსენსუსი {v} კმ)</i>"
-             if v is not None and mn is not None and mn < v * 0.7 else "")
+        tag = " — fog developing" if en else " — ნისლი ახლოვდება"
+    show_cons = v is not None and mn is not None and mn < v * 0.7
+    if en:
+        extra = f" <i>(consensus {v} km)</i>" if show_cons else ""
+        return f"👁 Visibility: <b>{m} m</b>{tag}{extra}\n"
+    extra = f" <i>(კონსენსუსი {v} კმ)</i>" if show_cons else ""
     return f"👁 ხილვადობა: <b>{m} მ</b>{tag}{extra}\n"
 
 
@@ -1714,7 +1731,7 @@ def _cop_str(c: dict) -> str:
     return f"\n   └ Copernicus (2.5 კმ): <b>{cop} მ</b>"
 
 
-def _wave_range_str(c: dict) -> str:
+def _wave_range_str(c: dict, lang: str = "ka") -> str:
     """ტალღის დიაპაზონი, როცა წყაროები საგრძნობლად არ თანხმდებიან.
 
     კონსენსუსი შეწონილი საშუალოა, რაც არითმეტიკულად ყოველთვის ანაკლებს
@@ -1728,11 +1745,27 @@ def _wave_range_str(c: dict) -> str:
     mx = c.get("wave_max") or 0
     if h < 0.3 or mx <= h * 1.2:      # უმნიშვნელო ან თანხმობა კარგია
         return ""
-    return f" <i>(მაქს. {mx} მ)</i>"
+    return f" <i>(max {mx} m)</i>" if lang == "en" else f" <i>(მაქს. {mx} მ)</i>"
+
+
+# ═══ ნალექის შკალა — ᲞᲝᲠᲢᲐᲚᲘᲡ (index.html → rainTxt) ᲘᲓᲔᲜᲢᲣᲠᲘ ═══
+# ⚠ 2026-09-21: Telegram ძველ შკალაზე დარჩენილიყო (1/5/10/20, „ინტენსიური“),
+#   პორტალი კი 09-06-ზე შეთანხმებულზეა (0.5/2.5/7/18.5, „კოკისპირული“).
+#   შედეგად 3.7 მმ/სთ Telegram-ში „მსუბუქი“ იყო, პორტალზე — „ზომიერი“.
+#   შკალა ახლა ერთ ადგილასაა და ორივე ენას ემსახურება.
+#   ზედა ზღვრები (7 და 18.5) ფოთის რეჟიმზეა მორგებული და არა WMO-ს 10/50-ზე.
+PRECIP_SCALE = [
+    # (ზედა ზღვარი მმ/სთ, ქართული, ინგლისური)
+    (0.5,  "უმნიშვნელო ნალექი",   "slight precipitation"),
+    (2.5,  "მსუბუქი წვიმა",       "light rain"),
+    (7.0,  "ზომიერი წვიმა",       "moderate rain"),
+    (18.5, "ძლიერი წვიმა",        "heavy rain"),
+    (None, "კოკისპირული წვიმა ⚠️", "torrential rain ⚠️"),
+]
 
 
 def _precip_label(mm: float, sources: int = None, agreement: int = None,
-                  total: int = None) -> str:
+                  total: int = None, lang: str = "ka") -> str:
     """მმ/სთ მნიშვნელობას ადამიანისთვის გასაგებ აღწერად გარდაქმნის.
 
     sources   — რამდენი მოდელი "ხედავს" ამ ნალექს (≥0.1 მმ).
@@ -1749,14 +1782,16 @@ def _precip_label(mm: float, sources: int = None, agreement: int = None,
     2026-09-17: ეკრანზე აბსტრაქტული „თანხმობა %“ შეიცვალა კონკრეტული
     „5/7 წყარო“-თი — იგივე ინფორმაცია, ახსნის გარეშე.
     """
+    en = (lang == "en")
     if mm is None: return "—"
-    if mm < 0.1:     return "მოსალოდნელი არ არის"   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
+    if mm < 0.1:                                   # < 0.1 მმ — ოპერაციულად უმნიშვნელო
+        return "none expected" if en else "მოსალოდნელი არ არის"
 
-    if   mm < 1.0:   desc = "უმნიშვნელო ნალექი"
-    elif mm < 5.0:   desc = "მსუბუქი წვიმა"
-    elif mm < 10.0:  desc = "ზომიერი წვიმა"
-    elif mm < 20.0:  desc = "ძლიერი წვიმა"
-    else:            desc = "ინტენსიური წვიმა ⚠️"
+    desc = None
+    for top, ka, eng in PRECIP_SCALE:
+        if top is None or mm < top:
+            desc = eng if en else ka
+            break
 
     # ⚠ 2026-09-18: თანაფარდობა (“2/5 წყარო”) მოხსნილია Telegram-იდან.
     #   შეტყობინება მოკლე უნდა იყოს და “შესაძლებელია” უკვე ყველაფერს
@@ -1787,6 +1822,8 @@ def _precip_label(mm: float, sources: int = None, agreement: int = None,
     if not hedge and agreement is None and total in (None, 0):
         hedge = sources is not None and sources <= 1
 
+    if en:
+        return f"{mm} mm — possible {desc}" if hedge else f"{mm} mm — {desc}"
     if hedge:
         return f"{mm} მმ — შესაძლებელია {desc}{pct}"
     return f"{mm} მმ — {desc}{pct}"
@@ -1809,55 +1846,57 @@ def send_digest_telegram(output: dict):
     em  = STATUS_EMOJI.get(c.get("status"), "ℹ️")
     now_str = output["meta"]["last_update"]
 
-    # ⚠ გამოსახულება ᲪᲐᲚᲙᲔ ᲪᲕᲚᲐᲓᲨᲘ: f-string-ის ფიგურულ ფრჩხილებში
-    #   ხაზის გადატანა მხოლოდ Python 3.12+-ში მუშაობს (PEP 701).
-    #   runner-ზე 3.11-ია და ეს SyntaxError-ს იძლეოდა.
-    _p_lbl = _precip_label(c['precipitation'], c.get('precip_sources'),
-                           c.get('precip_agreement'), c.get('precip_total'))
-    text = (
-        f"{em} <b>ფოთის პორტი — მიმდინარე მეტეო-მონაცემები</b>\n"
-        f"🕐 {now_str}\n"
-        f"─────────────────\n"
-        f"💨 ქარი: <b>{c['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{c['wind_gusts']} მ/წმ</b> | "
-        f"მიმართ: <b>{_compass_full(c['wind_direction'])}</b>\n"
-        f"🌊 ტალღა: <b>{c['wave_height']} მ</b>"
-        f"{_wave_range_str(c)}"
-        f"{' <i>(შეფასება)</i>' if c.get('wave_estimated') else ''}"
-        # ⚠ 2026-09-19: Copernicus-ის ცალკე სტრიქონი მოხსნილია —
-        #   ის კონსენსუსში უკვე შედის და ტექსტს მეორე რიცხვს ამატებდა.
-        f"\n"
-        f"🌡 ჰაერი: <b>{c['air_temp']}°C</b>"
-        + (f" <i>(იგრძნობა {c['feels_like']}°C)</i>"
-           if c.get('feels_like') is not None and c.get('air_temp') is not None
-           and abs(c['feels_like'] - c['air_temp']) >= 2 else "")
-        + "\n"
-        f"🌧 ნალექი: <b>{_p_lbl}</b>\n"
-        # 24სთ ჯამი მოხსნილია 2026-09-17: შეტყობინება მიმდინარე
-        # ვითარებაზეა და დღიური ჯამი მას ხმაურს მატებდა.
-        + _vis_line(c)
-        + f"სტატუსი: <b>{STATUS_KA.get(c.get('status'), c.get('status'))}</b>\n"
-    )
-    # ⚠ 2026-09-19: `alerts` მოხსნილია — ისინი იმავე რიცხვებს იმეორებდნენ,
-    #   რაც ზემოთ უკვე წერია („ქარის სიჩქარე 10.3“ = „დაქროლვა 10.3“),
-    #   ხოლო სტატუსი მიზეზს ისედაც ასახელებს.
-
     next_hours = fc[idx + 1 : idx + 1 + DIGEST_INTERVAL_HOURS]
-    if next_hours:
-        text += "─────────────────\n<b>მოსალოდნელი მომდევნო 3 საათი:</b>\n"
-        for h in next_hours:
-            t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
-            hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
-            temp_str = f"{h['air_temp']}°C, " if h.get("air_temp") is not None else ""
-            rain_str = _precip_label(h.get("precipitation", 0), h.get("precip_sources"),
-                                       h.get("precip_agreement"), h.get("precip_total"))
-            text += (
-                f"{hem} {t_label} — {temp_str}ქარი {h['wind_speed']} მ/წმ, "
-                f"ტალღა {h['wave_height']} მ\n"
-                f"     🌧 {rain_str}\n"
-            )
 
-    text += _tstorm_str(c, output)
-    text += f"─────────────────\n{PORTAL_URL}"
+    # ⚠ f-string-ის ფრჩხილებში ხაზის გადატანა მხოლოდ Python 3.12+-შია
+    #   (PEP 701); runner-ზე 3.11-ია. ამიტომ გამოსახულებები ცვლადებშია.
+    def _body(lang):
+        en = (lang == "en")
+        u, m = ("m/s", "m") if en else ("მ/წმ", "მ")
+        p_lbl = _precip_label(c['precipitation'], c.get('precip_sources'),
+                              c.get('precip_agreement'), c.get('precip_total'), lang)
+        st = (STATUS_EN if en else STATUS_KA).get(c.get('status'), c.get('status'))
+        feels = ""
+        if (c.get('feels_like') is not None and c.get('air_temp') is not None
+                and abs(c['feels_like'] - c['air_temp']) >= 2):
+            feels = (f" <i>(feels like {c['feels_like']}°C)</i>" if en
+                     else f" <i>(იგრძნობა {c['feels_like']}°C)</i>")
+        est = (" <i>(estimated)</i>" if en else " <i>(შეფასება)</i>") if c.get('wave_estimated') else ""
+        t = (
+            f"{em} <b>{'Poti Port — current weather' if en else 'ფოთის პორტი — მიმდინარე მეტეო-მონაცემები'}</b>\n"
+            f"🕐 {now_str}\n"
+            f"─────────────────\n"
+            f"💨 {'Wind' if en else 'ქარი'}: <b>{c['wind_speed']} {u}</b> | "
+            f"{'gust' if en else 'დაქროლვა'}: <b>{c['wind_gusts']} {u}</b> | "
+            f"{'dir' if en else 'მიმართ'}: <b>{_compass_full(c['wind_direction'], lang)}</b>\n"
+            f"🌊 {'Wave' if en else 'ტალღა'}: <b>{c['wave_height']} {m}</b>"
+            f"{_wave_range_str(c, lang)}{est}\n"
+            f"🌡 {'Air' if en else 'ჰაერი'}: <b>{c['air_temp']}°C</b>{feels}\n"
+            f"🌧 {'Precip' if en else 'ნალექი'}: <b>{p_lbl}</b>\n"
+            + _vis_line(c, lang)
+            + f"{'Status' if en else 'სტატუსი'}: <b>{st}</b>\n"
+        )
+        if next_hours:
+            t += ("─────────────────\n<b>"
+                  + ("Next 3 hours:" if en else "მოსალოდნელი მომდევნო 3 საათი:")
+                  + "</b>\n")
+            for h in next_hours:
+                t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
+                hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
+                temp_str = f"{h['air_temp']}°C, " if h.get("air_temp") is not None else ""
+                rain_str = _precip_label(h.get("precipitation", 0), h.get("precip_sources"),
+                                         h.get("precip_agreement"), h.get("precip_total"), lang)
+                t += (
+                    f"{hem} {t_label} — {temp_str}{'wind' if en else 'ქარი'} {h['wind_speed']} {u}, "
+                    f"{'wave' if en else 'ტალღა'} {h['wave_height']} {m}\n"
+                    f"     🌧 {rain_str}\n"
+                )
+        t += _tstorm_str(c, output, lang)
+        return t
+
+    # ინგლისური ბლოკი ჭექა-ქუხილის შემდეგ, ბმული — ბოლოში
+    text = _with_english(_body("ka"), _body("en"),
+                         tail=f"─────────────────\n{PORTAL_URL}")
     _send_telegram_text(text, label="Digest")
 
 
@@ -1987,28 +2026,44 @@ def send_squall_alert(output: dict):
     t_label = target_time[11:16] if len(target_time) >= 16 else target_time
     now_str = output["meta"]["last_update"]
 
-    # კრიტერიუმების ახსნა
-    crits = []
-    crits.append(f"💨 Gust Factor {squall['gust_factor']} მ/წმ (≥{SQUALL_GUST_FACTOR})")
-    if squall["crit2"]:
-        crits.append(f"⬆️ Delta T +{squall['delta']} მ/წმ ნახტომი (≥{SQUALL_DELTA})")
-    if squall["crit4"]:
-        crits.append(f"🌧 კონვექცია: {squall['p_next']} მმ/სთ (≥{SQUALL_PRECIP})")
+    def _body(lang):
+        en = (lang == "en")
+        u = "m/s" if en else "მ/წმ"
+        crits = [f"💨 Gust Factor {squall['gust_factor']} {u} (≥{SQUALL_GUST_FACTOR})"]
+        if squall["crit2"]:
+            crits.append(f"⬆️ Delta T +{squall['delta']} {u} "
+                         f"{'jump' if en else 'ნახტომი'} (≥{SQUALL_DELTA})")
+        if squall["crit4"]:
+            crits.append(f"🌧 {'Convection' if en else 'კონვექცია'}: {squall['p_next']} "
+                         f"{'mm/h' if en else 'მმ/სთ'} (≥{SQUALL_PRECIP})")
+        crit_lines = "\n".join(f"  ✅ {x}" for x in crits)
+        if en:
+            return (
+                f"🌪️ <b>Squall alert — in ≈1 hour!</b>\n"
+                f"🕐 Now: {now_str} | ⏰ Expected: <b>{t_label}</b>\n"
+                f"─────────────────\n"
+                f"💨 Wind: <b>{squall['w_next']} {u}</b> | gust: <b>{squall['g_next']} {u}</b> | "
+                f"dir: <b>{squall['direction']}</b>\n"
+                f"─────────────────\n"
+                f"<b>Triggered criteria:</b>\n{crit_lines}\n"
+                f"─────────────────\n"
+                f"⚠️ Squall signatures per WMO criteria. "
+                f"Verify against the official MTA bulletin.\n"
+            )
+        return (
+            f"🌪️ <b>შკვალის ალერტი — ≈1 საათში!</b>\n"
+            f"🕐 ახლა: {now_str} | ⏰ მოახლოება: <b>{t_label}</b>\n"
+            f"─────────────────\n"
+            f"💨 ქარი: <b>{squall['w_next']} {u}</b> | დაქროლვა: <b>{squall['g_next']} {u}</b> | "
+            f"მიმართ: <b>{squall['direction']}</b>\n"
+            f"─────────────────\n"
+            f"<b>ამოქმედებული კრიტერიუმები:</b>\n{crit_lines}\n"
+            f"─────────────────\n"
+            f"⚠️ WMO-ს სტანდარტით შკვალის ნიშნები. "
+            f"გადაამოწმეთ MTA-ს ოფიციალური ბიულეტენი.\n"
+        )
 
-    text = (
-        f"🌪️ <b>შკვალის ალერტი — ≈1 საათში!</b>\n"
-        f"🕐 ახლა: {now_str} | ⏰ მოახლოება: <b>{t_label}</b>\n"
-        f"─────────────────\n"
-        f"💨 ქარი: <b>{squall['w_next']} მ/წმ</b> | "
-        f"დაქროლვა: <b>{squall['g_next']} მ/წმ</b> | "
-        f"მიმართ: <b>{squall['direction']}</b>\n"
-        f"─────────────────\n"
-        f"<b>ამოქმედებული კრიტერიუმები:</b>\n"
-        + "\n".join(f"  ✅ {c}" for c in crits) + "\n"
-        f"─────────────────\n"
-        f"⚠️ WMO-ს სტანდარტით შკვალის ნიშნები. "
-        f"გადაამოწმეთ MTA-ს ოფიციალური ბიულეტენი."
-    )
+    text = _with_english(_body("ka"), _body("en"))
 
     # ⚠ ქეში მხოლოდ დადასტურებული გაგზავნის შემდეგ — იხ. #05.
     #   ჩავარდნისას შემდეგი გაშვება ხელახლა სცდის.
@@ -2096,70 +2151,104 @@ def send_shift_handover_telegram(output: dict):
                       for h in next_hours if (h["precipitation"] or 0) >= 0.1), default=0)
     peak_agr   = max((h.get("precip_agreement", 0) or 0
                       for h in next_hours if (h["precipitation"] or 0) >= 0.1), default=0)
-    if rain_hours == 0 or total_rain < 0.1:
-        rain_line = "მოსალოდნელი არ არის"
-    else:
-        # ყურადღება: total_rain არის ჯამი (მმ), peak_rain კი სიჩქარე (მმ/სთ).
-        # აღწერა ყოველთვის სიჩქარეს უნდა ეყრდნობოდეს — _precip_label-ის
-        # ზღურბლები (ჟინჟლი/მსუბუქი/ზომიერი) მმ/სთ-შია განსაზღვრული.
-        peak_desc = _precip_label(max(peak_rain, 0.1), peak_src, peak_agr).split(" — ", 1)[-1]
-        rain_line = f"~{total_rain} მმ ჯამში ({rain_hours} სთ) — მაქს. {peak_desc}"
-
-    worst       = max(next_hours, key=lambda h: STATUS_SEVERITY.get(h.get("status"), 0))
+    worst        = max(next_hours, key=lambda h: STATUS_SEVERITY.get(h.get("status"), 0))
     worst_status = worst.get("status")
-    status_summary = (
-        "სტანდარტული რეჟიმი — ცვლის განმავლობაში სრულად" if worst_status == "operational"
-        else STATUS_KA.get(worst_status, worst_status)
-    )
+    is_morning   = (shift_label == "დილის ცვლა")
 
-    text = (
-        f"🔔 <b>ფოთის პორტი — ცვლის ამინდის პროგნოზი (12 საათი)</b>\n"
-        f"🕐 განახლებულია: {now_str}\n"
-        f"─────────────────\n"
-        f"📊 პერიოდი: {period_start} — {period_end} ({shift_label})\n"
-        f"{STATUS_EMOJI.get(worst_status,'⚠️')} სტატუსი: <b>{status_summary}</b>\n"
-        f"─────────────────\n"
-        f"💨 ქარის მაქს. დაქროლვა: <b>{max_gust} მ/წმ</b>\n"
-        f"🌊 ტალღის მაქს. სიმაღლე: <b>{max_wave} მ</b>\n"
-        f"🌡 ჰაერის მაქს. ტემპ: <b>{f'{max_temp}°C' if max_temp is not None else '--'}</b>\n"
-        f"🌧 ნალექი: <b>{rain_line}</b>\n"
-        f"👁 ხილვადობის მინიმუმი: <b>{f'{min_vis} კმ' if min_vis is not None else '--'}</b>\n"
-        f"─────────────────\n"
-        f"<b>ცვლის მსვლელობა:</b>\n"
-    )
+    def _body(lang):
+        en = (lang == "en")
+        u, m = ("m/s", "m") if en else ("მ/წმ", "მ")
+        mm_u, h_u = ("mm", "h") if en else ("მმ", "სთ")
 
-    for i in range(0, len(next_hours), SHIFT_SEGMENT_HOURS):
-        seg = next_hours[i : i + SHIFT_SEGMENT_HOURS]
-        if not seg:
-            continue
-        seg_start_h = int(seg[0]["time"][11:13])
-        seg_end_h   = (seg_start_h + len(seg)) % 24
-        seg_worst   = max(seg, key=lambda h: STATUS_SEVERITY.get(h.get("status"), 0))
-        sem         = STATUS_EMOJI.get(seg_worst.get("status"), "✅")
-        seg_gust    = max(h["wind_gusts"]  for h in seg)
-        seg_wave    = max(h["wave_height"] for h in seg)
-        seg_rain    = round(sum(h["precipitation"] for h in seg), 1)
-        # BUGFIX: ადრე seg_rain (4-საათიანი ჯამი) გადაეცემოდა _precip_label-ს,
-        # რომლის ზღურბლებიც მმ/სთ-შია. ამიტომ 4 სთ-ში დაგროვილი 1.2 მმ
-        # "მსუბუქ წვიმად" ფასდებოდა, თავად ცვლის სათაური კი — "ჟინჟლად".
-        # აღწერა ახლა პიკურ საათობრივ სიჩქარეს ეყრდნობა, როგორც სათაურში.
-        seg_peak    = max((h["precipitation"] or 0 for h in seg), default=0)
-        seg_src     = max((h.get("precip_sources", 0) or 0
-                           for h in seg if (h["precipitation"] or 0) >= 0.1), default=0)
-        seg_agr     = max((h.get("precip_agreement", 0) or 0
-                           for h in seg if (h["precipitation"] or 0) >= 0.1), default=0)
-        if seg_rain < 0.1:
-            rain_str = "🌧 ნალექი: მოსალოდნელი არ არის"
+        # ყურადღება: total_rain ჯამია (მმ), peak_rain კი სიჩქარე (მმ/სთ).
+        # აღწერა ყოველთვის სიჩქარეს ეყრდნობა — შკალა მმ/სთ-შია.
+        if rain_hours == 0 or total_rain < 0.1:
+            rain_line = "none expected" if en else "მოსალოდნელი არ არის"
         else:
-            rain_desc = _precip_label(max(seg_peak, 0.1), seg_src, seg_agr).split(" — ", 1)[-1]
-            rain_str  = f"🌧 ნალექი: {seg_rain} მმ ჯამში — მაქს. {rain_desc}"
-        text += (
-            f"{sem} {seg_start_h:02d}:00–{seg_end_h:02d}:00 — დაქროლვა ≤{seg_gust} მ/წმ, "
-            f"ტალღა ≤{seg_wave} მ\n"
-            f"     {rain_str}\n"
-        )
+            peak_desc = _precip_label(max(peak_rain, 0.1), peak_src, peak_agr,
+                                      lang=lang).split(" — ", 1)[-1]
+            rain_line = (f"~{total_rain} {mm_u} total ({rain_hours} {h_u}) — peak {peak_desc}" if en
+                         else f"~{total_rain} {mm_u} ჯამში ({rain_hours} {h_u}) — მაქს. {peak_desc}")
 
-    text += f"─────────────────\nდეტალური მონაცემებისთვის გადადით პორტალზე:\n{PORTAL_URL}"
+        if worst_status == "operational":
+            status_summary = ("Standard operations — throughout the shift" if en
+                              else "სტანდარტული რეჟიმი — ცვლის განმავლობაში სრულად")
+        else:
+            status_summary = (STATUS_EN if en else STATUS_KA).get(worst_status, worst_status)
+
+        shift_name = (("Morning shift" if is_morning else "Evening shift") if en else shift_label)
+        temp_s = f"{max_temp}°C" if max_temp is not None else "--"
+        vis_s  = f"{min_vis} {'km' if en else 'კმ'}" if min_vis is not None else "--"
+
+        if en:
+            t = (
+                f"🔔 <b>Poti Port — shift weather forecast (12 hours)</b>\n"
+                f"🕐 Updated: {now_str}\n"
+                f"─────────────────\n"
+                f"📊 Period: {period_start} — {period_end} ({shift_name})\n"
+                f"{STATUS_EMOJI.get(worst_status,'⚠️')} Status: <b>{status_summary}</b>\n"
+                f"─────────────────\n"
+                f"💨 Max wind gust: <b>{max_gust} {u}</b>\n"
+                f"🌊 Max wave height: <b>{max_wave} {m}</b>\n"
+                f"🌡 Max air temp: <b>{temp_s}</b>\n"
+                f"🌧 Precip: <b>{rain_line}</b>\n"
+                f"👁 Min visibility: <b>{vis_s}</b>\n"
+                f"─────────────────\n"
+                f"<b>Shift outlook:</b>\n"
+            )
+        else:
+            t = (
+                f"🔔 <b>ფოთის პორტი — ცვლის ამინდის პროგნოზი (12 საათი)</b>\n"
+                f"🕐 განახლებულია: {now_str}\n"
+                f"─────────────────\n"
+                f"📊 პერიოდი: {period_start} — {period_end} ({shift_name})\n"
+                f"{STATUS_EMOJI.get(worst_status,'⚠️')} სტატუსი: <b>{status_summary}</b>\n"
+                f"─────────────────\n"
+                f"💨 ქარის მაქს. დაქროლვა: <b>{max_gust} {u}</b>\n"
+                f"🌊 ტალღის მაქს. სიმაღლე: <b>{max_wave} {m}</b>\n"
+                f"🌡 ჰაერის მაქს. ტემპ: <b>{temp_s}</b>\n"
+                f"🌧 ნალექი: <b>{rain_line}</b>\n"
+                f"👁 ხილვადობის მინიმუმი: <b>{vis_s}</b>\n"
+                f"─────────────────\n"
+                f"<b>ცვლის მსვლელობა:</b>\n"
+            )
+
+        for k in range(0, len(next_hours), SHIFT_SEGMENT_HOURS):
+            seg = next_hours[k : k + SHIFT_SEGMENT_HOURS]
+            if not seg:
+                continue
+            seg_start_h = int(seg[0]["time"][11:13])
+            seg_end_h   = (seg_start_h + len(seg)) % 24
+            seg_worst   = max(seg, key=lambda h: STATUS_SEVERITY.get(h.get("status"), 0))
+            sem         = STATUS_EMOJI.get(seg_worst.get("status"), "✅")
+            seg_gust    = max(h["wind_gusts"]  for h in seg)
+            seg_wave    = max(h["wave_height"] for h in seg)
+            seg_rain    = round(sum(h["precipitation"] for h in seg), 1)
+            # აღწერა პიკურ საათობრივ სიჩქარეზეა (შკალა მმ/სთ-შია), არა ჯამზე
+            seg_peak    = max((h["precipitation"] or 0 for h in seg), default=0)
+            seg_src     = max((h.get("precip_sources", 0) or 0
+                               for h in seg if (h["precipitation"] or 0) >= 0.1), default=0)
+            seg_agr     = max((h.get("precip_agreement", 0) or 0
+                               for h in seg if (h["precipitation"] or 0) >= 0.1), default=0)
+            if seg_rain < 0.1:
+                rain_str = "🌧 Precip: none expected" if en else "🌧 ნალექი: მოსალოდნელი არ არის"
+            else:
+                rain_desc = _precip_label(max(seg_peak, 0.1), seg_src, seg_agr,
+                                          lang=lang).split(" — ", 1)[-1]
+                rain_str = (f"🌧 Precip: {seg_rain} {mm_u} total — peak {rain_desc}" if en
+                            else f"🌧 ნალექი: {seg_rain} {mm_u} ჯამში — მაქს. {rain_desc}")
+            t += (
+                f"{sem} {seg_start_h:02d}:00–{seg_end_h:02d}:00 — "
+                f"{'gust' if en else 'დაქროლვა'} ≤{seg_gust} {u}, "
+                f"{'wave' if en else 'ტალღა'} ≤{seg_wave} {m}\n"
+                f"     {rain_str}\n"
+            )
+        return t
+
+    text = _with_english(
+        _body("ka"), _body("en"),
+        tail=f"─────────────────\nდეტალური მონაცემებისთვის გადადით პორტალზე:\n{PORTAL_URL}",
+    )
 
     # ⚠ ქეში მხოლოდ დადასტურებული გაგზავნის შემდეგ — იხ. #05.
     #   ჩავარდნისას შემდეგი გაშვება ხელახლა სცდის.
@@ -2167,6 +2256,36 @@ def send_shift_handover_telegram(output: dict):
         _save_shift_cache(now.isoformat())
     else:
         log.warning("ცვლის ქეში არ განახლდა — ხელახლა შემდეგ გაშვებაზე")
+
+
+# ═══ ინგლისური ვერსია — ტელეგრამის გასაშლელი ციტატა ═══
+# ⚠ 2026-09-21: ყოველ შეტყობინებას ბოლოში ემატება ინგლისური ვერსია
+#   `<blockquote expandable>`-ში (Bot API 7.4+). ის ნაგულისხმევად
+#   დაკეცილია — ჩანს სათაური და პირველი ხაზები, დაჭერით იშლება.
+#   სერვერი და callback-ები არ სჭირდება: ეს ჩვეულებრივი HTML-ია.
+#   ქართული ტექსტი უცვლელად რჩება ზემოთ.
+TG_MAX_CHARS = 4096          # Telegram-ის ლიმიტი (ტეგების გარეშე, UTF-16)
+EN_BLOCK_TITLE = "🇬🇧 <b>English — tap to expand</b>"
+
+
+def _tg_len(html: str) -> int:
+    """ტექსტის სიგრძე ისე, როგორც Telegram ითვლის: ტეგების გარეშე, UTF-16."""
+    plain = re.sub(r"<[^>]+>", "", html)
+    return len(plain.encode("utf-16-le")) // 2
+
+
+def _with_english(ka: str, en: str, tail: str = "") -> str:
+    """ქართული + დაკეცილი ინგლისური + (სურვილისამებრ) ბოლო ხაზი, მაგ. ბმული.
+
+    თუ ჯამი ლიმიტს აჭარბებს, ინგლისური ბლოკი გამოტოვდება და ქართული
+    შეტყობინება მაინც გაიგზავნება — მთავარი ენა არ უნდა დაზარალდეს.
+    """
+    en_block = f"<blockquote expandable>{EN_BLOCK_TITLE}\n{en.rstrip()}</blockquote>\n"
+    full = ka + en_block + tail
+    if _tg_len(full) > TG_MAX_CHARS - 50:
+        log.warning("ინგლისური ბლოკი გამოტოვდა — შეტყობინება ლიმიტს აჭარბებს")
+        return ka + tail
+    return full
 
 
 def _send_telegram_text(text: str, label: str = "Telegram") -> bool:
@@ -2255,19 +2374,34 @@ def send_sos_alert(output: dict):
     now_str = output["meta"]["last_update"]
     t_label = target_time[11:16] if len(target_time) >= 16 else target_time
 
-    text = (
-        f"🆘 <b>SOS — მოსალოდნელია კრიტიკული გაუარესება!</b>\n"
-        f"🕐 ამჟამად: {now_str}\n"
-        f"⏰ მოახლოვდება: <b>{t_label}</b> (≈1 საათში)\n"
-        f"─────────────────\n"
-        f"🚨 მოსალოდნელი სტატუსი: <b>{STATUS_KA['suspended']}</b>\n"
-        f"💨 ქარი: <b>{next_h['wind_speed']} მ/წმ</b> | დაქროლვა: <b>{next_h['wind_gusts']} მ/წმ</b> | "
-        f"მიმართ: <b>{_compass_full(next_h['wind_direction'])}</b>\n"
-        f"🌊 ტალღა: <b>{next_h['wave_height']} მ</b>\n"
-        + _vis_line(next_h)
-    )
-    # alerts აქაც მოხსნილია — ციფრები ზემოთ უკვე წერია.
-    text += "─────────────────\nსასურველია დროულად მოემზადოთ საოპერაციო შეჩერებისთვის."
+    def _body(lang):
+        en = (lang == "en")
+        u, m = ("m/s", "m") if en else ("მ/წმ", "მ")
+        if en:
+            head = (f"🆘 <b>SOS — critical deterioration expected!</b>\n"
+                    f"🕐 Now: {now_str}\n"
+                    f"⏰ Expected: <b>{t_label}</b> (in ≈1 hour)\n"
+                    f"─────────────────\n"
+                    f"🚨 Expected status: <b>{STATUS_EN['suspended']}</b>\n")
+            foot = "─────────────────\nPrepare in advance for an operational suspension.\n"
+        else:
+            head = (f"🆘 <b>SOS — მოსალოდნელია კრიტიკული გაუარესება!</b>\n"
+                    f"🕐 ამჟამად: {now_str}\n"
+                    f"⏰ მოახლოვდება: <b>{t_label}</b> (≈1 საათში)\n"
+                    f"─────────────────\n"
+                    f"🚨 მოსალოდნელი სტატუსი: <b>{STATUS_KA['suspended']}</b>\n")
+            foot = "─────────────────\nსასურველია დროულად მოემზადოთ საოპერაციო შეჩერებისთვის.\n"
+        return (
+            head
+            + f"💨 {'Wind' if en else 'ქარი'}: <b>{next_h['wind_speed']} {u}</b> | "
+              f"{'gust' if en else 'დაქროლვა'}: <b>{next_h['wind_gusts']} {u}</b> | "
+              f"{'dir' if en else 'მიმართ'}: <b>{_compass_full(next_h['wind_direction'], lang)}</b>\n"
+            + f"🌊 {'Wave' if en else 'ტალღა'}: <b>{next_h['wave_height']} {m}</b>\n"
+            + _vis_line(next_h, lang)
+            + foot
+        )
+
+    text = _with_english(_body("ka"), _body("en"))
 
     # ⚠ ქეში მხოლოდ დადასტურებული გაგზავნის შემდეგ — იხ. #05.
     #   ჩავარდნისას შემდეგი გაშვება ხელახლა სცდის.
@@ -2290,9 +2424,12 @@ GEO_COMPASS = {
 }
 
 
-def _compass_full(deg: float) -> str:
-    """ლათინური მიმართულება + ქართული შესაბამისობა, მაგ: 'SW (სამხ.-დას.)'"""
+def _compass_full(deg: float, lang: str = "ka") -> str:
+    """ლათინური მიმართულება + ქართული შესაბამისობა, მაგ: 'SW (სამხ.-დას.)'.
+    ინგლისურად მხოლოდ აბრევიატურა — 'SW'."""
     lat = _deg_to_compass(deg)
+    if lang == "en":
+        return lat
     return f"{lat} ({GEO_COMPASS.get(lat, lat)})"
 
 
