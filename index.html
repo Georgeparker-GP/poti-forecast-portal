@@ -415,6 +415,24 @@ header{align-items:flex-start;}
 }
 @media (hover:none){ .hdr-act:hover{border-color:var(--br);background:var(--ov1);color:var(--text-strong);} }
 
+/* ── რუკის რეჟიმის გადამრთველი ── */
+.map-tabs{display:inline-flex;gap:2px;padding:3px;border-radius:9px;
+  background:var(--ov1);border:1px solid var(--br);}
+.map-tab{background:transparent;border:0;border-radius:6px;padding:6px 13px;
+  font-size:13px;font-weight:600;color:var(--mu);cursor:pointer;
+  transition:background-color .15s ease,color .15s ease;}
+.map-tab:hover{color:var(--tx);}
+.map-tab.on{background:var(--ov3);color:var(--text-strong);}
+/* ქარის ისარი */
+.wind-arrow{pointer-events:auto;}
+.wind-arrow svg{display:block;margin:0 auto;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.7));}
+.wind-arrow b{display:block;text-align:center;font:600 10px/1 'JetBrains Mono',monospace;
+  color:#e8f1f5;text-shadow:0 1px 2px #000,0 0 3px #000;margin-top:1px;}
+.wind-key{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--mu);
+  font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.wind-key i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-left:5px;}
+@media(max-width:560px){ .wind-key{display:none;} .map-tab{padding:6px 10px;font-size:12px;} }
+
 /* ── 3D სცენის მოდალი ── */
 #modal3d{position:fixed;inset:0;z-index:9999;}
 #modal3d[hidden]{display:none;}
@@ -1160,19 +1178,37 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
   <!-- წვიმის რადარი (RainViewer) -->
   <div class="panel rel">
     <div class="panel-head">
-      <h3><span data-i18n="radar_title">წვიმის რადარი</span></h3>
-      <p><span data-i18n="radar_legend">ცოცხალი რადარი · ბოლო ~30 წთ მოძრაობა · წყარო: RainViewer</span></p>
+      <!-- რუკის რეჟიმი: წვიმის რადარი ან ქარის ველი — ერთი რუკა, ორი ფენა -->
+      <div class="map-tabs" role="tablist">
+        <button class="map-tab on" id="tab-rain" role="tab" onclick="setMapMode('rain')">
+          <span data-i18n="radar_title">წვიმის რადარი</span></button>
+        <button class="map-tab" id="tab-wind" role="tab" onclick="setMapMode('wind')">
+          <span data-i18n="wind_title">ქარის ველი</span></button>
+      </div>
+      <p id="map-legend"><span data-i18n="radar_legend">ცოცხალი რადარი · ბოლო ~30 წთ მოძრაობა · წყარო: RainViewer</span></p>
     </div>
     <div style="padding:16px">
       <div id="radar-map" style="width:100%;height:360px;border-radius:10px;overflow:hidden;background:var(--ov1);"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:10px;">
-        <div style="display:flex;align-items:center;gap:10px;">
+        <!-- ქარის ველის მართვა: საათის სლაიდერი + ფერების ლეგენდა -->
+        <div id="wind-ctrl" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;flex:1;min-width:0;">
+          <span id="wind-time" class="mono" style="font-size:12px;color:var(--tx);min-width:78px;">--</span>
+          <input id="wind-hour" type="range" min="0" max="47" value="0" step="1"
+                 oninput="windShow(+this.value)" style="flex:1;min-width:120px;max-width:340px;accent-color:var(--tl);">
+          <span class="wind-key">
+            <i style="background:#5ec8b4"></i>&lt;10
+            <i style="background:#f0c24f"></i>10–17
+            <i style="background:#f08a3c"></i>17–21.5
+            <i style="background:#ef5b5b"></i>≥21.5
+          </span>
+        </div>
+        <div id="rain-ctrl" style="display:flex;align-items:center;gap:10px;">
           <button id="radar-play" onclick="toggleRadarPlay()" style="background:var(--sf);border:1px solid var(--br);color:var(--tx);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:13px;">⏸</button>
           <span id="radar-time" class="mono" style="font-size:12px;color:var(--sb);">--:--</span>
           <button id="radar-cov" onclick="toggleRadarCoverage()" style="background:var(--sf);border:1px solid var(--br);color:var(--sb);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;" data-i18n="radar_cov_off">დაფარვა: გამორთ.</button>
         </div>
         <div style="font-size:10px;color:var(--mu);line-height:1.5;text-align:right;">
-          <a href="https://www.rainviewer.com/" target="_blank" rel="noopener" style="color:var(--mu);">Weather data by RainViewer</a>
+          <a id="map-attr" href="https://www.rainviewer.com/" target="_blank" rel="noopener" style="color:var(--mu);">Weather data by RainViewer</a>
           <br><span style="color:var(--mu);">Basemap: Esri, HERE, Garmin, © OpenStreetMap contributors</span>
         </div>
       </div>
@@ -1234,7 +1270,7 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
 const THR = {
   barge:     10.0,   // ბორნის მანევრირება შეზღუდულია   (MTA)
   vessel:    17.0,   // გემების მანევრირება შეზღუდულია  (MTA)
-  suspended: 21.5,   // ამწეები + გემების გასვლა        (MTA)
+  suspended: 21.5,   // ამწეები + გემების მანევრირება შეჩერება (MTA)
   // ტალღა განზრახ დაწეულია 2.0-დან: დადასტურებულია, რომ ტალღის კონსენსუსი
   // სისტემატურად ანაკლებს (26 ივლ: 1.09 მ vs რეალური 1.55–2.50 მ).
   wave:       1.50,
@@ -1349,7 +1385,7 @@ const STATUS_LBL = {
   operational: 'პორტი — სრული საოპერაციო რეჟიმი',
   barge:       'ბორნის მანევრირება შეზღუდულია',
   vessel:      'გემების მანევრირება შეზღუდულია',
-  suspended:   'ამწე + გემების გასვლა შეჩერებულია',
+  suspended:   'ამწე + გემების მანევრირება შეჩერებულია',
 };
 const PILL = {
   operational: '<span class="pill pill-op">სრული</span>',
@@ -1574,7 +1610,8 @@ function render(d) {
 
   if (depBlocked) {
     vesselLevel = 'danger';
-    vesselText  = isEng ? 'Vessel Departure — Restricted' : 'გემების გასვლა — შეზღუდულია';
+    // გასვლა/შემოსვლა მანევრის ნაწილია — ზედა საფეხური „შეჩერებაა“, არა „გასვლა“
+    vesselText  = isEng ? 'Vessel Manoeuvring — Suspended' : 'გემების მანევრირება — შეჩერებულია';
     vesselSub   = isEng ? 'Critical threshold exceeded' : 'კრიტიკული ზღვარი გადაცილებულია';
   } else if (w >= THR.vessel || vis <= THR.visVessel) {
     vesselLevel = 'danger';
@@ -1590,7 +1627,7 @@ function render(d) {
   } else {
     vesselLevel = 'ok';
     vesselText  = isEng ? 'Vessel Manoeuvring — Permitted' : 'გემების მანევრირება — ნებადართული';
-    vesselSub   = isEng ? 'Limits: Barge ≥10 | Manoeuvre ≥17 | Departure ≥21.5 m/s' : 'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ';
+    vesselSub   = isEng ? 'Limits: Barge ≥10 | Manoeuvre ≥17 m/s' : 'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 მ/წმ';
   }
 
   setOps('ops-vessel', vesselLevel, vesselText);
@@ -2356,7 +2393,7 @@ function renderSignal(c, fcFuture){
   const vEl = document.getElementById('sig-verdict');
   const wEl = document.getElementById('sig-why');
   // ⚠ 2026-09-16 აუდიტი: `suspended` ერთ ტექსტს იყენებდა — „ამწე +
-  //   გემების გასვლა შეჩერებულია“ — მიზეზის მიუხედავად. ტალღა და
+  //   გემების მანევრირება შეჩერებულია“ — მიზეზის მიუხედავად. ტალღა და
   //   ნისლი ამწეს არ აჩერებს, ანუ ტექსტი ზედმეტს ამბობდა და
   //   ოპერაციულ პანელსაც ეწინააღმდეგებოდა.
   let verdict = (ENG ? STATUS_LBL_ENG : STATUS_LBL)[st] || st;
@@ -2365,8 +2402,8 @@ function renderSignal(c, fcFuture){
     const vv = effVis(c);
     if (mw < THR.suspended && vv > THR.visCranes) {
       // მიზეზი ტალღაა — ამწე მუშაობს, ნავიგაცია ჩერდება
-      verdict = ENG ? 'Vessel Departure Suspended'
-                    : 'გემების გასვლა შეჩერებულია';
+      verdict = ENG ? 'Vessel Manoeuvring Suspended'
+                    : 'გემების მანევრირება შეჩერებულია';
     }
   }
   if (vEl) vEl.textContent = verdict;
@@ -2383,8 +2420,11 @@ function renderSignal(c, fcFuture){
     const t = (h.time||'').slice(11,16);
     const lbl = (ENG ? STATUS_LBL_ENG : STATUS_LBL)[h.status] || h.status;
     wEl.innerHTML = ENG
-      ? `Next change <b>${t}</b> — ${lbl} <span style="color:var(--mu)">(in ${hit} h)</span>`
-      : `შემდეგი ცვლილება <b>${t}</b> — ${lbl} <span style="color:var(--mu)">(${hit} სთ-ში)</span>`;
+      // ⚠ 2026-09-21: „შესაძლო“ — ეს პროგნოზია და არა ფაქტი. 41 საათის
+      //   შემდეგ რა მოხდება, ზუსტად არავინ იცის; კატეგორიული ფორმულირება
+      //   ოპერატორს ცრუ სიზუსტეს აძლევდა.
+      ? `Possible next change <b>${t}</b> — ${lbl} <span style="color:var(--mu)">(in ${hit} h)</span>`
+      : `შესაძლო შემდეგი ცვლილება <b>${t}</b> — ${lbl} <span style="color:var(--mu)">(${hit} სთ-ში)</span>`;
   } else {
     const mw = Math.max(c.wind_speed||0, c.wind_gusts||0);
     const gap = (THR.barge - mw);
@@ -2468,7 +2508,7 @@ const I18N = {
   op_cranes:     {geo:'ამწეები — ოპერაციული', eng:'Cranes — Operational'},
   op_cranes_sub: {geo:'შეჩერება: ≥ 21.5 მ/წმ', eng:'Suspended: ≥ 21.5 m/s'},
   op_vessel:     {geo:'გემების მანევრირება — ნებადართული', eng:'Vessel Manoeuvring — Permitted'},
-  op_vessel_sub: {geo:'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 | გასვლა ≥21.5 მ/წმ', eng:'Limits: Barge ≥10 | Manoeuvre ≥17 | Departure ≥21.5 m/s'},
+  op_vessel_sub: {geo:'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 მ/წმ', eng:'Limits: Barge ≥10 | Manoeuvre ≥17 m/s'},
   lbl_wind:      {geo:'ქარის სიჩქარე', eng:'Wind Speed'},
   lbl_wind_s:    {geo:'ქარი', eng:'Wind'},
   lbl_wave_s:    {geo:'ტალღა', eng:'Wave'},
@@ -2515,6 +2555,8 @@ const I18N = {
   th_status:     {geo:'სტატუსი', eng:'Status'},
   chart_title:   {geo:'48-საათიანი ტრენდი', eng:'48-Hour Trend'},
   radar_title:   {geo:'წვიმის რადარი', eng:'Rain Radar'},
+  wind_title:    {geo:'ქარის ველი', eng:'Wind Field'},
+  wind_legend:   {geo:'მოდელის ქარი 10 მ-ზე · 48 სთ · წყარო: Open-Meteo', eng:'Model wind at 10 m · 48 h · source: Open-Meteo'},
   radar_legend:  {geo:'ცოცხალი რადარი · ბოლო ~30 წთ მოძრაობა · წყარო: RainViewer', eng:'Live radar · last ~30 min movement · source: RainViewer'},
   radar_nodata:  {geo:'⚠️ ამ რეგიონში მიწისზედა რადარი შეზღუდულია — სატელიტ-შეფასება', eng:'⚠️ Ground radar limited in this region — satellite estimate'},
   radar_cov_off: {geo:'დაფარვა: გამორთ.', eng:'Coverage: off'},
@@ -2550,7 +2592,7 @@ const I18N = {
 // Dynamic JS strings
 const STATUS_LBL_ENG = {
   operational:'Port — Full Operational Mode', barge:'Barge Manoeuvring Restricted',
-  vessel:'Vessel Manoeuvring Restricted', suspended:'Cranes + Vessel Departure Suspended',
+  vessel:'Vessel Manoeuvring Restricted', suspended:'Cranes + Vessel Manoeuvring Suspended',
 };
 const PILL_ENG = {
   operational:'<span class="pill pill-op">Full</span>',
@@ -2840,6 +2882,176 @@ loadData();
     radarPlaying = !radarPlaying;
     document.getElementById('radar-play').textContent = radarPlaying ? '⏸' : '▶';
   };
+
+
+  /* ═══════════════════════════════════════════════════════════
+     ქარის ველი — იმავე რუკაზე, რადარის ალტერნატიულ რეჟიმად
+     ---------------------------------------------------------
+     წყარო: Open-Meteo (best_match, 10 მ), 28 წერტილის ფიქსირებული
+     ბადე ფოთის გარშემო — ზღვაც და კოლხეთის დაბლობიც.
+
+     ⚠ ეს მოდელის ველია და ᲐᲠᲐ ᲙᲝᲜᲡᲔᲜᲡᲣᲡᲘ. ფოთის წერტილი აქ
+       ზუსტად არ დაემთხვევა ზედა ბარათს — ის შვიდი წყაროს შეწონილი
+       საშუალოა, ეს კი ერთი მოდელის სივრცითი სურათი. დანიშნულება
+       განსხვავებულია: აქ ჩანს, საიდან მოდის ქარი და როგორ იცვლება
+       სივრცეში — განსაკუთრებით ზღვიდან მომავალი ნაკადი.
+
+     Windy-ის ჩასაშენებელი ვიჯეტი არ გამოიყენება: მისი წესებით
+     კომერციულ და ამინდის საიტებზე აკრძალულია.
+
+     ქსელის დატვირთვა: მონაცემი მხოლოდ პირველ გადართვაზე მოდის და
+     60 წუთი ქეშდება. 28 წერტილი = ერთი მოთხოვნა.
+     ═══════════════════════════════════════════════════════════ */
+  const WIND_LATS = [41.75, 42.02, 42.29, 42.56];
+  const WIND_LONS = [40.60, 40.90, 41.20, 41.50, 41.80, 42.10, 42.40];
+  const WIND_TTL  = 60 * 60 * 1000;
+  let windLayer = null, windData = null, windFetchedAt = 0, windIdx = 0;
+  let mapMode = 'rain', _rainWasPlaying = true;
+
+  // ფერი — იგივე ზღვრები, რაც სტატუსში (ბორანი/გემი/შეჩერება)
+  function windColor(v){
+    return v >= THR.suspended ? '#ef5b5b'
+         : v >= THR.vessel    ? '#f08a3c'
+         : v >= THR.barge     ? '#f0c24f'
+         :                      '#5ec8b4';
+  }
+
+  function arrowIcon(spd, dirFrom){
+    // მეტეოროლოგიური მიმართულება „საიდან“ არის; ისარი „საითკენ“ უნდა მიუთითებდეს
+    const to  = ((dirFrom || 0) + 180) % 360;
+    const col = windColor(spd);
+    const L_  = Math.max(16, Math.min(34, 14 + spd * 1.3));   // სიგრძე სიჩქარით
+    const svg = `<svg width="34" height="34" viewBox="-17 -17 34 34" style="transform:rotate(${to}deg)">
+      <line x1="0" y1="${L_/2}" x2="0" y2="${-L_/2+5}" stroke="${col}" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M0 ${-L_/2} L5 ${-L_/2+7} L-5 ${-L_/2+7}Z" fill="${col}"/></svg>`;
+    return L.divIcon({
+      className: 'wind-arrow',
+      html: svg + `<b>${spd.toFixed(1)}</b>`,
+      iconSize: [34, 46], iconAnchor: [17, 17]
+    });
+  }
+
+  async function fetchWind(){
+    if (windData && (Date.now() - windFetchedAt) < WIND_TTL) return windData;
+    const lat = [], lon = [];
+    WIND_LATS.forEach(a => WIND_LONS.forEach(b => { lat.push(a); lon.push(b); }));
+    const url = 'https://api.open-meteo.com/v1/forecast'
+      + `?latitude=${lat.join(',')}&longitude=${lon.join(',')}`
+      + '&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m'
+      + '&wind_speed_unit=ms&timezone=Asia%2FTbilisi&forecast_days=3';
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    let j = await r.json();
+    if (!Array.isArray(j)) j = [j];                 // ერთი წერტილისას ობიექტი მოდის
+    windData = j; windFetchedAt = Date.now();
+    return windData;
+  }
+
+  // მიმდინარე საათის ინდექსი თბილისის დროით
+  function windNowIndex(times){
+    const now = new Date();
+    const tb  = new Date(now.getTime() + (now.getTimezoneOffset() + 240) * 60000);
+    const key = `${tb.getFullYear()}-${String(tb.getMonth()+1).padStart(2,'0')}-`
+              + `${String(tb.getDate()).padStart(2,'0')}T${String(tb.getHours()).padStart(2,'0')}:00`;
+    const i = times.indexOf(key);
+    return i >= 0 ? i : 0;
+  }
+
+  window.windShow = function(offset){
+    if (!windData || !radarMap) return;
+    const times = windData[0].hourly.time;
+    const base  = windNowIndex(times);
+    windIdx = Math.min(times.length - 1, base + (offset || 0));
+
+    if (!radarMap.getPane('windPane')) {
+      radarMap.createPane('windPane');
+      radarMap.getPane('windPane').style.zIndex = 225;   // რადარის ზემოთ, წარწერების ქვემოთ
+    }
+    if (windLayer) radarMap.removeLayer(windLayer);
+    windLayer = L.layerGroup();
+
+    const ENG = currentLang === 'eng';
+    windData.forEach(pt => {
+      const h = pt.hourly;
+      const v = h.wind_speed_10m[windIdx], d = h.wind_direction_10m[windIdx];
+      const g = h.wind_gusts_10m[windIdx];
+      if (v == null || d == null) return;
+      L.marker([pt.latitude, pt.longitude], {
+        icon: arrowIcon(v, d), pane: 'windPane', interactive: true, keyboard: false
+      }).bindTooltip(
+        (ENG ? `Wind ${v.toFixed(1)} · gust ${g!=null?g.toFixed(1):'--'} m/s · ${toCompass(d)}`
+             : `ქარი ${v.toFixed(1)} · ქროლვა ${g!=null?g.toFixed(1):'--'} მ/წმ · ${toCompass(d)}`),
+        { direction: 'top', offset: [0, -12] }
+      ).addTo(windLayer);
+    });
+    windLayer.addTo(radarMap);
+
+    const t = times[windIdx] || '';
+    const el = document.getElementById('wind-time');
+    if (el) {
+      const day = t.slice(8,10) + '.' + t.slice(5,7);
+      el.textContent = (offset ? `${day} ` : (ENG ? 'now ' : 'ახლა ')) + t.slice(11,16);
+    }
+  };
+
+  window.setMapMode = async function(mode){
+    if (mode === mapMode || !radarMap) return;
+    mapMode = mode;
+    const ENG = currentLang === 'eng';
+    const wind = mode === 'wind';
+
+    document.getElementById('tab-rain').classList.toggle('on', !wind);
+    document.getElementById('tab-wind').classList.toggle('on',  wind);
+    document.getElementById('rain-ctrl').style.display = wind ? 'none' : 'flex';
+    document.getElementById('wind-ctrl').style.display = wind ? 'flex' : 'none';
+    const nd = document.getElementById('radar-nodata'); if (nd && wind) nd.style.display = 'none';
+
+    const leg = document.querySelector('#map-legend span');
+    if (leg) {
+      const k = wind ? 'wind_legend' : 'radar_legend';
+      leg.setAttribute('data-i18n', k); leg.textContent = _t(k);
+    }
+    const at = document.getElementById('map-attr');
+    if (at) {
+      at.href = wind ? 'https://open-meteo.com/' : 'https://www.rainviewer.com/';
+      at.textContent = wind ? 'Weather data by Open-Meteo.com' : 'Weather data by RainViewer';
+    }
+
+    // წვიმის ფენა იმალება და არა იშლება — უკან დაბრუნება მყისიერია
+    const rp = radarMap.getPane('radarPane');
+    if (wind) {
+      _rainWasPlaying = radarPlaying;
+      radarPlaying = false;
+      if (rp) rp.style.display = 'none';
+      try {
+        const el = document.getElementById('wind-time');
+        if (el && !windData) el.textContent = ENG ? 'loading…' : 'იტვირთება…';
+        await fetchWind();
+        const sl = document.getElementById('wind-hour');
+        windShow(sl ? +sl.value : 0);
+      } catch (e) {
+        console.warn('wind fetch failed', e);
+        const el = document.getElementById('wind-time');
+        if (el) el.textContent = ENG ? 'unavailable' : 'მიუწვდომელია';
+      }
+    } else {
+      if (windLayer) { radarMap.removeLayer(windLayer); windLayer = null; }
+      if (rp) rp.style.display = '';
+      radarPlaying = _rainWasPlaying;
+    }
+  };
+
+  // ენის გადართვისას ქარის ისრების წარწერები და დრო თავიდან იხატება
+  if (typeof window.toggleLang === 'function') {
+    const _tl = window.toggleLang;
+    window.toggleLang = function(){
+      _tl.apply(this, arguments);
+      if (mapMode === 'wind' && windData) {
+        const sl = document.getElementById('wind-hour');
+        windShow(sl ? +sl.value : 0);
+      }
+    };
+  }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initRadar);
