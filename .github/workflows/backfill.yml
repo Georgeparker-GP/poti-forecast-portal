@@ -28,7 +28,7 @@ jobs:
       # backfill-ს თავად PDF არ სჭირდება, მაგრამ იმპორტის ჯაჭვი
       # backfill_compare → mta_ingest → mta_parser → pdfplumber მაინც ეშვება.
       - name: Install dependencies
-        run: pip install pdfplumber
+        run: pip install -r requirements.txt
 
       - name: Backfill
         run: |

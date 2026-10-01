@@ -25,7 +25,7 @@
   TELEGRAM_CHAT_ID     ← შენი chat ID
 """
 
-import json, math, os, logging, time, sys, pathlib, re
+import html, json, math, os, logging, time, sys, pathlib, re
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -612,9 +612,12 @@ def parse_stormglass(raw, hours=PARSE_HOURS):
             #   ხუთი წყარო მთელი დროის განმავლობაში 4 საათით იყო
             #   გადაწეული და ᲧᲕᲔᲚᲐ ᲨᲔᲓᲐᲠᲔᲑᲐᲡ ᲐᲑᲘᲜᲫᲣᲠᲔᲑᲓᲐ.
             "time":           _sg_time(entry.get("time", "")),
-            "wind_speed":     sg("windSpeed"),
-            "wind_gusts":     sg("gust"),
-            "wind_direction": sg("windDirection"),
+            # ⚠ ქარზე default=None: დაკარგული ველი 0.0-ად იქცეოდა და
+            #   დეგრადირებულ აუზში რეალურ შტილად ითვლებოდა, რაც საშუალოს
+            #   ამცირებდა. `_wavg`, veto და მიმართულება None-ს გამოტოვებენ.
+            "wind_speed":     sg("windSpeed", default=None),
+            "wind_gusts":     sg("gust", default=None),
+            "wind_direction": sg("windDirection", default=None),
             # ⚠ ნალექი მოთხოვნაში არ შედის. ადრე 0.0 ეწერა და ეს
             #   „მშრალი“ ხმა კონსენსუსში ითვლებოდა — ანუ დაკარგული
             #   პარამეტრი უნალექობის მტკიცებულებად აღიქმებოდა.
@@ -1113,7 +1116,7 @@ DIR_AGREE_MIN = 0.70
 
 
 def _stddev(values):
-    """ნიმუშის სტანდარტული გადახრა. <2 მნიშვნელობაზე — 0."""
+    """პოპულაციის სტანდარტული გადახრა (÷n). <2 მნიშვნელობაზე — 0."""
     n = len(values)
     if n < 2:
         return 0.0
@@ -2548,6 +2551,9 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "next_update":    (datetime.now(TBILISI_TZ) + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M"),
             "sources_used":   sources_used,
             "forecast_hours": len(consensus),
+            # ზღვრები ერთ ადგილას: index.html მათ აქედან კითხულობს, ამიტომ
+            # backend-სა და frontend-ს შორის აცდენა აღარ შეიძლება.
+            "thresholds":     dict(THRESHOLDS),
         },
         "current": {k: now.get(k, v) for k, v in {
             "time": "", "wind_speed": 0, "wind_gusts": 0,
@@ -2609,6 +2615,9 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
 #  7.  მთავარი
 # ═══════════════════════════════════════════════════════════════
 
+THROTTLE_MINUTES = 30
+
+
 def _minutes_since_last_update():
     """data.json-ის meta.last_update-დან გასული წუთები. თუ ფაილი არ არსებობს/არასწორია — None."""
     try:
@@ -2627,17 +2636,23 @@ def _minutes_since_last_update():
 def main():
     log.info(f"══ {LOCATION['name']} — კონსენსუს ბექენდი (48h) ══")
 
-    # GitHub Actions-ის cron scheduler ხანდახან საათობით აგვიანებს/'ხტის' გაშვებებს —
-    # ამიტომ workflow ხშირად (15 წუთში ერთხელ) ეშვება, მაგრამ ნამდვილი fetch
-    # მხოლოდ მაშინ ხდება, თუ წინა წარმატებული განახლებიდან ნამდვილად ~საათი გავიდა.
-    # ეს რჩება დაცული Stormglass-ის daily quota-სა და Open-Meteo-ს ზედმეტი დატვირთვისგან.
+    # Throttle — ორმაგი გაშვებისგან დაცვა (cron-job.org-ის განმეორებითი
+    # დარტყმა, ხელით გაშვება ავტომატურთან ერთად). ორმაგ გაშვებას ორმაგი
+    # digest და ზედმეტი commit მოჰყვება.
+    #
+    # ⚠ 2026-10-01: workflow ახლა მხოლოდ `workflow_dispatch`-ით ეშვება, ამიტომ
+    #   ძველი `FORCE_REFRESH = (event == workflow_dispatch)` ყოველთვის true
+    #   იყო და დაცვა საერთოდ არ მუშაობდა. ახლა FORCE_REFRESH ცალკე input-ია.
+    #   ზღვარი 55-დან 30 წუთამდეა დაწეული: საათობრივი გაშვება რიგში
+    #   დაყოვნებისას 55 წუთზე ადრეც შეიძლება მოვიდეს და მთელი საათი
+    #   დაიკარგებოდა; ორმაგი გაშვება კი რამდენიმე წუთის სხვაობით ხდება.
     force_refresh = os.environ.get("FORCE_REFRESH", "").lower() == "true"
     minutes_since = _minutes_since_last_update()
-    if not force_refresh and minutes_since is not None and minutes_since < 55:
-        log.info(f"ბოლო განახლება {minutes_since:.0f} წუთის წინ მოხდა — ნაადრევია, ამ ციკლს გამოვტოვებ.")
-        return
-    if force_refresh and minutes_since is not None and minutes_since < 55:
-        log.info(f"ხელით გაშვება (workflow_dispatch) — throttle-ს გამოვტოვებ ({minutes_since:.0f} წუთის წინ).")
+    if minutes_since is not None and minutes_since < THROTTLE_MINUTES:
+        if not force_refresh:
+            log.info(f"ბოლო განახლება {minutes_since:.0f} წუთის წინ მოხდა — ნაადრევია, ამ ციკლს გამოვტოვებ.")
+            return
+        log.info(f"FORCE_REFRESH — throttle-ს გამოვტოვებ ({minutes_since:.0f} წუთის წინ).")
 
     sources_used = []
 
@@ -2701,7 +2716,7 @@ def main():
             send_failure_alert(
                 "🚨 <b>ფოთის პორტი — ყველა ატმოსფერული წყარო მიუწვდომელია</b>\n"
                 f"მცდელობა: Open-Meteo (best/GFS/ICON/ECMWF), yr.no\n"
-                f"მიღებული: <code>{', '.join(sources_used) or '—'}</code>\n"
+                f"მიღებული: <code>{html.escape(', '.join(sources_used) or '—')}</code>\n"
                 "მონაცემები გაჩერებულია ბოლო წარმატებულ მნიშვნელობაზე."
             )
             sys.exit(1)
@@ -2804,7 +2819,10 @@ def main():
         log.exception("მოულოდნელი შეცდომა fetch.py-ში")
         send_failure_alert(
             f"🚨 <b>ფოთის პორტი — განახლება ჩავარდა (გამონაკლისი)</b>\n"
-            f"<code>{type(e).__name__}: {e}</code>\n"
+            # ⚠ escape აუცილებელია: parse_mode=HTML-ში გამონაკლისის ტექსტის
+            #   `<` (მაგ. "'<' not supported between...") Telegram-ს 400-ით
+            #   აგდებდა და სწორედ ეს, ყველაზე მნიშვნელოვანი შეტყობინება იკარგებოდა.
+            f"<code>{html.escape(f'{type(e).__name__}: {e}')}</code>\n"
             f"მონაცემები გაჩერებულია ბოლო წარმატებულ მნიშვნელობაზე."
         )
         sys.exit(1)

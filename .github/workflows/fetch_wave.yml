@@ -45,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install copernicusmarine
+          pip install "copernicusmarine>=2.0,<3"
 
       - name: Fetch Copernicus wave data
         env:
@@ -57,12 +57,12 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add wave_copernicus.json
           if git diff --staged --quiet; then
             echo "ცვლილება არ არის — commit გამოტოვებულია"
           else
             git commit -m "Copernicus wave data: $(date -u '+%Y-%m-%d %H:%M UTC')"
             # rebase — მთავარმა pipeline-მა შეიძლება ამასობაში data.json დაფიქსიროს
-            git pull --rebase --autostash origin main || true
-            git push
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi

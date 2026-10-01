@@ -16,12 +16,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install copernicusmarine
+      - run: pip install "copernicusmarine>=2.0,<3"
       - name: ძებნა
         env:
           COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.CMEMS_USERNAME }}
           COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.CMEMS_PASSWORD }}
+          # input env-ით გადაეცემა და არა `${{ }}`-ით პირდაპირ shell-ში —
+          # თორემ ტექსტი ბრძანებად ჩაიხსნებოდა (script injection).
+          RADIUS: ${{ github.event.inputs.radius }}
         run: |
           copernicusmarine describe --contains INSITU_BLK || true
           echo "═══════════════════════"
-          python3 find_wave_buoys.py ${{ github.event.inputs.radius }}
+          python3 find_wave_buoys.py "$RADIUS"

@@ -5,6 +5,21 @@ on:
   # არასტაბილური აღმოჩნდა. ახლა cron-job.org გარედან საიმედოდ "აჭერს" ამ
   # ღილაკს საათში ერთხელ.
   workflow_dispatch:         # ხელით გაშვების ღილაკი + cron-job.org-ის გარეშე ტრიგერი
+    inputs:
+      force:
+        description: 'throttle-ის გამოტოვება (30 წუთზე ადრე განმეორებითი გაშვება)'
+        required: false
+        default: 'false'
+
+# ⚠ ერთდროული გაშვებები ერთსა და იმავე ფაილებს (data.json, *_cache.json,
+#   mta_mail_state.json) ცვლიან. რიგში დგებიან და არ უქმდებიან —
+#   გაუქმებული გაშვება Telegram-ის შეტყობინებას ნახევრად გაგზავნილს დატოვებდა.
+concurrency:
+  group: fetch-data
+  cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   update:
@@ -21,7 +36,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt python-dotenv requests pdfplumber
+        run: pip install -r requirements.txt
 
       - name: Run fetch script
         env:
@@ -30,7 +45,9 @@ jobs:
           OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          FORCE_REFRESH: ${{ github.event_name == 'workflow_dispatch' }}
+          # ⚠ ადრე `event_name == 'workflow_dispatch'` იყო — ყოველთვის true,
+          #   რადგან სხვა ტრიგერი აღარ არსებობს. throttle საერთოდ არ მუშაობდა.
+          FORCE_REFRESH: ${{ github.event.inputs.force == 'true' }}
         run: python fetch.py
 
       # ── MTA ბიულეტენების მიღება Gmail-იდან ──
@@ -42,6 +59,8 @@ jobs:
         env:
           GMAIL_USER:         ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          # დაშვებული გამგზავნები (მძიმით). ცარიელზე შემოწმება გამორთულია.
+          MTA_ALLOWED_SENDERS: ${{ secrets.MTA_ALLOWED_SENDERS }}
         run: python fetch_mta.py
 
       # ── MTA ბიულეტენების ingest (observation-only) ──
@@ -62,9 +81,16 @@ jobs:
           # (non-zero exit მთელ ბიჯს ჩააგდებდა). -A საიმედოა ამ repo-სთვის,
           # რადგან ყველა ცვალებადი ფაილი სწორედ commit-ის ღირსია.
           git add -A
-          git commit -m "Update weather data - $(date +'%Y-%m-%d %H:%M')" || echo "No changes to commit"
-          git pull --rebase --autostash || true
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Update weather data - $(date +'%Y-%m-%d %H:%M')"
+          # ⚠ `|| true` მოხსნილია: rebase-ის კონფლიქტი ჩუმად იმალებოდა და
+          #   ბიჯი მხოლოდ push-ზე ვარდებოდა გაურკვეველი შეცდომით. ახლა
+          #   კონფლიქტი აქვე ჩანს და ქვემოთ Telegram-ის backstop ირთვება.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Notify on failure (backstop)
         if: failure()

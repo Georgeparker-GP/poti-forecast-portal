@@ -57,14 +57,17 @@ def _label_key(cell: str) -> str:
 
 
 def _num(val: str):
-    """'155-225' → (155, 225) დიაპაზონი; '8' → 8.0; ცარიელი → None."""
+    """'155-225' → (155, 225) დიაპაზონი; '8' → 8.0; '20,2' → 20.2; ცარიელი → None."""
     if not val or not val.strip():
         return None
     val = val.strip()
-    m = re.match(r"^(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)$", val)
+    # ⚠ MTA ათწილადს ხშირად მძიმით წერს ("20,2", "1015,5"). ადრე ასეთი
+    #   მნიშვნელობა ტექსტად რჩებოდა და mta_log.json-ში სტრიქონად იწერებოდა.
+    num = val.replace(",", ".")
+    m = re.match(r"^(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)$", num)
     if m:
         return (float(m.group(1)), float(m.group(2)))
-    m = re.match(r"^(\d+(?:\.\d+)?)$", val)
+    m = re.match(r"^(\d+(?:\.\d+)?)$", num)
     if m:
         return float(m.group(1))
     return val  # ტექსტი (მაგ. ამინდის აღწერა)

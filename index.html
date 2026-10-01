@@ -1288,9 +1288,10 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
 
 <script>
 // ═══ CONSTANTS ═══
-// ⚠ ეს მნიშვნელობები ᲖᲣᲡᲢᲐᲓ უნდა ემთხვეოდეს fetch.py-ის THRESHOLDS-ს.
-// 2026-08-22-მდე ორი მხარე განსხვავებულ ცხრილს იყენებდა და ერთსა და იმავე
-// საათზე ორი სხვადასხვა ვერდიქტი გამოდიოდა.
+// ⚠ ეს მხოლოდ სათადარიგო მნიშვნელობებია. წყარო fetch.py-ის THRESHOLDS-ია,
+// რომელიც data.json-ის meta.thresholds-ში იწერება და ჩატვირთვისას აქ
+// გადაიწერება (`applyThresholds`). 2026-08-22-მდე ორი მხარე განსხვავებულ
+// ცხრილს იყენებდა და ერთსა და იმავე საათზე ორი ვერდიქტი გამოდიოდა.
 const THR = {
   barge:     10.0,   // ბორნის მანევრირება შეზღუდულია   (MTA)
   vessel:    17.0,   // გემების მანევრირება შეზღუდულია  (MTA)
@@ -1305,6 +1306,19 @@ const THR = {
   visVessel:  0.12,  // 120 მ — გემების მანევრირება იზღუდება
   visCranes:  0.08,  //  80 მ — ამწე ჩერდება
 };
+
+// meta.thresholds (fetch.py-ის სახელებით) → THR. მხოლოდ ვალიდური რიცხვები.
+const THR_KEYS = {
+  wind_barge: 'barge', wind_vessel: 'vessel', wind_suspended: 'suspended',
+  wave_height: 'wave', vis_vessel: 'visVessel', vis_cranes: 'visCranes',
+};
+function applyThresholds(t) {
+  if (!t || typeof t !== 'object') return;
+  for (const [src, dst] of Object.entries(THR_KEYS)) {
+    const v = Number(t[src]);
+    if (Number.isFinite(v) && v > 0) THR[dst] = v;
+  }
+}
 
 const COMPASS = ['N','NE','E','SE','S','SW','W','NW'];
 function toCompass(d){ return COMPASS[Math.round(((d%360)+360)%360/45)%8]; }
@@ -1467,6 +1481,7 @@ async function loadData() {
   }
 
   // recompute status with new thresholds
+  applyThresholds(d.meta && d.meta.thresholds);
   if (d.forecast) d.forecast.forEach(h => { h.status = computeStatus(h); });
   render(d);
 
