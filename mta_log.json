@@ -7932,9 +7932,133 @@
       },
       "portal_time": "2026-10-01 04:07",
       "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-02 04:08",
+      "source_file": "ამინდის_პროგნოზი_ფოთი_WF_14.7819_23.09.26_10.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "gust": [
+            17.0,
+            20.0
+          ],
+          "wind_speed": "10-15",
+          "wind_speed_note": "დღის მე-2 ნახ- ში დას.სამხრ.- დას. The second half of the night W/WS 6-11/12-17 m/sec",
+          "wave_cm": "10-50/35-85",
+          "sea_state": "2/ 2-3",
+          "vis_miles": "5-10",
+          "cloud": "ცვალებადი\nVariable",
+          "precip": "უნალექოდ No\nprecipitation"
+        },
+        "night": {
+          "gust": [
+            17.0,
+            20.0
+          ],
+          "wind_speed": "6-11",
+          "wind_speed_note": "დაქროლვა 12-15 მ/წმ. Gust 12-15 m/sec.",
+          "wave_cm": "80-180/125-250",
+          "sea_state": "3-4/ 4",
+          "vis_miles": "5-10",
+          "cloud": "მოღრუბლული\nCloudy",
+          "precip": "უმეტესად\nუნალექო\nMainly dry"
+        }
+      },
+      "bulletin_no": "WF14/7819",
+      "valid": "23/09/2026 წ. 10:00 სთ-დან 24/09/2026 წ. 10:00 სთ-მდე",
+      "bulletin_no_source": "pdf"
+    },
+    {
+      "ingested_at": "2026-10-02 04:08",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7812_23.09.2026წ._01.00სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/7812",
+      "forecast": {},
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-10-02 04:07",
+      "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-02 04:08",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7829_23.09.2026წ._შეცვლა_14.05სთ..pdf",
+      "type": "storm_warning",
+      "poti": {
+        "wind_dir_txt": "SW",
+        "wind_range": [
+          12.0,
+          13.0
+        ]
+      },
+      "bulletin_no": "14/7829",
+      "forecast": {},
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 13.0,
+        "wind_portal": 3.5,
+        "wind_delta": 9.5
+      },
+      "portal_time": "2026-10-02 04:07",
+      "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-02 04:08",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.7815_23.09.2026_წ._04_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 93.0,
+        "wind_avg": 8.0,
+        "wind_max": 12.0,
+        "wave_cm": [
+          20.0,
+          31.0
+        ],
+        "sea_state": 2.0,
+        "sea_level": null,
+        "rip_current": null,
+        "sea_temp": null,
+        "vis_miles": 10.0,
+        "cloud": "მოღრუბლული\nCloudy",
+        "precip": "უნალექოდ No\nprecipitation",
+        "air_temp": "22,5",
+        "humidity": 68.0,
+        "pressure": "1010,3"
+      },
+      "bulletin_no": "14/7815",
+      "date": "23 / სექტემბერი / 2026",
+      "time": "04:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 12.0,
+        "wind_portal": 3.5,
+        "wind_delta": 8.5,
+        "wind_avg_mta": 8.0,
+        "wind_avg_portal": 1.67,
+        "wind_avg_delta": 6.33,
+        "wave_mta": 0.26,
+        "wave_portal": 0.35,
+        "wave_delta": -0.09,
+        "dir_mta": 93.0,
+        "dir_portal": 107.0,
+        "dir_delta": 14.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 13.82,
+        "vis_capped": true,
+        "vis_flag": "portal_below",
+        "precip_mta": "dry",
+        "precip_portal": 2.0,
+        "precip_verdict": "false_positive",
+        "air_temp_mta": 22.5,
+        "air_temp_portal": 16.3,
+        "air_temp_delta": 6.2
+      },
+      "portal_time": "2026-10-02 04:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-10-01 04:08",
+  "last_ingest": "2026-10-02 04:08",
   "storm_windows": [
     {
       "warning": "14/6922",
@@ -8050,6 +8174,20 @@
     },
     {
       "warning": "14/7756",
+      "cancel": null,
+      "issued": null,
+      "cancelled": null,
+      "open": true
+    },
+    {
+      "warning": "14/7812",
+      "cancel": null,
+      "issued": null,
+      "cancelled": null,
+      "open": true
+    },
+    {
+      "warning": "14/7829",
       "cancel": null,
       "issued": null,
       "cancelled": null,
