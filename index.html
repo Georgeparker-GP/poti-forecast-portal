@@ -1383,6 +1383,24 @@ function effVis(h) {
   return Math.min(c, m);
 }
 
+/* სტატუსის წარწერა მიზეზის გათვალისწინებით.
+   ⚠ 2026-09-27: ვერდიქტი მხოლოდ ბარათზე იყო მიზეზზე მიბმული, ზედა
+     სტატუს-ზოლი კი ფიქსირებულ ტექსტს იღებდა. შედეგად ერთ ეკრანზე
+     ერთდროულად ეწერა „ამწე + გემები შეჩერებულია“ და „ამწეები
+     ოპერაციული“ — ურთიერთგამომრიცხავი. ახლა ორივე ამ ფუნქციიდან
+     კითხულობს. */
+function statusLabel(c, st, eng) {
+  const base = (eng ? STATUS_LBL_ENG : STATUS_LBL)[st] || st;
+  if (st !== 'suspended') return base;
+  const mw = Math.max(c.wind_speed || 0, c.wind_gusts || 0);
+  // ამწეს მხოლოდ ქარი (≥21.5) ან ინტენსიური ნისლი (≤80 მ) აჩერებს.
+  // თუ არცერთია, მიზეზი ტალღაა და ამწე მუშაობს.
+  if (mw < THR.suspended && effVis(c) > THR.visCranes) {
+    return eng ? 'Vessel Manoeuvring Suspended' : 'გემების მანევრირება შეჩერებულია';
+  }
+  return base;
+}
+
 function computeStatus(h) {
   const w = h.wind_speed  || 0;
   const g = h.wind_gusts  || 0;
@@ -1604,7 +1622,7 @@ function render(d) {
 
   const sb = document.getElementById('status-bar');
   sb.className = 'status-bar '+st;
-  document.getElementById('status-text').textContent = (currentLang==='eng' ? STATUS_LBL_ENG : STATUS_LBL)[st]||st;
+  document.getElementById('status-text').textContent = statusLabel(c, st, currentLang==='eng');
   const ai = document.getElementById('alert-items');
   if (ai) ai.innerHTML = (c.alerts||[]).map(a=>`<span>▲ ${a}</span>`).join('');
 
@@ -2420,17 +2438,7 @@ function renderSignal(c, fcFuture){
   //   გემების მანევრირება შეჩერებულია“ — მიზეზის მიუხედავად. ტალღა და
   //   ნისლი ამწეს არ აჩერებს, ანუ ტექსტი ზედმეტს ამბობდა და
   //   ოპერაციულ პანელსაც ეწინააღმდეგებოდა.
-  let verdict = (ENG ? STATUS_LBL_ENG : STATUS_LBL)[st] || st;
-  if (st === 'suspended') {
-    const mw = Math.max(c.wind_speed||0, c.wind_gusts||0);
-    const vv = effVis(c);
-    if (mw < THR.suspended && vv > THR.visCranes) {
-      // მიზეზი ტალღაა — ამწე მუშაობს, ნავიგაცია ჩერდება
-      verdict = ENG ? 'Vessel Manoeuvring Suspended'
-                    : 'გემების მანევრირება შეჩერებულია';
-    }
-  }
-  if (vEl) vEl.textContent = verdict;
+  if (vEl) vEl.textContent = statusLabel(c, st, ENG);
   if (!wEl) return;
 
   const a = c.alerts || [];
