@@ -8056,9 +8056,323 @@
       },
       "portal_time": "2026-10-02 04:07",
       "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-03 04:07",
+      "source_file": "ამინდის_პროგნოზი_ფოთი_WF_14.7857_24.09.26_10.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "gust": [
+            15.0,
+            18.0
+          ],
+          "wind_speed": "8-13",
+          "wave_cm": "170-300/130-250",
+          "sea_state": "4-5/ 4",
+          "sea_state_note": "მოსალოდნელია ნჩქრევა Rip Currens is expected.",
+          "vis_miles": "5-10/ 2-5",
+          "cloud": "მოღრუბლული\nCloudy",
+          "precip": "ხანმოკლე წვიმა\nBriefly rain",
+          "precip_note": "საღამოს დროგამოშვებით წვიმა In the evening occasional rain"
+        },
+        "night": {
+          "gust": [
+            15.0,
+            18.0
+          ],
+          "wind_speed": "6-11",
+          "wave_cm": "125-200/80-160",
+          "sea_state": "4/ 3-4",
+          "vis_miles": "5-10/ 2-5",
+          "cloud": "მოღრუბლული\nCloudy",
+          "precip": "დროგამოშვებით\nწვიმა\ntoccasional rain"
+        }
+      },
+      "bulletin_no": "WF14/7857",
+      "bulletin_no_source": "pdf",
+      "vs_portal_forecast": {
+        "issued": "2026-10-03 04:07",
+        "blocks": [
+          {
+            "block": "day1",
+            "window": "2026-10-03T10:00 → 16:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                5.2,
+                9.93
+              ],
+              "overlap": true,
+              "max_delta": 3.07,
+              "mid_delta": 2.94
+            },
+            "wave": {
+              "mta": [
+                1.7,
+                3.0
+              ],
+              "portal": [
+                0.52,
+                1.51
+              ],
+              "overlap": false,
+              "max_delta": 1.49,
+              "mid_delta": 1.33
+            }
+          },
+          {
+            "block": "day2",
+            "window": "2026-10-03T16:00 → 22:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                7.48,
+                11.37
+              ],
+              "overlap": true,
+              "max_delta": 1.63,
+              "mid_delta": 1.07
+            },
+            "wave": {
+              "mta": [
+                1.3,
+                2.5
+              ],
+              "portal": [
+                1.61,
+                1.88
+              ],
+              "overlap": true,
+              "max_delta": 0.62,
+              "mid_delta": 0.15
+            }
+          },
+          {
+            "block": "night1",
+            "window": "2026-10-03T22:00 → 04:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                6.0,
+                11.0
+              ],
+              "portal": [
+                8.14,
+                11.72
+              ],
+              "overlap": true,
+              "max_delta": -0.72,
+              "mid_delta": -1.43
+            },
+            "wave": {
+              "mta": [
+                1.25,
+                2.0
+              ],
+              "portal": [
+                1.84,
+                2.01
+              ],
+              "overlap": true,
+              "max_delta": -0.01,
+              "mid_delta": -0.3
+            }
+          },
+          {
+            "block": "night2",
+            "window": "2026-10-04T04:00 → 10:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                6.0,
+                11.0
+              ],
+              "portal": [
+                3.33,
+                7.42
+              ],
+              "overlap": true,
+              "max_delta": 3.58,
+              "mid_delta": 3.12
+            },
+            "wave": {
+              "mta": [
+                0.8,
+                1.6
+              ],
+              "portal": [
+                1.27,
+                1.75
+              ],
+              "overlap": true,
+              "max_delta": -0.15,
+              "mid_delta": -0.31
+            }
+          }
+        ],
+        "wind_overlap": "4/4",
+        "wave_overlap": "3/4"
+      }
+    },
+    {
+      "ingested_at": "2026-10-03 04:07",
+      "source_file": "საღამოს_ამინდის_პროგნოზი_ფოთი_WF_14.7844_23.09.26_22.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "gust": [
+            12.0,
+            15.0
+          ],
+          "wind_speed": "6-11",
+          "wave_cm": "80-180/125-250",
+          "sea_state": "3-4/ 4",
+          "vis_miles": "5-10",
+          "cloud": "მოღრუბლული\nCloudy",
+          "precip": "უმეტესად\nუნალექო\nMainly dry"
+        },
+        "night": {
+          "gust": [
+            12.0,
+            15.0
+          ],
+          "wind_speed": "6-11",
+          "wave_cm": "80-180/125-250",
+          "sea_state": "3-4/ 4",
+          "vis_miles": "5-10",
+          "cloud": "მოღრუბლული\nCloudy",
+          "precip": "უმეტესად\nუნალექო\nMainly dry"
+        }
+      },
+      "valid": "23/09/ 2026 წ. 22:00 სთ-დან (Poti) (Kulevi) 24/09/ 2026 წ. 10:00 სთ-მდე",
+      "bulletin_no": "WF14/7844",
+      "bulletin_no_source": "filename"
+    },
+    {
+      "ingested_at": "2026-10-03 04:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.7833_23.09.2026_წ._16_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 215.0,
+        "wind_avg": 9.0,
+        "wind_max": 11.0,
+        "wave_cm": [
+          62.0,
+          97.0
+        ],
+        "sea_state": 3.0,
+        "sea_level": null,
+        "rip_current": null,
+        "sea_temp": 25.0,
+        "vis_miles": 10.0,
+        "cloud": "მოწმენდილი\nClear",
+        "precip": "უნალექოდ\nNo precipitation",
+        "air_temp": 24.7,
+        "humidity": 84.0,
+        "pressure": 1011.9
+      },
+      "bulletin_no": "14/7833",
+      "date": "23 / სექტემბერი / 2026",
+      "time": "16:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 11.0,
+        "wind_portal": 4.6,
+        "wind_delta": 6.4,
+        "wind_avg_mta": 9.0,
+        "wind_avg_portal": 2.39,
+        "wind_avg_delta": 6.61,
+        "wave_mta": 0.79,
+        "wave_portal": 0.33,
+        "wave_delta": 0.46,
+        "dir_mta": 215.0,
+        "dir_portal": 270.0,
+        "dir_delta": 55.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 10.69,
+        "vis_capped": true,
+        "vis_flag": "portal_below",
+        "precip_mta": "dry",
+        "precip_portal": 1.2,
+        "precip_verdict": "false_positive",
+        "air_temp_mta": 24.7,
+        "air_temp_portal": 16.0,
+        "air_temp_delta": 8.7,
+        "sea_temp_mta": 25.0,
+        "sea_temp_portal": 23.2,
+        "sea_temp_delta": 1.8
+      },
+      "portal_time": "2026-10-03 04:07",
+      "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-03 04:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.7849_24.09.2026_წ._04_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 265.0,
+        "wind_avg": 1.0,
+        "wind_max": 2.0,
+        "wave_cm": [
+          71.0,
+          139.0
+        ],
+        "sea_state": [
+          3.0,
+          4.0
+        ],
+        "sea_level": null,
+        "rip_current": null,
+        "sea_temp": null,
+        "vis_miles": 10.0,
+        "cloud": "მოღრუბლული\nCloudy",
+        "precip": "უნალექოდ\nNo precipitation",
+        "air_temp": 22.4,
+        "humidity": 93.0,
+        "pressure": 1014.3
+      },
+      "bulletin_no": "14/7849",
+      "date": "24 / სექტემბერი / 2026",
+      "time": "04:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 2.0,
+        "wind_portal": 4.6,
+        "wind_delta": -2.6,
+        "wind_avg_mta": 1.0,
+        "wind_avg_portal": 2.39,
+        "wind_avg_delta": -1.39,
+        "wave_mta": 1.05,
+        "wave_portal": 0.33,
+        "wave_delta": 0.72,
+        "dir_mta": 265.0,
+        "dir_portal": 270.0,
+        "dir_delta": 5.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 10.69,
+        "vis_capped": true,
+        "vis_flag": "portal_below",
+        "precip_mta": "dry",
+        "precip_portal": 1.2,
+        "precip_verdict": "false_positive",
+        "air_temp_mta": 22.4,
+        "air_temp_portal": 16.0,
+        "air_temp_delta": 6.4
+      },
+      "portal_time": "2026-10-03 04:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-10-02 04:08",
+  "last_ingest": "2026-10-03 04:07",
   "storm_windows": [
     {
       "warning": "14/6922",
