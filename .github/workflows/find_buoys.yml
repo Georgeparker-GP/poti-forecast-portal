@@ -8,6 +8,9 @@ on:
         required: false
         default: '300'
 
+env:
+  TZ: Asia/Tbilisi
+
 jobs:
   search:
     runs-on: ubuntu-latest

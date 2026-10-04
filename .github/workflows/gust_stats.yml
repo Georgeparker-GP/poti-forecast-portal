@@ -3,6 +3,9 @@ name: ქროლვის outlier-სტატისტიკა
 on:
   workflow_dispatch:
 
+env:
+  TZ: Asia/Tbilisi
+
 jobs:
   stats:
     runs-on: ubuntu-latest

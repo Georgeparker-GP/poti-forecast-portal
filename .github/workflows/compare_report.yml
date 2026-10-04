@@ -10,6 +10,9 @@ on:
 permissions:
   contents: write
 
+env:
+  TZ: Asia/Tbilisi
+
 jobs:
   report:
     runs-on: ubuntu-latest

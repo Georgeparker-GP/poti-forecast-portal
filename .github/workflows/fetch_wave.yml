@@ -27,6 +27,9 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  TZ: Asia/Tbilisi
+
 jobs:
   wave:
     runs-on: ubuntu-latest

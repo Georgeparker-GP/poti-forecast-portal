@@ -21,6 +21,12 @@ concurrency:
 permissions:
   contents: write
 
+# ლოგები და commit-ის სახელი თბილისის დროით. GitHub-ის საკუთარი
+# პრეფიქსი (…Z) UTC რჩება. data.json-ს არ ეხება — იქ TBILISI_TZ
+# კოდშივე წერია.
+env:
+  TZ: Asia/Tbilisi
+
 jobs:
   update:
     runs-on: ubuntu-latest
