@@ -8491,9 +8491,172 @@
       },
       "portal_time": "2026-10-04 04:07",
       "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-05 04:08",
+      "source_file": "ამინდის_პროგნოზი_ფოთი_WF_14.7914_26.09.26_10.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "5-10",
+          "wave_cm": "70-120/40-75",
+          "sea_state": "3/2-3",
+          "vis_miles": "5-10",
+          "cloud": "ცვალებადი\nPartly cloudy",
+          "precip": "უნალექოდ\nNo precipitation",
+          "precip_note": "დღის დასაწყისში უმნიშვნელო ნალექი At the beginning of the day mainly dry"
+        },
+        "night": {
+          "wind_speed": "3-8",
+          "wave_cm": "20-50",
+          "sea_state": "2",
+          "vis_miles": "5-10",
+          "cloud": "ცვალებადი\nPartly cloudy",
+          "precip": "უნალექოდ\nNo precipitation"
+        }
+      },
+      "bulletin_no": "WF14/7914",
+      "valid": "26/09/ 2026 წ. 10:00 სთ-დან Poti Kulevi დღე ღამე დღე ღამე 27/09/ 2026 წ. 10:00 სთ-მდე",
+      "bulletin_no_source": "pdf"
+    },
+    {
+      "ingested_at": "2026-10-05 04:08",
+      "source_file": "საღამოს_ამინდის_პროგნოზი_ფოთი_WF_14.7904_25.09.26_22.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "6-11",
+          "wave_cm": "70-120/40-80",
+          "sea_state": "3/2-3",
+          "vis_miles": "5-10/2-5",
+          "cloud": "ძირითადად მოღრუბლული\nMostly cloudy",
+          "precip": "ხანმოკლე წვიმა\nBriefly rain",
+          "precip_note": "მოსალოდნელია ელჭექი Thunderstorm is expected"
+        },
+        "night": {
+          "wind_speed": "6-11",
+          "wave_cm": "70-120/40-80",
+          "sea_state": "3/2-3",
+          "vis_miles": "5-10/2-5",
+          "cloud": "ძირითადად მოღრუბლული\nMostly cloudy",
+          "precip": "ხანმოკლე წვიმა\nBriefly rain",
+          "precip_note": "მოსალოდნელია ელჭექი Thunderstorm is expected"
+        }
+      },
+      "valid": "25/09/ 2026 წ. 22:00 სთ-დან (Poti) (Kulevi) ღამე ღამე 26/09/ 2026 წ. 10:00 სთ-მდე",
+      "bulletin_no": "WF14/7904",
+      "bulletin_no_source": "filename"
+    },
+    {
+      "ingested_at": "2026-10-05 04:08",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.7894_25.09.2026_წ._16_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 300.0,
+        "wind_avg": 7.0,
+        "wind_max": 9.0,
+        "wave_cm": [
+          70.0,
+          120.0
+        ],
+        "sea_state": 3.0,
+        "sea_level": "-",
+        "rip_current": null,
+        "sea_temp": 24.4,
+        "vis_miles": 10.0,
+        "cloud": "ცვალებადი\nPartly cloudy",
+        "precip": "უნალექოდ\nNo precipitation",
+        "air_temp": 21.6,
+        "humidity": 70.0,
+        "pressure": 1020.0
+      },
+      "bulletin_no": "14/7894",
+      "date": "25 / სექტემბერი / 2026",
+      "time": "16:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 9.0,
+        "wind_portal": 6.3,
+        "wind_delta": 2.7,
+        "wind_avg_mta": 7.0,
+        "wind_avg_portal": 3.86,
+        "wind_avg_delta": 3.14,
+        "wave_mta": 0.95,
+        "wave_portal": 0.38,
+        "wave_delta": 0.57,
+        "dir_mta": 300.0,
+        "dir_portal": 63.0,
+        "dir_delta": 123.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 27.2,
+        "vis_capped": true,
+        "vis_flag": "ok_capped",
+        "precip_mta": "dry",
+        "precip_portal": 0.0,
+        "precip_verdict": "match",
+        "air_temp_mta": 21.6,
+        "air_temp_portal": 12.6,
+        "air_temp_delta": 9.0,
+        "sea_temp_mta": 24.4,
+        "sea_temp_portal": 22.7,
+        "sea_temp_delta": 1.7
+      },
+      "portal_time": "2026-10-05 04:07",
+      "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-05 04:08",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.7907_26.09.2026_წ._04_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 179.0,
+        "wind_avg": 7.0,
+        "wind_max": 10.0,
+        "wave_cm": [
+          70.0,
+          100.0
+        ],
+        "sea_state": 3.0,
+        "sea_level": "-",
+        "rip_current": null,
+        "sea_temp": null,
+        "vis_miles": 10.0,
+        "cloud": "მოღრუბლული\nCloudy",
+        "precip": "უნლექოდ\nNo precupitation",
+        "air_temp": "21,3",
+        "humidity": 81.0,
+        "pressure": "1019,9"
+      },
+      "bulletin_no": "14/7907",
+      "date": "26 / სექტემბერი / 2026",
+      "time": "04:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 10.0,
+        "wind_portal": 6.3,
+        "wind_delta": 3.7,
+        "wind_avg_mta": 7.0,
+        "wind_avg_portal": 3.86,
+        "wind_avg_delta": 3.14,
+        "wave_mta": 0.85,
+        "wave_portal": 0.38,
+        "wave_delta": 0.47,
+        "dir_mta": 179.0,
+        "dir_portal": 63.0,
+        "dir_delta": 116.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 27.2,
+        "vis_capped": true,
+        "vis_flag": "ok_capped",
+        "air_temp_mta": 21.3,
+        "air_temp_portal": 12.6,
+        "air_temp_delta": 8.7
+      },
+      "portal_time": "2026-10-05 04:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-10-04 04:07",
+  "last_ingest": "2026-10-05 04:08",
   "storm_windows": [
     {
       "warning": "14/6922",
