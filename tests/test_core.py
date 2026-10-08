@@ -31,6 +31,12 @@ class ComputeStatusTest(unittest.TestCase):
         self.assertEqual(fetch._compute_status(5, T["wind_suspended"], 0.2, 10)[0], "suspended")
         self.assertEqual(fetch._compute_status(1, 2, T["wave_height"], 10)[0], "suspended")
 
+    def test_vessel_fog_limit_2026_10_08(self):
+        # 08.10: 140 მ, მანევრირება შეჩერდა; 20.09: ~350 მ, გრძელდებოდა
+        self.assertEqual(fetch._compute_status(3, 5, 0.2, 11.68, vis_min=0.14)[0], "vessel")
+        self.assertEqual(fetch._compute_status(3, 5, 0.2, 11.0, vis_min=0.35)[0], "operational")
+        self.assertEqual(fetch._compute_status(3, 5, 0.2, 11.0, vis_min=0.997)[0], "operational")
+
     def test_fog_uses_worst_source(self):
         st, _ = fetch._compute_status(1, 2, 0.2, 11.0, vis_min=0.10)
         self.assertEqual(st, "vessel")
@@ -80,6 +86,24 @@ class ConsensusTest(unittest.TestCase):
                      precipitation=0.0, visibility_km=10.0)
         out = fetch.compute_consensus(src, None, None, src, None, None, None, None)
         self.assertEqual(out[0]["source_count"], 1)
+
+    def test_identical_values_from_two_models_counted_once(self):
+        # best_match ხშირად ICON-EU-ს ზუსტ ასლს აბრუნებს (სხვადასხვა სია)
+        rec = dict(wind_speed=3.0, wind_gusts=4.5, wind_direction=69.0,
+                   precipitation=1.0, visibility_km=11.66, air_temp=13.7)
+        best, icon = _hours(1, **rec), _hours(1, **rec)
+        gfs = _hours(1, **{**rec, "wind_speed": 4.5, "precipitation": 0.0})
+        out = fetch.compute_consensus(best, gfs, icon, None, None, None, None, None)
+        self.assertEqual(out[0]["precip_total"], 2)       # best + gfs, icon არა
+        self.assertEqual(out[0]["precip_agreement"], 63)  # 0.22 / (0.22 + 0.13)
+
+    def test_different_values_both_counted(self):
+        base = dict(wind_speed=3.0, wind_gusts=4.5, wind_direction=69.0,
+                    precipitation=1.0, visibility_km=11.66, air_temp=13.7)
+        best = _hours(1, **base)
+        icon = _hours(1, **{**base, "air_temp": 13.6})
+        out = fetch.compute_consensus(best, None, icon, None, None, None, None, None)
+        self.assertEqual(out[0]["precip_total"], 2)
 
     def test_output_carries_thresholds(self):
         src = _hours(2, wind_speed=5.0, wind_gusts=7.0, wind_direction=90.0,

@@ -114,7 +114,11 @@ THRESHOLDS = {
     #     ათეულობით მეტრია. ფაქტობრივად წყდება მაშინ, როცა მეამწე
     #     ტრიუმს ვეღარ ხედავს.
     # რიცხვები ფოთის საოპერაციო პრაქტიკიდანაა.
-    "vis_vessel":      0.12,  # 120 მ — გემების მანევრირება იზღუდება
+    # 2026-10-08 კალიბრაცია: 120 → 150 მ. ჩანაწერები: 08.10 — 140 მ,
+    # მანევრირება შეჩერდა (პორტალი 20 მ-ით ჩამოსცდა); 20.09 — ~350 მ და
+    # 21.09 — 997 მ, მანევრირება გრძელდებოდა. ნამდვილი ზღვარი 140–350 მ-ს
+    # შორისაა; 150 ყველაზე მცირე ცვლილებაა, რომელიც სამივეს ეთანხმება.
+    "vis_vessel":      0.15,  # 150 მ — გემების მანევრირება იზღუდება
     "vis_cranes":      0.08,  #  80 მ — ამწე ჩერდება
 }
 
@@ -843,6 +847,14 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
     result  = []
 
     for i in range(hours):
+        # ═══ ერთნაირი ჩანაწერების მოხსნა ᲐᲛ ᲡᲐᲐᲗᲘᲡᲗᲕᲘᲡ ═══
+        # ⚠ 2026-10-08: Open-Meteo-ს `best_match` ფოთზე ხშირად ICON-EU-ს
+        #   სიტყვასიტყვით აბრუნებს (195 ჩანაწერიდან 164-ში ყველა ველი
+        #   ემთხვეოდა). იდენტობის შემოწმება ამას ვერ იჭერს — ორი სხვადასხვა
+        #   სიაა. შედეგად ერთი მოდელი ნალექის, ხილვადობისა და ტენიანობის
+        #   აუზში ორჯერ ითვლებოდა და `precip_agreement`-ს ბერავდა.
+        hour_pool = _dedup_hour(atmo_pool, i)
+
         # ═══ აუზის არჩევა ᲐᲛ ᲡᲐᲐᲗᲘᲡᲗᲕᲘᲡ ═══
         # ⚠ 2026-09-16 აუდიტი: აუზი მხოლოდ ერთხელ ირჩეოდა, სიის
         #   არსებობის მიხედვით. თუ ელიტურ წყაროს კონკრეტულ საათზე
@@ -859,8 +871,8 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         if len(_elite_h) >= ELITE_MIN:
             _wind_h, hour_pool_mode = _elite_h, "elite"
         else:
-            _wind_h, hour_pool_mode = _vals(atmo_pool), "degraded"
-        active_wind_pool = elite_wind_pool if hour_pool_mode == "elite" else atmo_pool
+            _wind_h, hour_pool_mode = _vals(hour_pool), "degraded"
+        active_wind_pool = elite_wind_pool if hour_pool_mode == "elite" else hour_pool
         active_wind_w    = sum(w for _, w in _wind_h)
 
         # ─── ქარის ლოგიკა ───
@@ -924,7 +936,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # ასე ლოკალურ კონვექციას არ ვკარგავთ, მაგრამ გაურკვევლობა გამჭვირვალეა.
         precip_pool = [
             (src[i].get("precipitation"), w)
-            for src, w in atmo_pool
+            for src, w in hour_pool
             if i < len(src) and src[i].get("precipitation") is not None
         ]
         precip_all = [v for v, _ in precip_pool]
@@ -944,7 +956,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # fog_area_fraction-იდან) კონსენსუსში არ მონაწილეობს, სანამ ერთი
         # რეალური წყაროც კი არსებობს.
         _vis_real, _vis_est = [], []
-        for src, w in atmo_pool:
+        for src, w in hour_pool:
             if i >= len(src) or not src[i]:
                 continue
             v = src[i].get("visibility_km")
@@ -968,16 +980,16 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
 
         # ── ტენიანობა / ნამის წერტილი / წნევა ──
         # მხოლოდ ინფორმაციულია — სტატუსს არ ცვლის.
-        humidity   = _wavg(atmo_pool, i, "humidity")
-        dew_point  = _wavg(atmo_pool, i, "dew_point")
-        pressure   = _wavg(atmo_pool, i, "pressure")
+        humidity   = _wavg(hour_pool, i, "humidity")
+        dew_point  = _wavg(hour_pool, i, "dew_point")
+        pressure   = _wavg(hour_pool, i, "pressure")
 
         # ჭექა-ქუხილი: WMO-ს კოდები 95 (ჭექა-ქუხილი),
         # 96 და 99 (სეტყვით). წესი: რომელიმე წყარომაც დააფიქსიროს,
         # ვაღიარებთ — ამწესთან დაკავშირებული რისკი ძალიან მაღალია
         # და გამოტოვება უფრო ძვირია, ვიდრე ცრუ გაფრთხილება.
         _tstorm = False
-        for src, _w in atmo_pool:
+        for src, _w in hour_pool:
             if i < len(src) and src[i]:
                 wc = src[i].get("weather_code")
                 if wc in (95, 96, 99):
@@ -1052,7 +1064,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # თუ best_match-ს არ აქვს, ვცდილობთ სხვა ატმოსფერულ წყაროებს.
         feels_like = atmo_best[i].get("feels_like")
         if feels_like is None:
-            for src, _ in atmo_pool:
+            for src, _ in hour_pool:
                 if i < len(src) and src[i].get("feels_like") is not None:
                     feels_like = src[i]["feels_like"]
                     break
@@ -1105,6 +1117,31 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "wind_pool": hour_pool_mode,
         })
     return result
+
+
+# ველები, რომლებიც ორი წყაროს „ერთნაირობას“ განსაზღვრავს
+_DUP_FIELDS = ("wind_speed", "wind_gusts", "wind_direction",
+               "precipitation", "visibility_km", "air_temp")
+
+
+def _dedup_hour(pool, i):
+    """აუზი i-ურ საათზე ერთნაირი ჩანაწერების გარეშე.
+
+    ორი ჩანაწერი დუბლიკატია, თუ `_DUP_FIELDS`-ის ყველა ველი ემთხვევა და
+    ქარის სიჩქარე ცნობილია. რჩება პირველი (აუზის რიგით — best_match
+    ICON-EU-ზე ადრეა), ანუ მისი წონა. სხვა საათებს ეს არ ეხება:
+    თუ მოდელები განსხვავდებიან, ორივე ითვლება.
+    """
+    kept, seen = [], []
+    for src, w in pool:
+        h = src[i] if i < len(src) else None
+        if h and h.get("wind_speed") is not None:
+            sig = tuple(h.get(f) for f in _DUP_FIELDS)
+            if sig in seen:
+                continue
+            seen.append(sig)
+        kept.append((src, w))
+    return kept
 
 
 CONF_HIGH_MAX   = 1.5   # σ < 1.5 მ/წმ → მაღალი ნდობა
