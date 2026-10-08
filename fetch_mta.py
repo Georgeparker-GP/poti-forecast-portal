@@ -21,6 +21,8 @@ HTTP ჩამოტვირთვა. 2026-08-25-ის ტესტმა ა
 გარემოს ცვლადები:
     GMAIL_USER            — მაგ. gigaparkaia@gmail.com
     GMAIL_APP_PASSWORD    — Google App Password (16 სიმბოლო, ჰარეების გარეშე)
+    MTA_ALLOWED_SENDERS   — დაშვებული გამგზავნები, მძიმით (არასავალდებულო,
+                            მაგრამ რეკომენდებულია — Power Automate-ის მისამართი)
 
 პრინციპი: არასოდეს აგდებს არა-ნულოვან exit კოდს — MTA-ს პაიპლაინი
 პორტალის მთავარ განახლებას ვერ უნდა შეაფერხოს.
@@ -29,6 +31,7 @@ HTTP ჩამოტვირთვა. 2026-08-25-ის ტესტმა ა
 from __future__ import annotations
 
 import email
+import hashlib
 import imaplib
 import json
 import os
@@ -37,6 +40,7 @@ import re
 import sys
 from datetime import datetime, timedelta, timezone
 from email.header import decode_header, make_header
+from email.utils import parseaddr
 
 # ─────────────────────────── კონფიგი ───────────────────────────
 
@@ -117,6 +121,81 @@ def save_state(seen: list) -> None:
         )
     except Exception as exc:
         log(f"state ჩაწერის შეცდომა: {exc}")
+
+
+def message_key(msg, subject: str) -> str:
+    """წერილის სტაბილური იდენტიფიკატორი dedup-ისთვის.
+
+    Message-ID-ის გარეშე ვაგებთ სათაურიდან და თარიღიდან.
+    ⚠ ადრე `noid-{num}` იყო — IMAP-ის თანმიმდევრობის ნომერი,
+      რომელიც საქაღალდის შეცვლისას იცვლება და dedup ვერ მუშაობს.
+    """
+    msg_id = (msg.get("Message-ID") or "").strip()
+    if msg_id:
+        return msg_id
+    base = f"{subject}|{msg.get('Date', '')}"
+    return "noid-" + hashlib.sha1(base.encode("utf-8", "replace")).hexdigest()[:16]
+
+
+def allowed_senders() -> set:
+    """MTA_ALLOWED_SENDERS — მძიმით გამოყოფილი მისამართები.
+
+    ცარიელი → შემოწმება გამორთულია (უკუთავსებადობა). დაყენებისას მხოლოდ
+    ამ მისამართებიდან მოსული წერილი მუშავდება — თორემ ნებისმიერს, ვინც
+    „MTA“ სათაურით PDF-ს გამოგზავნის, საჯარო პორტალზე ყალბი
+    სინოპტიკოსის შენიშვნის ჩასმა შეეძლო.
+    """
+    raw = os.environ.get("MTA_ALLOWED_SENDERS", "")
+    return {a.strip().lower() for a in raw.split(",") if a.strip()}
+
+
+def fetch_headers(mail: imaplib.IMAP4_SSL, ids: list) -> list:
+    """სათაურები ერთი მოთხოვნით → [(num, Message), ...] ids-ის რიგით.
+
+    BODY.PEEK წერილს წაკითხულად არ ნიშნავს.
+    """
+    if not ids:
+        return []
+    typ, data = mail.fetch(b",".join(ids),
+                           "(BODY.PEEK[HEADER.FIELDS (SUBJECT DATE MESSAGE-ID FROM)])")
+    if typ != "OK" or not data:
+        return []
+    by_num = {}
+    for item in data:
+        if isinstance(item, tuple) and len(item) == 2:
+            num = item[0].split(b" ", 1)[0]
+            by_num[num] = email.message_from_bytes(item[1])
+    return [(n, by_num[n]) for n in ids if n in by_num]
+
+
+def select_candidates(headers: list, seen_set: set, allowed: set):
+    """სათაურებიდან დასამუშავებელი წერილების არჩევა.
+
+    აბრუნებს (candidates, skipped, rejected):
+      candidates — [(num, msg_id, subject), ...] ძველიდან ახლისკენ
+      skipped    — უკვე დამუშავებულთა რაოდენობა
+      rejected   — [(subject, sender), ...] უცნობი გამგზავნისგან
+    """
+    candidates, rejected = [], []
+    skipped = 0
+    for num, hdr in headers:
+        subject = decode_mime(hdr.get("Subject", ""))
+        # მხოლოდ ჩვენი პრეფიქსი (ინბოქსზე გადასვლის შემთხვევისთვის)
+        if SUBJECT_TAG not in subject:
+            continue
+        msg_id = message_key(hdr, subject)
+        if msg_id in seen_set:
+            skipped += 1
+            continue
+        if allowed:
+            sender = parseaddr(decode_mime(hdr.get("From", "")))[1].lower()
+            if sender not in allowed:
+                # seen-ში არ ვწერთ: თუ სია შეცდომით იყო დაყენებული,
+                # გასწორების შემდეგ წერილი ისევ დამუშავდება.
+                rejected.append((subject, sender))
+                continue
+        candidates.append((num, msg_id, subject))
+    return candidates, skipped, rejected
 
 
 def pick_mailbox(mail: imaplib.IMAP4_SSL) -> str:
@@ -228,13 +307,33 @@ def main() -> None:
 
         log(f"{len(ids)} წერილი ბოლო {LOOKBACK_DAYS} დღეში "
             f"(state-ში უკვე {len(seen_set)})")
-        if len(ids) > MAX_PER_RUN:
-            log(f"იზღუდება {MAX_PER_RUN}-მდე (დანარჩენი შემდეგ გაშვებაზე)")
-            ids = ids[:MAX_PER_RUN]   # ᲫᲕᲔᲚᲘᲓᲐᲜ — ხვრელი ქრონოლოგიურად ივსება
+
+        # ⚠ 2026-10-01: ზღვარი ᲛᲮᲝᲚᲝᲓ ᲐᲮᲐᲚ წერილებზე ვრცელდება.
+        #
+        #   ადრე `ids[:MAX_PER_RUN]` ყველა წერილს ჭრიდა, დამუშავებულის
+        #   ჩათვლით. 21 დღეში ~84 წერილი გროვდება, ამიტომ პირველი 60
+        #   (ყველაზე ძველი, უკვე `seen`-ში მყოფი) მთელ ლიმიტს ხარჯავდა და
+        #   ახალ წერილებამდე სკრიპტი ვერ აღწევდა. დღეში მხოლოდ ერთი დღის
+        #   ბიულეტენები „იწურებოდა“ — 10-01-ზე 09-22-ის მუშავდებოდა.
+        #
+        #   ᲐᲮᲚᲐ: ჯერ მხოლოდ სათაურები მოდის (BODY.PEEK — წაკითხულად არ
+        #   ინიშნება), იფილტრება დამუშავებული და უცხო გამგზავნი, და
+        #   ლიმიტი მხოლოდ დარჩენილზე მოქმედებს.
+        headers = fetch_headers(mail, ids)
+        allowed = allowed_senders()
+        if not allowed:
+            log("⚠ MTA_ALLOWED_SENDERS არ არის დაყენებული — გამგზავნი არ მოწმდება")
+        candidates, skipped, rejected = select_candidates(headers, seen_set, allowed)
+        for subject, sender in rejected:
+            log(f"უცნობი გამგზავნი ({sender or '—'}) — გამოტოვება: {subject[:60]}")
+
+        if len(candidates) > MAX_PER_RUN:
+            log(f"{len(candidates)} ახალი წერილი — იზღუდება {MAX_PER_RUN}-მდე "
+                f"(დანარჩენი შემდეგ გაშვებაზე)")
+            candidates = candidates[:MAX_PER_RUN]   # ᲫᲕᲔᲚᲘᲓᲐᲜ — ხვრელი ქრონოლოგიურად ივსება
 
         saved = 0
-        skipped = 0
-        for num in ids:
+        for num, msg_id, subject in candidates:
             try:
                 typ, raw = mail.fetch(num, "(RFC822)")
                 if typ != "OK" or not raw or not raw[0]:
@@ -242,24 +341,6 @@ def main() -> None:
                 msg = email.message_from_bytes(raw[0][1])
             except Exception as exc:
                 log(f"წერილის წაკითხვა ჩავარდა: {exc}")
-                continue
-
-            subject = decode_mime(msg.get("Subject", ""))
-            # Message-ID-ის გარეშე ვაგებთ სტაბილურ იდენტიფიკატორს.
-            # ⚠ ადრე `noid-{num}` იყო — IMAP-ის თანმიმდევრობის ნომერი,
-            #   რომელიც საქაღალდის შეცვლისას იცვლება და dedup ვერ მუშაობს.
-            msg_id = (msg.get("Message-ID") or "").strip()
-            if not msg_id:
-                import hashlib
-                base = f"{subject}|{msg.get('Date','')}"
-                msg_id = "noid-" + hashlib.sha1(base.encode("utf-8", "replace")).hexdigest()[:16]
-
-            # მხოლოდ ჩვენი პრეფიქსი (ინბოქსზე გადასვლის შემთხვევისთვის)
-            if SUBJECT_TAG not in subject:
-                continue
-
-            if msg_id in seen_set:
-                skipped += 1
                 continue
 
             pdfs = extract_pdfs(msg, seen_set)

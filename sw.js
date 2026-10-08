@@ -105,7 +105,11 @@ async function staleWhileRevalidate(req, cacheName) {
       return resp;
     })
     .catch(() => null);
-  return cached || network || fetch(req);
+  if (cached) return cached;
+  /* ⚠ ადრე `cached || network || fetch(req)` იყო: network Promise-ია და
+     ყოველთვის truthy, ამიტომ ქსელის ჩავარდნისას respondWith null-ს იღებდა. */
+  const resp = await network;
+  return resp || Response.error();
 }
 
 /* ─── მოთხოვნების მარშრუტიზაცია ─── */

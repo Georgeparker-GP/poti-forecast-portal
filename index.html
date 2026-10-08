@@ -1288,9 +1288,10 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
 
 <script>
 // ═══ CONSTANTS ═══
-// ⚠ ეს მნიშვნელობები ᲖᲣᲡᲢᲐᲓ უნდა ემთხვეოდეს fetch.py-ის THRESHOLDS-ს.
-// 2026-08-22-მდე ორი მხარე განსხვავებულ ცხრილს იყენებდა და ერთსა და იმავე
-// საათზე ორი სხვადასხვა ვერდიქტი გამოდიოდა.
+// ⚠ ეს მხოლოდ სათადარიგო მნიშვნელობებია. წყარო fetch.py-ის THRESHOLDS-ია,
+// რომელიც data.json-ის meta.thresholds-ში იწერება და ჩატვირთვისას აქ
+// გადაიწერება (`applyThresholds`). 2026-08-22-მდე ორი მხარე განსხვავებულ
+// ცხრილს იყენებდა და ერთსა და იმავე საათზე ორი ვერდიქტი გამოდიოდა.
 const THR = {
   barge:     10.0,   // ბორნის მანევრირება შეზღუდულია   (MTA)
   vessel:    17.0,   // გემების მანევრირება შეზღუდულია  (MTA)
@@ -1302,9 +1303,22 @@ const THR = {
   // გემები უფრო ადრე იზღუდება: ნავიგაციაა, მანძილები დიდია.
   // ამწე უფრო ინტენსიურ ნისლს უძლებს — ფაქტობრივად მაშინ ჩერდება,
   // როცა მეამწე ტრიუმს ვეღარ ხედავს.
-  visVessel:  0.12,  // 120 მ — გემების მანევრირება იზღუდება
+  visVessel:  0.15,  // 150 მ — გემების მანევრირება იზღუდება (2026-10-08: 120 → 150)
   visCranes:  0.08,  //  80 მ — ამწე ჩერდება
 };
+
+// meta.thresholds (fetch.py-ის სახელებით) → THR. მხოლოდ ვალიდური რიცხვები.
+const THR_KEYS = {
+  wind_barge: 'barge', wind_vessel: 'vessel', wind_suspended: 'suspended',
+  wave_height: 'wave', vis_vessel: 'visVessel', vis_cranes: 'visCranes',
+};
+function applyThresholds(t) {
+  if (!t || typeof t !== 'object') return;
+  for (const [src, dst] of Object.entries(THR_KEYS)) {
+    const v = Number(t[src]);
+    if (Number.isFinite(v) && v > 0) THR[dst] = v;
+  }
+}
 
 const COMPASS = ['N','NE','E','SE','S','SW','W','NW'];
 function toCompass(d){ return COMPASS[Math.round(((d%360)+360)%360/45)%8]; }
@@ -1485,6 +1499,7 @@ async function loadData() {
   }
 
   // recompute status with new thresholds
+  applyThresholds(d.meta && d.meta.thresholds);
   if (d.forecast) d.forecast.forEach(h => { h.status = computeStatus(h); });
   render(d);
 
@@ -1659,8 +1674,8 @@ function render(d) {
     vesselLevel = 'danger';
     vesselText  = isEng ? 'Vessel Manoeuvring — Restricted' : 'გემების მანევრირება — შეზღუდულია';
     vesselSub   = vis <= THR.visVessel
-      ? (isEng ? `Visibility ${Math.round(vis*1000)} m (limit 120 m)`
-               : `ხილვადობა ${Math.round(vis*1000)} მ (ზღვარი 120 მ)`)
+      ? (isEng ? `Visibility ${Math.round(vis*1000)} m (limit ${Math.round(THR.visVessel*1000)} m)`
+               : `ხილვადობა ${Math.round(vis*1000)} მ (ზღვარი ${Math.round(THR.visVessel*1000)} მ)`)
       : (isEng ? 'Wind ≥ 17 m/s' : 'ქარი ≥ 17 მ/წმ');
   } else if (w >= THR.barge) {
     vesselLevel = 'warn';
@@ -1697,7 +1712,7 @@ function render(d) {
   if (wvCard) wvCard.classList.toggle('estimated', wvEst);
   renderWaveSplit(c);
 
-  // ოთხი საფეხური: ≤80 მ კრიტიკული · ≤120 მ შეზღუდვა ·
+  // ოთხი საფეხური: ≤80 მ კრიტიკული · ≤150 მ შეზღუდვა ·
   // ≤1 კმ ყურადღება (ზღვრამდე არაა, მაგრამ ნისლია) · სხვა — ნორმა.
   const VIS_WARN = 1.0;
   setCard('card-vis','c-vis', c.visibility_km,
@@ -2552,7 +2567,7 @@ const I18N = {
   lbl_temp:      {geo:'ჰაერის ტემპ.', eng:'Air Temp.'},
   lbl_rain:      {geo:'ნალექი', eng:'Precipitation'},
   lbl_vis:       {geo:'ხილვადობა', eng:'Visibility'},
-  vis_sub:       {geo:'ნისლი: გემები 120 მ · ამწე 80 მ', eng:'Fog: vessels 120 m · cranes 80 m'},
+  vis_sub:       {geo:'ნისლი: გემები 150 მ · ამწე 80 მ', eng:'Fog: vessels 150 m · cranes 80 m'},
   gusts_lbl:     {geo:'დაქროლვა:', eng:'Gusts:'},
   lbl_compass:   {geo:'ქარის მიმართულება', eng:'Wind Direction'},
   compass_conv:  {geo:'მეტეოროლ. კონვ.', eng:'Meteorol. conv.'},

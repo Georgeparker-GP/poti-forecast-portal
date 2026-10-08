@@ -1,7 +1,7 @@
 # ⚓ ფოთის პორტი — ამინდის კონსენსუს-პორტალი
 
 48-საათიანი საოპერაციო ამინდის პორტალი GitHub Pages-ზე.
-ავტომატური განახლება ყოველ საათში GitHub Actions-ის მეშვეობით.
+ავტომატური განახლება ყოველ საათში GitHub Actions-ის მეშვეობით (ტრიგერი — cron-job.org).
 
 ---
 
@@ -54,28 +54,35 @@ https://შენი_username.github.io/poti-portal/
 
 რეპოში: **Settings → Secrets and variables → Actions → New repository secret**
 
-| სახელი | სად მიიღო |
+| სახელი | სად მიიღო / რისთვის |
 |--------|-----------|
-| `WINDY_API_KEY` | windy.com/en/api |
 | `STORMGLASS_API_KEY` | stormglass.io |
 | `OWM_API_KEY` | openweathermap.org |
 | `TELEGRAM_BOT_TOKEN` | @BotFather Telegram-ში |
 | `TELEGRAM_CHAT_ID` | @userinfobot Telegram-ში |
+| `GMAIL_USER`, `GMAIL_APP_PASSWORD` | MTA-ს ბიულეტენების მიღება IMAP-ით |
+| `MTA_ALLOWED_SENDERS` | დაშვებული გამგზავნები მძიმით (Power Automate-ის მისამართი). ცარიელზე გამგზავნი არ მოწმდება |
+| `CMEMS_USERNAME`, `CMEMS_PASSWORD` | Copernicus Marine (ტალღის ცალკე pipeline) |
 
 > გასაღებების გარეშეც მუშაობს — Open-Meteo უფასოა.
 
 ---
 
-### 5. პირველი გაშვება
+### 5. გაშვება
 
-**Actions**탭 → **Weather Fetch** → **Run workflow** → **Run workflow** ✓
+`Update Weather Data` workflow-ს მხოლოდ `workflow_dispatch` ტრიგერი აქვს.
+საათში ერთხელ მას cron-job.org უშვებს GitHub API-ით. GitHub-ის `schedule:`
+არასტაბილური აღმოჩნდა.
 
-კონსოლში უნდა გამოჩნდეს:
+ხელით გაშვება: **Actions → Update Weather Data → Run workflow**. თუ წინა
+განახლებიდან 30 წუთი არ გასულა, გაშვება გამოტოვდება. მაშინ `force` ველში
+`true` ჩაწერე.
+
+ტესტები:
+
 ```
-Open-Meteo [best_match] ✓
-Open-Meteo [gfs_seamless] ✓
-Open-Meteo Marine ✓
-✓ data.json განახლდა
+pip install -r requirements.txt
+python -m unittest discover -s tests
 ```
 
 ---
@@ -84,13 +91,19 @@ Open-Meteo Marine ✓
 
 | ფაილი | როლი |
 |-------|------|
-| `fetch.py` | API-ების გამოძახება + კონსენსუსი |
-| `index.html` | პორტალის ინტერფეისი |
-| `data.json` | კონსენსუს-პროგნოზი (ავტო-განახლება) |
-| `requirements.txt` | Python ბიბლიოთეკები |
-| `.github/workflows/fetch.yml` | ავტომატური გაშვება |
-| `stormglass_cache.json` | Stormglass კეში (ავტო) |
-| `status_cache.json` | Telegram სტატუს-კეში (ავტო) |
+| `fetch.py` | API-ების გამოძახება + კონსენსუსი → `data.json` |
+| `fetch_wave.py` | Copernicus-ის ტალღა → `wave_copernicus.json` (ცალკე workflow) |
+| `fetch_mta.py` | MTA-ს PDF ბიულეტენები Gmail-იდან → `mta_bulletins/` |
+| `mta_ingest.py`, `mta_parser.py` | ბიულეტენების პარსინგი → `mta_log.json` |
+| `compare_report.py`, `backfill_compare.py` | პორტალისა და MTA-ს შედარება → `comparison.md` |
+| `*_stats.py` | ერთჯერადი ანალიზები git-ის ისტორიიდან |
+| `index.html`, `sw.js`, `manifest.json` | პორტალის ინტერფეისი (PWA) |
+| `scene.html` | 3D სცენა (ცალკე იტვირთება) |
+| `tests/` | რეგრესიული ტესტები |
+| `*_cache.json`, `mta_mail_state.json` | მდგომარეობა და ქეშები (ავტომატური) |
+
+საოპერაციო ზღვრები მხოლოდ `fetch.py`-ის `THRESHOLDS`-შია. `data.json`-ში
+ისინი `meta.thresholds`-ად იწერება და `index.html` მათ იქიდან კითხულობს.
 
 ---
 

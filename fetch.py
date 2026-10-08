@@ -25,7 +25,7 @@
   TELEGRAM_CHAT_ID     ← შენი chat ID
 """
 
-import json, math, os, logging, time, sys, pathlib, re
+import html, json, math, os, logging, time, sys, pathlib, re
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -114,7 +114,11 @@ THRESHOLDS = {
     #     ათეულობით მეტრია. ფაქტობრივად წყდება მაშინ, როცა მეამწე
     #     ტრიუმს ვეღარ ხედავს.
     # რიცხვები ფოთის საოპერაციო პრაქტიკიდანაა.
-    "vis_vessel":      0.12,  # 120 მ — გემების მანევრირება იზღუდება
+    # 2026-10-08 კალიბრაცია: 120 → 150 მ. ჩანაწერები: 08.10 — 140 მ,
+    # მანევრირება შეჩერდა (პორტალი 20 მ-ით ჩამოსცდა); 20.09 — ~350 მ და
+    # 21.09 — 997 მ, მანევრირება გრძელდებოდა. ნამდვილი ზღვარი 140–350 მ-ს
+    # შორისაა; 150 ყველაზე მცირე ცვლილებაა, რომელიც სამივეს ეთანხმება.
+    "vis_vessel":      0.15,  # 150 მ — გემების მანევრირება იზღუდება
     "vis_cranes":      0.08,  #  80 მ — ამწე ჩერდება
 }
 
@@ -612,9 +616,12 @@ def parse_stormglass(raw, hours=PARSE_HOURS):
             #   ხუთი წყარო მთელი დროის განმავლობაში 4 საათით იყო
             #   გადაწეული და ᲧᲕᲔᲚᲐ ᲨᲔᲓᲐᲠᲔᲑᲐᲡ ᲐᲑᲘᲜᲫᲣᲠᲔᲑᲓᲐ.
             "time":           _sg_time(entry.get("time", "")),
-            "wind_speed":     sg("windSpeed"),
-            "wind_gusts":     sg("gust"),
-            "wind_direction": sg("windDirection"),
+            # ⚠ ქარზე default=None: დაკარგული ველი 0.0-ად იქცეოდა და
+            #   დეგრადირებულ აუზში რეალურ შტილად ითვლებოდა, რაც საშუალოს
+            #   ამცირებდა. `_wavg`, veto და მიმართულება None-ს გამოტოვებენ.
+            "wind_speed":     sg("windSpeed", default=None),
+            "wind_gusts":     sg("gust", default=None),
+            "wind_direction": sg("windDirection", default=None),
             # ⚠ ნალექი მოთხოვნაში არ შედის. ადრე 0.0 ეწერა და ეს
             #   „მშრალი“ ხმა კონსენსუსში ითვლებოდა — ანუ დაკარგული
             #   პარამეტრი უნალექობის მტკიცებულებად აღიქმებოდა.
@@ -840,6 +847,14 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
     result  = []
 
     for i in range(hours):
+        # ═══ ერთნაირი ჩანაწერების მოხსნა ᲐᲛ ᲡᲐᲐᲗᲘᲡᲗᲕᲘᲡ ═══
+        # ⚠ 2026-10-08: Open-Meteo-ს `best_match` ფოთზე ხშირად ICON-EU-ს
+        #   სიტყვასიტყვით აბრუნებს (195 ჩანაწერიდან 164-ში ყველა ველი
+        #   ემთხვეოდა). იდენტობის შემოწმება ამას ვერ იჭერს — ორი სხვადასხვა
+        #   სიაა. შედეგად ერთი მოდელი ნალექის, ხილვადობისა და ტენიანობის
+        #   აუზში ორჯერ ითვლებოდა და `precip_agreement`-ს ბერავდა.
+        hour_pool = _dedup_hour(atmo_pool, i)
+
         # ═══ აუზის არჩევა ᲐᲛ ᲡᲐᲐᲗᲘᲡᲗᲕᲘᲡ ═══
         # ⚠ 2026-09-16 აუდიტი: აუზი მხოლოდ ერთხელ ირჩეოდა, სიის
         #   არსებობის მიხედვით. თუ ელიტურ წყაროს კონკრეტულ საათზე
@@ -856,8 +871,8 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         if len(_elite_h) >= ELITE_MIN:
             _wind_h, hour_pool_mode = _elite_h, "elite"
         else:
-            _wind_h, hour_pool_mode = _vals(atmo_pool), "degraded"
-        active_wind_pool = elite_wind_pool if hour_pool_mode == "elite" else atmo_pool
+            _wind_h, hour_pool_mode = _vals(hour_pool), "degraded"
+        active_wind_pool = elite_wind_pool if hour_pool_mode == "elite" else hour_pool
         active_wind_w    = sum(w for _, w in _wind_h)
 
         # ─── ქარის ლოგიკა ───
@@ -921,7 +936,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # ასე ლოკალურ კონვექციას არ ვკარგავთ, მაგრამ გაურკვევლობა გამჭვირვალეა.
         precip_pool = [
             (src[i].get("precipitation"), w)
-            for src, w in atmo_pool
+            for src, w in hour_pool
             if i < len(src) and src[i].get("precipitation") is not None
         ]
         precip_all = [v for v, _ in precip_pool]
@@ -941,7 +956,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # fog_area_fraction-იდან) კონსენსუსში არ მონაწილეობს, სანამ ერთი
         # რეალური წყაროც კი არსებობს.
         _vis_real, _vis_est = [], []
-        for src, w in atmo_pool:
+        for src, w in hour_pool:
             if i >= len(src) or not src[i]:
                 continue
             v = src[i].get("visibility_km")
@@ -965,16 +980,16 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
 
         # ── ტენიანობა / ნამის წერტილი / წნევა ──
         # მხოლოდ ინფორმაციულია — სტატუსს არ ცვლის.
-        humidity   = _wavg(atmo_pool, i, "humidity")
-        dew_point  = _wavg(atmo_pool, i, "dew_point")
-        pressure   = _wavg(atmo_pool, i, "pressure")
+        humidity   = _wavg(hour_pool, i, "humidity")
+        dew_point  = _wavg(hour_pool, i, "dew_point")
+        pressure   = _wavg(hour_pool, i, "pressure")
 
         # ჭექა-ქუხილი: WMO-ს კოდები 95 (ჭექა-ქუხილი),
         # 96 და 99 (სეტყვით). წესი: რომელიმე წყარომაც დააფიქსიროს,
         # ვაღიარებთ — ამწესთან დაკავშირებული რისკი ძალიან მაღალია
         # და გამოტოვება უფრო ძვირია, ვიდრე ცრუ გაფრთხილება.
         _tstorm = False
-        for src, _w in atmo_pool:
+        for src, _w in hour_pool:
             if i < len(src) and src[i]:
                 wc = src[i].get("weather_code")
                 if wc in (95, 96, 99):
@@ -1049,7 +1064,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # თუ best_match-ს არ აქვს, ვცდილობთ სხვა ატმოსფერულ წყაროებს.
         feels_like = atmo_best[i].get("feels_like")
         if feels_like is None:
-            for src, _ in atmo_pool:
+            for src, _ in hour_pool:
                 if i < len(src) and src[i].get("feels_like") is not None:
                     feels_like = src[i]["feels_like"]
                     break
@@ -1104,6 +1119,31 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
     return result
 
 
+# ველები, რომლებიც ორი წყაროს „ერთნაირობას“ განსაზღვრავს
+_DUP_FIELDS = ("wind_speed", "wind_gusts", "wind_direction",
+               "precipitation", "visibility_km", "air_temp")
+
+
+def _dedup_hour(pool, i):
+    """აუზი i-ურ საათზე ერთნაირი ჩანაწერების გარეშე.
+
+    ორი ჩანაწერი დუბლიკატია, თუ `_DUP_FIELDS`-ის ყველა ველი ემთხვევა და
+    ქარის სიჩქარე ცნობილია. რჩება პირველი (აუზის რიგით — best_match
+    ICON-EU-ზე ადრეა), ანუ მისი წონა. სხვა საათებს ეს არ ეხება:
+    თუ მოდელები განსხვავდებიან, ორივე ითვლება.
+    """
+    kept, seen = [], []
+    for src, w in pool:
+        h = src[i] if i < len(src) else None
+        if h and h.get("wind_speed") is not None:
+            sig = tuple(h.get(f) for f in _DUP_FIELDS)
+            if sig in seen:
+                continue
+            seen.append(sig)
+        kept.append((src, w))
+    return kept
+
+
 CONF_HIGH_MAX   = 1.5   # σ < 1.5 მ/წმ → მაღალი ნდობა
 CONF_MEDIUM_MAX = 3.0   # σ 1.5–3.0 → საშუალო; > 3.0 → დაბალი
 
@@ -1113,7 +1153,7 @@ DIR_AGREE_MIN = 0.70
 
 
 def _stddev(values):
-    """ნიმუშის სტანდარტული გადახრა. <2 მნიშვნელობაზე — 0."""
+    """პოპულაციის სტანდარტული გადახრა (÷n). <2 მნიშვნელობაზე — 0."""
     n = len(values)
     if n < 2:
         return 0.0
@@ -2548,6 +2588,9 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "next_update":    (datetime.now(TBILISI_TZ) + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M"),
             "sources_used":   sources_used,
             "forecast_hours": len(consensus),
+            # ზღვრები ერთ ადგილას: index.html მათ აქედან კითხულობს, ამიტომ
+            # backend-სა და frontend-ს შორის აცდენა აღარ შეიძლება.
+            "thresholds":     dict(THRESHOLDS),
         },
         "current": {k: now.get(k, v) for k, v in {
             "time": "", "wind_speed": 0, "wind_gusts": 0,
@@ -2609,6 +2652,9 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
 #  7.  მთავარი
 # ═══════════════════════════════════════════════════════════════
 
+THROTTLE_MINUTES = 30
+
+
 def _minutes_since_last_update():
     """data.json-ის meta.last_update-დან გასული წუთები. თუ ფაილი არ არსებობს/არასწორია — None."""
     try:
@@ -2627,17 +2673,23 @@ def _minutes_since_last_update():
 def main():
     log.info(f"══ {LOCATION['name']} — კონსენსუს ბექენდი (48h) ══")
 
-    # GitHub Actions-ის cron scheduler ხანდახან საათობით აგვიანებს/'ხტის' გაშვებებს —
-    # ამიტომ workflow ხშირად (15 წუთში ერთხელ) ეშვება, მაგრამ ნამდვილი fetch
-    # მხოლოდ მაშინ ხდება, თუ წინა წარმატებული განახლებიდან ნამდვილად ~საათი გავიდა.
-    # ეს რჩება დაცული Stormglass-ის daily quota-სა და Open-Meteo-ს ზედმეტი დატვირთვისგან.
+    # Throttle — ორმაგი გაშვებისგან დაცვა (cron-job.org-ის განმეორებითი
+    # დარტყმა, ხელით გაშვება ავტომატურთან ერთად). ორმაგ გაშვებას ორმაგი
+    # digest და ზედმეტი commit მოჰყვება.
+    #
+    # ⚠ 2026-10-01: workflow ახლა მხოლოდ `workflow_dispatch`-ით ეშვება, ამიტომ
+    #   ძველი `FORCE_REFRESH = (event == workflow_dispatch)` ყოველთვის true
+    #   იყო და დაცვა საერთოდ არ მუშაობდა. ახლა FORCE_REFRESH ცალკე input-ია.
+    #   ზღვარი 55-დან 30 წუთამდეა დაწეული: საათობრივი გაშვება რიგში
+    #   დაყოვნებისას 55 წუთზე ადრეც შეიძლება მოვიდეს და მთელი საათი
+    #   დაიკარგებოდა; ორმაგი გაშვება კი რამდენიმე წუთის სხვაობით ხდება.
     force_refresh = os.environ.get("FORCE_REFRESH", "").lower() == "true"
     minutes_since = _minutes_since_last_update()
-    if not force_refresh and minutes_since is not None and minutes_since < 55:
-        log.info(f"ბოლო განახლება {minutes_since:.0f} წუთის წინ მოხდა — ნაადრევია, ამ ციკლს გამოვტოვებ.")
-        return
-    if force_refresh and minutes_since is not None and minutes_since < 55:
-        log.info(f"ხელით გაშვება (workflow_dispatch) — throttle-ს გამოვტოვებ ({minutes_since:.0f} წუთის წინ).")
+    if minutes_since is not None and minutes_since < THROTTLE_MINUTES:
+        if not force_refresh:
+            log.info(f"ბოლო განახლება {minutes_since:.0f} წუთის წინ მოხდა — ნაადრევია, ამ ციკლს გამოვტოვებ.")
+            return
+        log.info(f"FORCE_REFRESH — throttle-ს გამოვტოვებ ({minutes_since:.0f} წუთის წინ).")
 
     sources_used = []
 
@@ -2701,7 +2753,7 @@ def main():
             send_failure_alert(
                 "🚨 <b>ფოთის პორტი — ყველა ატმოსფერული წყარო მიუწვდომელია</b>\n"
                 f"მცდელობა: Open-Meteo (best/GFS/ICON/ECMWF), yr.no\n"
-                f"მიღებული: <code>{', '.join(sources_used) or '—'}</code>\n"
+                f"მიღებული: <code>{html.escape(', '.join(sources_used) or '—')}</code>\n"
                 "მონაცემები გაჩერებულია ბოლო წარმატებულ მნიშვნელობაზე."
             )
             sys.exit(1)
@@ -2804,7 +2856,10 @@ def main():
         log.exception("მოულოდნელი შეცდომა fetch.py-ში")
         send_failure_alert(
             f"🚨 <b>ფოთის პორტი — განახლება ჩავარდა (გამონაკლისი)</b>\n"
-            f"<code>{type(e).__name__}: {e}</code>\n"
+            # ⚠ escape აუცილებელია: parse_mode=HTML-ში გამონაკლისის ტექსტის
+            #   `<` (მაგ. "'<' not supported between...") Telegram-ს 400-ით
+            #   აგდებდა და სწორედ ეს, ყველაზე მნიშვნელოვანი შეტყობინება იკარგებოდა.
+            f"<code>{html.escape(f'{type(e).__name__}: {e}')}</code>\n"
             f"მონაცემები გაჩერებულია ბოლო წარმატებულ მნიშვნელობაზე."
         )
         sys.exit(1)

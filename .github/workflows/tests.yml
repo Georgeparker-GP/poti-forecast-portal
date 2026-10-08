@@ -1,0 +1,26 @@
+name: ტესტები
+
+# bot-ის საათობრივი commit-ები GITHUB_TOKEN-ით ხდება და ამ workflow-ს არ
+# რთავს — ტესტები მხოლოდ ადამიანის ცვლილებებზე ეშვება.
+on:
+  push:
+    paths: ['**.py', 'requirements.txt', '.github/workflows/tests.yml']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  TZ: Asia/Tbilisi
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
