@@ -12208,9 +12208,131 @@
       },
       "portal_time": "2026-10-08T16:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-10-08 22:07",
+      "source_file": "საღამოს_ამინდის_პროგნოზი_ფოთი_WF_14.8299_08.10.26_22.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "8-13\nდროგამოშვებით დაქროლვა\nOccasional gusts\n15-20",
+          "wind_speed_note": "ღამის 2 ნახ.-დან აღმოსავლეთი From the second half of the night Easterly 10-15/17",
+          "wave_cm": "50-125/35-75",
+          "sea_state": "3/2-3",
+          "sea_state_note": "ღამის 1 ნახ.დროგამოშვებით At the first half of the night 3-4(70-160)",
+          "vis_miles": "5-10/2-5",
+          "cloud": "ძირითადად მოღრუბლული\nMostly cloudy",
+          "precip": "დროგამოშვებით წვიმა,ელჭექი\nOccasional rain,with thunderstorm",
+          "precip_note": "დილით უნალექოდ No precipitation in the morning"
+        },
+        "night": {
+          "wind_speed": "8-13\nდროგამოშვებით დაქროლვა\nOccasional gusts\n15-18",
+          "wind_speed_note": "ღამის 2 ნახ.-დან აღმოსავლეთი From the second half of the night Easterly 10-15/17",
+          "wave_cm": "50-125/35-75",
+          "sea_state": "3/2-3",
+          "sea_state_note": "ღამის 1 ნახ.დროგამოშვებით At the first half of the night 3/3-4(70-140)",
+          "vis_miles": "5-10/2-5",
+          "cloud": "ძირითადად მოღრუბლული\nMostly cloudy",
+          "precip": "დროგამოშვებით წვიმა,ელჭექი\nOccasional rain,with thunderstorm",
+          "precip_note": "დილით უნალექოდ No precipitation in the morning"
+        }
+      },
+      "bulletin_no": "WF14/8299",
+      "bulletin_no_source": "filename",
+      "vs_portal_forecast": {
+        "issued": "2026-10-08 22:07",
+        "blocks": [
+          {
+            "block": "day1",
+            "window": "2026-10-09T10:00 → 16:00",
+            "portal_hours": 6,
+            "wave": {
+              "mta": [
+                0.5,
+                1.25
+              ],
+              "portal": [
+                0.14,
+                0.23
+              ],
+              "overlap": false,
+              "max_delta": 1.02,
+              "mid_delta": 0.69
+            }
+          },
+          {
+            "block": "day2",
+            "window": "2026-10-09T16:00 → 22:00",
+            "portal_hours": 6,
+            "wave": {
+              "mta": [
+                0.35,
+                0.75
+              ],
+              "portal": [
+                0.11,
+                0.14
+              ],
+              "overlap": false,
+              "max_delta": 0.61,
+              "mid_delta": 0.43
+            }
+          },
+          {
+            "block": "night1",
+            "window": "2026-10-09T22:00 → 04:00",
+            "portal_hours": 6,
+            "wave": {
+              "mta": [
+                0.5,
+                1.25
+              ],
+              "portal": [
+                0.15,
+                0.17
+              ],
+              "overlap": false,
+              "max_delta": 1.08,
+              "mid_delta": 0.71
+            }
+          },
+          {
+            "block": "night2",
+            "window": "2026-10-09T04:00 → 10:00",
+            "portal_hours": 6,
+            "wave": {
+              "mta": [
+                0.35,
+                0.75
+              ],
+              "portal": [
+                0.14,
+                0.21
+              ],
+              "overlap": false,
+              "max_delta": 0.54,
+              "mid_delta": 0.38
+            }
+          }
+        ],
+        "wind_overlap": null,
+        "wave_overlap": "0/4"
+      }
+    },
+    {
+      "ingested_at": "2026-10-08 22:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8298_08.10.2026წ._21.20_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/8298",
+      "forecast": {},
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-10-08 22:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-10-08 17:07",
+  "last_ingest": "2026-10-08 22:07",
   "storm_windows": [
     {
       "warning": "14/6922",
@@ -12396,6 +12518,13 @@
     },
     {
       "warning": "14/8278",
+      "cancel": null,
+      "issued": null,
+      "cancelled": null,
+      "open": true
+    },
+    {
+      "warning": "14/8298",
       "cancel": null,
       "issued": null,
       "cancelled": null,
