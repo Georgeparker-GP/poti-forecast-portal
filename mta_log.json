@@ -12330,9 +12330,75 @@
       "vs_portal": {},
       "portal_time": "2026-10-08 22:07",
       "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-09 05:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8298_გაუქმება_09.10.2026წ._04.15_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/8304",
+      "forecast": {},
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-10-09 05:07",
+      "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-09 05:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.8305_09.10.2026_წ._04_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 119.0,
+        "wind_avg": 6.0,
+        "wind_max": 10.0,
+        "wave_cm": [
+          62.0,
+          100.0
+        ],
+        "sea_state": 3.0,
+        "sea_level": "-10",
+        "rip_current": null,
+        "sea_temp": null,
+        "vis_miles": 10.0,
+        "cloud": "ძირითადად\nმოღრუბლული\nMostly cloudy",
+        "precip": "უნალექოდ\nNo precipitation",
+        "air_temp": 16.2,
+        "humidity": 93.0,
+        "pressure": 1022.1
+      },
+      "bulletin_no": "14/8305",
+      "date": "09 / ოქტომბერი / 2026",
+      "time": "04:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 10.0,
+        "wind_portal": 7.2,
+        "wind_delta": 2.8,
+        "wind_avg_mta": 6.0,
+        "wind_avg_portal": 4.52,
+        "wind_avg_delta": 1.48,
+        "wave_mta": 0.81,
+        "wave_portal": 0.14,
+        "wave_delta": 0.67,
+        "dir_mta": 119.0,
+        "dir_portal": 65.0,
+        "dir_delta": 54.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 21.94,
+        "vis_capped": true,
+        "vis_flag": "ok_capped",
+        "precip_mta": "dry",
+        "precip_portal": 0.0,
+        "precip_verdict": "match",
+        "air_temp_mta": 16.2,
+        "air_temp_portal": 17.6,
+        "air_temp_delta": -1.4
+      },
+      "portal_time": "2026-10-09T04:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-10-08 22:07",
+  "last_ingest": "2026-10-09 05:07",
   "storm_windows": [
     {
       "warning": "14/6922",
@@ -12525,6 +12591,13 @@
     },
     {
       "warning": "14/8298",
+      "cancel": null,
+      "issued": null,
+      "cancelled": null,
+      "open": true
+    },
+    {
+      "warning": "14/8304",
       "cancel": null,
       "issued": null,
       "cancelled": null,
