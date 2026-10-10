@@ -229,13 +229,17 @@
     {
       "ingested_at": "2026-08-26 10:07",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.6882_გაუქმება_26.08.2026წ._09.20_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/6922",
+      "bulletin_no": null,
       "forecast": {},
       "vs_portal": {},
       "portal_time": "2026-08-26 10:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/6882",
+      "bulletin_no_source": "repaired",
+      "date": "26/08/2026",
+      "time": "09:20"
     },
     {
       "ingested_at": "2026-08-26 17:07",
@@ -2003,7 +2007,9 @@
         "wind_delta": 7.0
       },
       "portal_time": "2026-08-30 18:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "30/08/2026",
+      "time": "17:20"
     },
     {
       "ingested_at": "2026-08-30 22:07",
@@ -2169,14 +2175,17 @@
     {
       "ingested_at": "2026-08-31 05:07",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.6882_გაუქმება_31.08.2026წ._04.40_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/7121",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-08-31 05:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/6882",
+      "date": "31/08/2026",
+      "time": "04:40"
     },
     {
       "ingested_at": "2026-08-31 05:07",
@@ -2614,7 +2623,9 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-09-01 01:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "01/09/2026",
+      "time": "00:30"
     },
     {
       "ingested_at": "2026-09-01 08:07",
@@ -4933,14 +4944,17 @@
     {
       "ingested_at": "2026-09-16 21:10",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7148_გაუქმება_02.09.2026წ._05.00_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/7198",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-09-16 21:10",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/7148",
+      "date": "02/09/2026",
+      "time": "05:00"
     },
     {
       "ingested_at": "2026-09-16 21:10",
@@ -4963,19 +4977,24 @@
         "wind_delta": 11.7
       },
       "portal_time": "2026-09-16 21:10",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "05/09/2026",
+      "time": "01:30"
     },
     {
       "ingested_at": "2026-09-16 21:10",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7305_გაუქმება_05.09.2026წ._20.00_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/7320",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-09-16 21:10",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/7305",
+      "date": "05/09/2026",
+      "time": "20:00"
     },
     {
       "ingested_at": "2026-09-16 21:10",
@@ -4987,19 +5006,24 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-09-16 21:10",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "07/09/2026",
+      "time": "01:10"
     },
     {
       "ingested_at": "2026-09-16 21:10",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7347_გაუქმება_09.09.2026წ._01.50_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/7396",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-09-16 21:10",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/7347",
+      "date": "09/09/2026",
+      "time": "01:50"
     },
     {
       "ingested_at": "2026-09-16 21:10",
@@ -5023,20 +5047,25 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-09-16 21:10",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "14/09/2026",
+      "time": "07:20"
     },
     {
       "ingested_at": "2026-09-16 21:10",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7539_გაუქმება_14.09.2026წ._10.00_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/7543",
+      "bulletin_no": null,
       "issued": "14.09.26წ. 10:00",
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-09-16 21:10",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/7539",
+      "date": "14/09/2026",
+      "time": "10:00"
     },
     {
       "ingested_at": "2026-09-16 21:10",
@@ -5049,7 +5078,9 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-09-16 21:10",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "15/09/2026",
+      "time": "18:35"
     },
     {
       "ingested_at": "2026-09-16 21:10",
@@ -6850,14 +6881,17 @@
     {
       "ingested_at": "2026-09-26 04:08",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7588_გაუქმება_17.09.2026წ._01.55_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/7631",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-09-26 04:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/7588",
+      "date": "17/09/2026",
+      "time": "01:55"
     },
     {
       "ingested_at": "2026-09-26 04:08",
@@ -7325,7 +7359,9 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-09-28 04:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "19/09/2026",
+      "time": "07:10"
     },
     {
       "ingested_at": "2026-09-28 04:07",
@@ -7446,14 +7482,17 @@
     {
       "ingested_at": "2026-09-29 04:08",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7712_გაუქმება_20.09.2026წ._15.40_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/7739",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-09-29 04:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/7712",
+      "date": "20/09/2026",
+      "time": "15:40"
     },
     {
       "ingested_at": "2026-09-29 04:08",
@@ -7607,19 +7646,24 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-09-30 04:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "21/09/2026",
+      "time": "04:05"
     },
     {
       "ingested_at": "2026-09-30 04:08",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7751_გაუქმება_21.09.2026წ._08.40_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/7756",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-09-30 04:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/7751",
+      "date": "21/09/2026",
+      "time": "08:40"
     },
     {
       "ingested_at": "2026-09-30 04:08",
@@ -7979,7 +8023,9 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-10-02 04:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "23/09/2026",
+      "time": "01:00"
     },
     {
       "ingested_at": "2026-10-02 04:08",
@@ -8001,7 +8047,9 @@
         "wind_delta": 9.5
       },
       "portal_time": "2026-10-02 04:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "23/09/2026",
+      "time": "14:05"
     },
     {
       "ingested_at": "2026-10-02 04:08",
@@ -8426,14 +8474,17 @@
     {
       "ingested_at": "2026-10-04 04:07",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.7892_გაუქმება_25.09.2026წ._14.30_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/7892",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-10-04 04:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/7892",
+      "date": "25/09/2026",
+      "time": "14:30"
     },
     {
       "ingested_at": "2026-10-04 04:07",
@@ -9351,7 +9402,9 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-10-08 04:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "29/09/2026",
+      "time": "11:15"
     },
     {
       "ingested_at": "2026-10-08 04:08",
@@ -10987,19 +11040,24 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-10-08 09:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "20/09/2026",
+      "time": "08:30"
     },
     {
       "ingested_at": "2026-10-08 09:08",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8032_გაუქმება_01.10.2026წ._20.15_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/8082",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-10-08 09:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/8032",
+      "date": "01/10/2026",
+      "time": "20:15"
     },
     {
       "ingested_at": "2026-10-08 09:08",
@@ -11017,19 +11075,24 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-10-08 09:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "03/10/2026",
+      "time": "05:00"
     },
     {
       "ingested_at": "2026-10-08 09:08",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8127_გაუქმება_04.10.2026წ._21.35_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/8167",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-10-08 09:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/8127",
+      "date": "04/10/2026",
+      "time": "21:35"
     },
     {
       "ingested_at": "2026-10-08 09:08",
@@ -11041,7 +11104,9 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-10-08 09:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "08/10/2026",
+      "time": "01:10"
     },
     {
       "ingested_at": "2026-10-08 09:08",
@@ -12143,14 +12208,17 @@
     {
       "ingested_at": "2026-10-08 10:07",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8268_გაუქმება_08.10.2026წ._09.50_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/8278",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-10-08 10:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/8268",
+      "date": "08/10/2026",
+      "time": "09:50"
     },
     {
       "ingested_at": "2026-10-08 17:07",
@@ -12329,19 +12397,24 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-10-08 22:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "08/10/2026",
+      "time": "21:20"
     },
     {
       "ingested_at": "2026-10-09 05:07",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8298_გაუქმება_09.10.2026წ._04.15_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/8304",
+      "bulletin_no": null,
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-10-09 05:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/8298",
+      "date": "09/10/2026",
+      "time": "04:15"
     },
     {
       "ingested_at": "2026-10-09 05:07",
@@ -12676,20 +12749,25 @@
       "bulletin_no_source": "pdf",
       "vs_portal": {},
       "portal_time": "2026-10-10 06:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "date": "10/10/2026",
+      "time": "05:40"
     },
     {
       "ingested_at": "2026-10-10 09:07",
       "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8347_გაუქმება_10.10.2026წ._09.00_სთ..pdf",
-      "type": "storm_warning",
+      "type": "storm_cancel",
       "poti": {},
-      "bulletin_no": "14/8350",
+      "bulletin_no": null,
       "issued": "10.10.26წ. 09:00",
       "forecast": {},
-      "bulletin_no_source": "pdf",
+      "bulletin_no_source": "repaired",
       "vs_portal": {},
       "portal_time": "2026-10-10 09:07",
-      "portal_hour_exact": false
+      "portal_hour_exact": false,
+      "cancels": "14/8347",
+      "date": "10/10/2026",
+      "time": "09:00"
     },
     {
       "ingested_at": "2026-10-10 10:07",
@@ -12852,221 +12930,139 @@
   "last_ingest": "2026-10-10 10:07",
   "storm_windows": [
     {
-      "warning": "14/6922",
+      "warning": "14/6882",
       "cancel": null,
       "issued": null,
-      "cancelled": null,
-      "open": true
+      "cancelled": "2026-08-26T09:20"
+    },
+    {
+      "warning": "14/6882",
+      "cancel": null,
+      "issued": null,
+      "cancelled": "2026-08-31T04:40"
+    },
+    {
+      "warning": "14/7892",
+      "cancel": null,
+      "issued": null,
+      "cancelled": "2026-09-25T14:30"
     },
     {
       "warning": "14/7112",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/7121",
-      "cancel": null,
-      "issued": null,
+      "issued": "2026-08-30T17:20",
       "cancelled": null,
       "open": true
     },
     {
       "warning": "14/7148",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/7198",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-09-01T00:30",
+      "cancelled": "2026-09-02T05:00",
+      "duration_h": 28.5
     },
     {
       "warning": "14/7305",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/7320",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-09-05T01:30",
+      "cancelled": "2026-09-05T20:00",
+      "duration_h": 18.5
     },
     {
       "warning": "14/7347",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/7396",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-09-07T01:10",
+      "cancelled": "2026-09-09T01:50",
+      "duration_h": 48.7
     },
     {
       "warning": "14/7539",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/7543",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-09-14T07:20",
+      "cancelled": "2026-09-14T10:00",
+      "duration_h": 2.7
     },
     {
       "warning": "14/7588",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/7631",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-09-15T18:35",
+      "cancelled": "2026-09-17T01:55",
+      "duration_h": 31.3
     },
     {
       "warning": "14/7712",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-09-19T07:10",
+      "cancelled": "2026-09-20T15:40",
+      "duration_h": 32.5
     },
     {
-      "warning": "14/7739",
+      "warning": "14/8032",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-09-20T08:30",
+      "cancelled": "2026-10-01T20:15",
+      "duration_h": 275.8
     },
     {
       "warning": "14/7751",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/7756",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-09-21T04:05",
+      "cancelled": "2026-09-21T08:40",
+      "duration_h": 4.6
     },
     {
       "warning": "14/7812",
       "cancel": null,
-      "issued": null,
+      "issued": "2026-09-23T01:00",
       "cancelled": null,
       "open": true
     },
     {
       "warning": "14/7829",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/7892",
-      "cancel": null,
-      "issued": null,
+      "issued": "2026-09-23T14:05",
       "cancelled": null,
       "open": true
     },
     {
       "warning": "14/7997",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/8032",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/8082",
-      "cancel": null,
-      "issued": null,
+      "issued": "2026-09-29T11:15",
       "cancelled": null,
       "open": true
     },
     {
       "warning": "14/8127",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/8167",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-10-03T05:00",
+      "cancelled": "2026-10-04T21:35",
+      "duration_h": 40.6
     },
     {
       "warning": "14/8268",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/8278",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-10-08T01:10",
+      "cancelled": "2026-10-08T09:50",
+      "duration_h": 8.7
     },
     {
       "warning": "14/8298",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/8304",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-10-08T21:20",
+      "cancelled": "2026-10-09T04:15",
+      "duration_h": 6.9
     },
     {
       "warning": "14/8347",
       "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
-    },
-    {
-      "warning": "14/8350",
-      "cancel": null,
-      "issued": null,
-      "cancelled": null,
-      "open": true
+      "issued": "2026-10-10T05:40",
+      "cancelled": "2026-10-10T09:00",
+      "duration_h": 3.3,
+      "portal_hours": 4,
+      "portal_statuses": {
+        "operational": 4
+      },
+      "calm_tail_h": 4
     }
   ]
 }
