@@ -12677,9 +12677,22 @@
       "vs_portal": {},
       "portal_time": "2026-10-10 06:07",
       "portal_hour_exact": false
+    },
+    {
+      "ingested_at": "2026-10-10 09:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8347_გაუქმება_10.10.2026წ._09.00_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/8350",
+      "issued": "10.10.26წ. 09:00",
+      "forecast": {},
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-10-10 09:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-10-10 06:07",
+  "last_ingest": "2026-10-10 09:07",
   "storm_windows": [
     {
       "warning": "14/6922",
@@ -12886,6 +12899,13 @@
     },
     {
       "warning": "14/8347",
+      "cancel": null,
+      "issued": null,
+      "cancelled": null,
+      "open": true
+    },
+    {
+      "warning": "14/8350",
       "cancel": null,
       "issued": null,
       "cancelled": null,
