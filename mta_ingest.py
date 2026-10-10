@@ -35,6 +35,11 @@ def _subject_from_name(fname: str) -> str:
     სახელით ინახავს; მაგ. 'ფაქტიური_ამინდი_ფოთი_...pdf')."""
     base = os.path.basename(fname).lower()
     if "ფაქტიური" in base or "actual" in base:   return "ფაქტიური ამინდი ფოთი"
+    # ⚠ 2026-10-10: გაუქმება აქამდე ჩვეულებრივ გაფრთხილებად ცნობდა —
+    #   „საშტორმო“ სახელშიც წერია. 14-ვე გაუქმება storm_warning-ად ჩაიწერა,
+    #   საშტორმოს ფანჯრები არასდროს იხურებოდა („ღია: 27“).
+    if ("საშტორმო" in base or "storm" in base) and ("გაუქმებ" in base or "cancel" in base):
+        return "საშტორმო გაფრთხილების გაუქმება"
     if "საშტორმო" in base or "storm" in base:     return "საშტორმო გაფრთხილება"
     if "პროგნოზი" in base or "forecast" in base or base.startswith("wf"): return "ამინდის პროგნოზი ფოთი"
     return ""   # router შიგთავსით ცდის
@@ -158,6 +163,44 @@ def _build_storm_windows(dblog: dict, portal_hours: dict) -> list:
 def _save_log(dblog: dict):
     with open(LOG_FILE, "w", encoding="utf-8") as f:
         json.dump(dblog, f, ensure_ascii=False, indent=2)
+
+
+# "…_10.10.2026წ._05.40_სთ" და "…_23.09.2026წ._შეცვლა_14.05სთ" (შუაში სიტყვა)
+_NAME_DT_RE = re.compile(r"(\d{2})\.(\d{2})\.(\d{4})\s*წ?\.?[_\s]*(?:[^\d_.]+_)?(\d{2})[._:](\d{2})")
+
+
+def _dt_from_name(fname: str):
+    """"..._10.10.2026წ._05.40_სთ..pdf" → ("10/10/2026", "05:40") ან (None, None)."""
+    m = _NAME_DT_RE.search(os.path.basename(fname or ""))
+    if not m:
+        return None, None
+    return f"{m.group(1)}/{m.group(2)}/{m.group(3)}", f"{m.group(4)}:{m.group(5)}"
+
+
+def _repair_storm_entries(dblog: dict) -> int:
+    """ძველი საშტორმო ჩანაწერების გასწორება (იდემპოტენტური).
+
+    ⚠ 2026-10-10: ორი ხარვეზი ჟურნალში დარჩა:
+      1. გაუქმებები storm_warning-ად იწერებოდა, თან ნომრად გაუქმებული
+         გაფრთხილების ნომერი ეწერებოდა (სახელიდან). ფანჯრები არ იხურებოდა.
+      2. საშტორმოს თარიღი/დრო არ იწერებოდა — `_dt_of` None-ს აბრუნებდა.
+    PDF-ები წაშლილია, მაგრამ ორივე ფაილის სახელიდან აღდგება.
+    """
+    n = 0
+    for e in dblog.get("entries", []):
+        src = e.get("source_file") or ""
+        if e.get("type") == "storm_warning" and "გაუქმებ" in src:
+            e["type"] = "storm_cancel"
+            e["cancels"] = _bulletin_no_from_name(src)
+            e["bulletin_no"] = None          # სახელიდან აღებული — გაუქმებულისაა
+            e["bulletin_no_source"] = "repaired"
+            n += 1
+        if e.get("type") in ("storm_warning", "storm_cancel") and not e.get("date"):
+            d, t = _dt_from_name(src)
+            if d:
+                e["date"], e["time"] = d, t
+                n += 1
+    return n
 
 
 def _seen_ids(dblog: dict) -> set:
@@ -599,11 +642,14 @@ def main():
         return
 
     dblog = _load_log()
+    repaired = _repair_storm_entries(dblog)
+    if repaired:
+        log.info(f"საშტორმოს ძველი ჩანაწერები გასწორდა: {repaired}")
     seen  = _seen_ids(dblog)
     seen_f = _seen_files(dblog)
 
     pdfs = sorted(glob.glob(os.path.join(BULLETIN_DIR, "*.pdf")))
-    if not pdfs:
+    if not pdfs and not repaired:
         log.info("ახალი PDF არ არის.")
         return
 
@@ -646,6 +692,10 @@ def main():
         entry["bulletin_no"] = bno
         if bno_src:
             entry["bulletin_no_source"] = bno_src
+        if entry.get("type") in ("storm_warning", "storm_cancel") and not entry.get("date"):
+            _d, _t = _dt_from_name(pdf)
+            if _d:
+                entry["date"], entry["time"] = _d, _t
         # actual/storm nowcast → პორტალთან შედარება.
         # პორტალის ჩანაწერი ᲗᲘᲗᲝᲔᲣᲚ ᲑᲘᲣᲚᲔᲢᲔᲜᲖᲔ ცალკე ირჩევა — მისი
         # საკუთარი საათის მიხედვით, არა ingest-ის მომენტის.
@@ -707,8 +757,9 @@ def main():
         processed_files.append(pdf)
         log.info(f"დამატებულია: {parsed.get('type')} #{bno} ({os.path.basename(pdf)})")
 
-    if added:
-        dblog["last_ingest"] = datetime.now(TBILISI_TZ).strftime("%Y-%m-%d %H:%M")
+    if added or repaired:
+        if added:
+            dblog["last_ingest"] = datetime.now(TBILISI_TZ).strftime("%Y-%m-%d %H:%M")
         # ── საშტორმოს ფანჯრები ──
         # პორტალის საათობრივი სტატუსი data.json-იდან (მიმდინარე 48 სთ).
         # ძველ ფანჯრებს backfill_compare.py-ის ლოგიკა მოგვიანებით შეავსებს.

@@ -1314,7 +1314,7 @@ def _merge_period_notes(per_geo, per_eng):
     return notes, notes_eng
 
 
-def load_mta_advisory():
+def _forecast_advisory():
     """MTA-ს სინოპტიკოსის შენიშვნა — მოქმედი ფანჯრით.
 
     არის ერთადერთი რამ, რაც მოდელს პრინციპში ვერ აწარმოებს:
@@ -1389,6 +1389,172 @@ def load_mta_advisory():
     except Exception as exc:
         log.warning(f"MTA advisory წაკითხვა ჩავარდა ({exc})")
         return None
+
+
+# ─── MTA-ს საშტორმო გაფრთხილება პორტალზე ───
+# დაემატა 2026-10-10. იმ დილით 05:40-ზე MTA-მ ნისლზე საშტორმო გამოსცა,
+# გემების მანევრირება 05:40–06:30 შეიზღუდა, ჩვენი ყველა მოდელი კი
+# 10+ კმ ხილვადობას აჩვენებდა. გაფრთხილება 06:07-ზე უკვე ჟურნალში იყო,
+# მაგრამ პორტალზე არსად ჩანდა. ლოკალურ ნისლს მოდელი ვერ იჭერს —
+# სინოპტიკოსის გაფრთხილება ერთადერთი სიგნალია.
+#
+# ⚠ სტატუსს არ ცვლის (იგივე პრინციპი, რაც `_forecast_advisory`-ზე):
+#   ეს დეკლარაციაა და არა გაზომვა. ეკრანზე ჩანს, ვერდიქტი — უცვლელი.
+
+STORM_ADVISORY_MAX_H = 12    # გაუქმების გარეშეც ამის შემდეგ აღარ ჩანს
+
+_PHEN_LBL = {
+    "fog":          ("ნისლი", "fog"),
+    "mist":         ("ბურუსი", "mist"),
+    "thunderstorm": ("ჭექა-ქუხილი", "thunderstorm"),
+    "wind":         ("ქარი", "wind"),
+    "sea":          ("ღელვა", "sea"),
+}
+
+
+def _mta_entry_dt(e):
+    """ჩანაწერის გამოცემის დრო: date/time ("10/10/2026", "05:40")."""
+    try:
+        d, mo, y = [int(x) for x in (e.get("date") or "").replace(" ", "").split("/")]
+        hh, mm = [int(x) for x in (e.get("time") or "").split(":")]
+        return datetime(y, mo, d, hh, mm, tzinfo=TBILISI_TZ)
+    except Exception:
+        return None
+
+
+def _fmt_vis_range(lo, hi=None):
+    hi = lo if hi is None else hi
+    if hi < 2.0:
+        a, b = int(round(lo * 1000)), int(round(hi * 1000))
+        return (f"{a} მ", f"{a} m") if a == b else (f"{a}–{b} მ", f"{a}–{b} m")
+    a, b = f"{lo:.1f}".rstrip("0").rstrip("."), f"{hi:.1f}".rstrip("0").rstrip(".")
+    return (f"{a} კმ", f"{a} km") if a == b else (f"{a}–{b} კმ", f"{a}–{b} km")
+
+
+def _storm_advisory(entries, now=None):
+    """ბოლო მოქმედი (გაუუქმებელი, ≤12 სთ) საშტორმო ფოთისთვის, ან None."""
+    now = now or datetime.now(TBILISI_TZ)
+    cancels = [e for e in entries if e.get("type") == "storm_cancel"
+               and (e.get("area") or "poti") == "poti"]
+    best = None
+    for e in entries:
+        if e.get("type") != "storm_warning" or (e.get("area") or "poti") != "poti":
+            continue
+        t = _mta_entry_dt(e)
+        if not t or t > now + timedelta(minutes=30):
+            continue
+        if (now - t).total_seconds() / 3600 > STORM_ADVISORY_MAX_H:
+            continue
+        no = e.get("bulletin_no")
+        cancelled = False
+        for c in cancels:
+            ct = _mta_entry_dt(c)
+            if ct and ct > now:
+                continue          # ჯერ არ გამოცემულა (ისტორიის გადათვლისას)
+            if no and c.get("cancels") == no:
+                cancelled = True
+            # ნომერი ვერ ამოიკითხა — ნებისმიერი გვიანდელი გაუქმება ხურავს
+            elif not c.get("cancels") and ct and ct >= t:
+                cancelled = True
+            if cancelled:
+                break
+        if cancelled:
+            continue
+        if best is None or t > best[0]:
+            best = (t, e)
+    if not best:
+        return None
+
+    t, e = best
+    phen = [p for p in (e.get("phenomena") or []) if p in _PHEN_LBL]
+    head_g = "საშტორმო გაფრთხილება" + (": " + ", ".join(_PHEN_LBL[p][0] for p in phen) if phen else "")
+    head_e = "Storm warning" + (": " + ", ".join(_PHEN_LBL[p][1] for p in phen) if phen else "")
+    notes, notes_eng = [head_g], [head_e]
+
+    fc = e.get("forecast") or {}
+    poti = e.get("poti") or {}
+    v = fc.get("vis_km")
+    if isinstance(v, (list, tuple)) and v:
+        g, en = _fmt_vis_range(float(v[0]), float(v[-1]))
+        notes.append(f"ხილვადობა {g}")
+        notes_eng.append(f"visibility {en}")
+    if poti.get("vis_km") is not None:
+        g, en = _fmt_vis_range(float(poti["vis_km"]))
+        notes.append(f"ფოთი ფაქტობრივად {g}")
+        notes_eng.append(f"Poti actual {en}")
+    wr = fc.get("wind_range")
+    if isinstance(wr, (list, tuple)) and len(wr) == 2:
+        g = f"ქარი {wr[0]:g}–{wr[1]:g} მ/წმ"
+        en = f"wind {wr[0]:g}–{wr[1]:g} m/s"
+        if fc.get("gust_max"):
+            g += f", დაქროლვა {fc['gust_max']:g}"
+            en += f", gusts {fc['gust_max']:g}"
+        notes.append(g)
+        notes_eng.append(en)
+    wc = fc.get("wave_cm")
+    if isinstance(wc, (list, tuple)) and len(wc) == 2:
+        notes.append(f"ტალღა {wc[0]:g}–{wc[1]:g} სმ")
+        notes_eng.append(f"waves {wc[0]:g}–{wc[1]:g} cm")
+    if len(notes) == 1 and e.get("text_eng"):
+        # დეტალები ვერ ამოიკითხა — ნედლი ინგლისური ტექსტი, რომ არაფერი დაიკარგოს
+        txt = e["text_eng"][:220]
+        notes.append(txt)
+        notes_eng.append(txt)
+
+    return {
+        "kind": "storm",
+        "notes": notes,
+        "notes_eng": notes_eng,
+        "bulletin": e.get("bulletin_no"),
+        "issued": t.strftime("%Y-%m-%d %H:%M"),
+        "valid_until": None,
+        "source": "MTA",
+    }
+
+
+def load_mta_advisory():
+    """MTA-ს ბანერი: მოქმედი საშტორმო (თუ არის) + სინოპტიკოსის შენიშვნა."""
+    fc = _forecast_advisory()
+    storm = None
+    try:
+        path = pathlib.Path(MTA_LOG_FILE)
+        if path.exists():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            entries = data.get("entries") if isinstance(data, dict) else data
+            storm = _storm_advisory(entries or [])
+    except Exception as exc:
+        log.warning(f"MTA საშტორმოს წაკითხვა ჩავარდა ({exc})")
+    if not storm:
+        return fc
+    if fc:
+        storm["notes"] = storm["notes"] + list(fc.get("notes") or [])
+        storm["notes_eng"] = storm["notes_eng"] + list(fc.get("notes_eng") or [])
+        storm["valid_until"] = fc.get("valid_until")
+    return storm
+
+
+def refresh_mta_advisory_only():
+    """მხოლოდ data.json-ის `mta_advisory`-ს განახლება, ქსელის გარეშე.
+
+    workflow-ში MTA-ს ingest-ის შემდეგ ეშვება. ადრე fetch.py MTA-მდე
+    მუშაობდა და ახალი ბიულეტენი პორტალზე მხოლოდ მომდევნო საათში ჩნდებოდა —
+    10.10-ის ნისლის გაფრთხილება (05:40) შეზღუდვის დასრულებამდე (06:30)
+    ვერ გამოჩნდებოდა.
+    """
+    try:
+        with open(OUTPUT_FILE, encoding="utf-8") as f:
+            out = json.load(f)
+    except Exception as exc:
+        log.warning(f"advisory-only: {OUTPUT_FILE} ვერ წაიკითხა ({exc})")
+        return
+    adv = load_mta_advisory()
+    if out.get("mta_advisory") == adv:
+        log.info("advisory-only: MTA ბანერი უცვლელია")
+        return
+    out["mta_advisory"] = adv
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
+    log.info(f"advisory-only: MTA ბანერი განახლდა ({(adv or {}).get('kind', 'none')})")
 
 
 def _align_to(reference, source):
@@ -2878,4 +3044,7 @@ def _r(v, n=2):
 # ─────────────────────────────────
 
 if __name__ == "__main__":
-    main()
+    if "--advisory-only" in sys.argv:
+        refresh_mta_advisory_only()
+    else:
+        main()

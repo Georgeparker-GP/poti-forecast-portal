@@ -77,6 +77,14 @@ jobs:
         run: python mta_ingest.py
         continue-on-error: true
 
+      # ── MTA-ს ბანერის განახლება იმავე გაშვებაში ──
+      # fetch.py MTA-მდე ეშვება, ამიტომ ახალი ბიულეტენი (მაგ. ნისლის
+      # საშტორმო) პორტალზე მხოლოდ მომდევნო საათში ჩნდებოდა. ეს ბიჯი
+      # მხოლოდ data.json-ის `mta_advisory`-ს ცვლის, ქსელის გარეშე.
+      - name: Refresh MTA advisory in data.json
+        run: python fetch.py --advisory-only
+        continue-on-error: true
+
       - name: Commit updated data.json
         run: |
           git config user.name "github-actions[bot]"
