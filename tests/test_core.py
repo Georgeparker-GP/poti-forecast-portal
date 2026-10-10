@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT))
 
 import fetch          # noqa: E402
 import fetch_mta      # noqa: E402
+import mta_ingest     # noqa: E402
 import mta_parser     # noqa: E402
 
 
@@ -196,6 +197,145 @@ class MtaParserTest(unittest.TestCase):
         self.assertEqual(mta_parser._num("155-225"), (155.0, 225.0))
         self.assertEqual(mta_parser._num("ცვალებადი"), "ცვალებადი")
         self.assertIsNone(mta_parser._num("  "))
+
+
+# ─── MTA-ს საშტორმო: რეალური ტექსტები (14/7539, 14/7543, 14/7588) ───
+FOG_TXT = """№ 14/7539
+საშტორმო გაფრთხილება
+ფოთი-ყულევის აკვატორიაში მომდევნო 2-3 საათში შენარჩუნდება ნისლი,
+STORM WARNING
+In the area of Poti-Kulevi In the next 2-3 hours will be remained fog. time to time heavi fog. visibility 0.1-0.5 miles.
+A.W. Poti - visibility 200 meter.
+kulevi- 10 miles.
+14.09.26წ. 07სთ20წთ.
+სინოპტიკოსი"""
+
+FOG_CANCEL_TXT = """№ 14/7543
+საშტორმო გაფრთხილება №14/7539 ის გაუქმება.
+STORM WARNING №14/7539 Cancelation
+In the area of Poti-Kulevi the storm warning № 14/7539 is canceled.
+a.w. Poti-Kulevi visibility -10 miles.
+14.09.26წ. 10:00სთ.
+სინოპტიკოსი"""
+
+WIND_TXT = """№ 14/7588
+STORM WARNING
+In the area of Poti-Kulevi will be maintained sea 3-4/ 4 state (W.H 80-180/ 125-250cm). Wind NW/W
+6-11 m/sec, with ocasionally gusts 12-15 m/sec.
+A.W. (Poti)- SW 4-5 m/sec.
+(Kulevi) - S 3-4 m/sec.
+Sea 3-4 (w.h. 106-139 cm.).
+15.09.26 წ. 18:35 სთ.
+სინოპტიკოსი"""
+
+
+def _fake_pdf(text):
+    page = mock.Mock()
+    page.extract_text.return_value = text
+    page.extract_tables.return_value = []
+    pdf = mock.MagicMock()
+    pdf.__enter__.return_value.pages = [page]
+    return pdf
+
+
+class MtaStormParserTest(unittest.TestCase):
+    def _parse(self, text, subject):
+        with mock.patch.object(mta_parser.pdfplumber, "open", return_value=_fake_pdf(text)):
+            return mta_parser.parse_mta_pdf("x.pdf", subject)
+
+    def test_fog_warning_is_not_empty(self):
+        # 10.10: ნისლის საშტორმო `poti: {}`-ად იწერებოდა
+        r = self._parse(FOG_TXT, "საშტორმო გაფრთხილება")
+        self.assertEqual(r["type"], "storm_warning")
+        self.assertEqual(r["phenomena"], ["fog"])
+        self.assertEqual(r["forecast"]["vis_km"], (0.185, 0.926))
+        self.assertEqual(r["poti"]["vis_km"], 0.2)
+        self.assertEqual((r["date"], r["time"]), ("14/09/2026", "07:20"))
+        self.assertIn("visibility 200 meter", r["text_eng"])
+
+    def test_cancel_with_number_sign(self):
+        r = self._parse(FOG_CANCEL_TXT, "საშტორმო გაფრთხილების გაუქმება")
+        self.assertEqual(r["type"], "storm_cancel")
+        self.assertEqual(r["cancels"], "14/7539")
+        self.assertEqual(r["bulletin_no"], "14/7543")
+        self.assertEqual((r["date"], r["time"]), ("14/09/2026", "10:00"))
+
+    def test_wind_warning_alternate_format(self):
+        r = self._parse(WIND_TXT, "საშტორმო გაფრთხილება")
+        self.assertEqual(r["forecast"]["wind_range"], (6.0, 11.0))
+        self.assertEqual(r["forecast"]["gust_max"], 15.0)
+        self.assertEqual(r["forecast"]["wave_cm"], (80.0, 250.0))
+        self.assertEqual(r["poti"]["wind_range"], (4.0, 5.0))
+        self.assertEqual(r["phenomena"], ["wind", "sea"])
+
+
+class MtaIngestStormTest(unittest.TestCase):
+    CANCEL = "საშტორმო_გაფრთხილება_ფოთი_№_14.7539_გაუქმება_14.09.2026წ._10.00_სთ..pdf"
+    WARN = "საშტორმო_გაფრთხილება_ფოთი_№_14.8347_10.10.2026წ._05.40_სთ..pdf"
+
+    def test_cancel_routed_by_filename(self):
+        self.assertEqual(mta_ingest._subject_from_name(self.CANCEL),
+                         "საშტორმო გაფრთხილების გაუქმება")
+        self.assertEqual(mta_ingest._subject_from_name(self.WARN), "საშტორმო გაფრთხილება")
+
+    def test_dt_from_name(self):
+        self.assertEqual(mta_ingest._dt_from_name(self.WARN), ("10/10/2026", "05:40"))
+        self.assertEqual(mta_ingest._dt_from_name(
+            "საშტორმო_გაფრთხილება_ფოთი_№_14.7829_23.09.2026წ._შეცვლა_14.05სთ..pdf"),
+            ("23/09/2026", "14:05"))
+
+    def test_repair_legacy_entries_idempotent(self):
+        log = {"entries": [
+            {"type": "storm_warning", "source_file": self.WARN, "bulletin_no": "14/8347"},
+            {"type": "storm_warning", "source_file": self.CANCEL, "bulletin_no": "14/7539"},
+        ]}
+        self.assertGreater(mta_ingest._repair_storm_entries(log), 0)
+        w, c = log["entries"]
+        self.assertEqual((w["type"], w["date"], w["time"]), ("storm_warning", "10/10/2026", "05:40"))
+        self.assertEqual((c["type"], c["cancels"], c["bulletin_no"]), ("storm_cancel", "14/7539", None))
+        self.assertEqual(mta_ingest._repair_storm_entries(log), 0)
+
+
+class StormAdvisoryTest(unittest.TestCase):
+    WARN = {"type": "storm_warning", "bulletin_no": "14/7539", "date": "14/09/2026",
+            "time": "07:20", "phenomena": ["fog"],
+            "forecast": {"vis_km": [0.185, 0.926]}, "poti": {"vis_km": 0.2}}
+    CANCEL = {"type": "storm_cancel", "cancels": "14/7539", "date": "14/09/2026", "time": "10:00"}
+
+    @staticmethod
+    def _at(s):
+        from datetime import datetime
+        return datetime.strptime(s, "%Y-%m-%d %H:%M").replace(tzinfo=fetch.TBILISI_TZ)
+
+    def test_active_until_cancelled(self):
+        E = [self.WARN, self.CANCEL]
+        a = fetch._storm_advisory(E, self._at("2026-09-14 08:00"))
+        self.assertEqual(a["kind"], "storm")
+        self.assertEqual(a["issued"], "2026-09-14 07:20")
+        self.assertEqual(a["notes"], ["საშტორმო გაფრთხილება: ნისლი",
+                                      "ხილვადობა 185–926 მ", "ფოთი ფაქტობრივად 200 მ"])
+        self.assertIsNone(fetch._storm_advisory(E, self._at("2026-09-14 10:05")))
+
+    def test_expires_without_cancel(self):
+        self.assertIsNone(fetch._storm_advisory([self.WARN], self._at("2026-09-14 20:00")))
+
+    def test_other_area_ignored(self):
+        w = {**self.WARN, "area": "batumi"}
+        self.assertIsNone(fetch._storm_advisory([w], self._at("2026-09-14 08:00")))
+
+    def test_advisory_only_updates_banner(self):
+        import json, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            out, lg = os.path.join(d, "data.json"), os.path.join(d, "mta_log.json")
+            json.dump({"meta": {}, "mta_advisory": None}, open(out, "w"))
+            json.dump({"entries": [self.WARN]}, open(lg, "w"))
+            with mock.patch.object(fetch, "OUTPUT_FILE", out), \
+                 mock.patch.object(fetch, "MTA_LOG_FILE", lg), \
+                 mock.patch.object(fetch, "datetime", wraps=fetch.datetime) as dt:
+                dt.now.return_value = self._at("2026-09-14 08:00")
+                fetch.refresh_mta_advisory_only()
+            adv = json.load(open(out))["mta_advisory"]
+            self.assertEqual(adv["bulletin"], "14/7539")
 
 
 if __name__ == "__main__":

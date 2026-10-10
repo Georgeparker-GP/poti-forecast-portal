@@ -156,6 +156,81 @@ COMPASS_DEG = {
 }
 
 
+# ─── ხილვადობა და მოვლენის ტიპი საშტორმო ტექსტიდან ───
+# დაემატა 2026-10-10. აქამდე საშტორმოს პარსერი მხოლოდ ქარსა და ზღვას
+# ეძებდა. ნისლის გაფრთხილება (14.09, 10.10) ამ ველებს არ შეიცავს და
+# ჩანაწერი ცარიელი (`poti: {}`) იწერებოდა — შიგთავსი სრულად იკარგებოდა.
+#
+# რეალური ფორმატი (14/7539):
+#   In the area of Poti-Kulevi In the next 2-3 hours will be remained fog.
+#   time to time heavi fog. visibility 0.1-0.5 miles.
+#   A.W. Poti - visibility 200 meter.
+#   kulevi- 10 miles.
+# გაუქმებაში: "a.w. Poti-Kulevi visibility -10 miles."
+
+MILE_KM = 1.852
+_NUM = r"(\d+(?:[.,]\d+)?)"
+_VIS_RE = re.compile(
+    r"visibility\s*[-–:]?\s*" + _NUM + r"(?:\s*[-–]\s*" + _NUM + r")?\s*"
+    r"(miles?|meters?|metres?|m\b|km\b)", re.I)
+
+
+def _vis_to_km(val: str, unit: str) -> float:
+    v = float(val.replace(",", "."))
+    u = unit.lower()
+    if u.startswith("mile"):
+        return round(v * MILE_KM, 3)
+    if u.startswith("km"):
+        return v
+    return round(v / 1000.0, 3)
+
+
+def _parse_vis(fragment: str):
+    """პირველი "visibility N[-M] unit" → (km_lo, km_hi, ნედლი ტექსტი) ან None."""
+    m = _VIS_RE.search(fragment or "")
+    if not m:
+        return None
+    lo = _vis_to_km(m.group(1), m.group(3))
+    hi = _vis_to_km(m.group(2), m.group(3)) if m.group(2) else lo
+    return lo, hi, m.group(0).strip()
+
+
+def _storm_phenomena(text: str) -> list:
+    """რა მოვლენაზეა გაფრთხილება. რამდენიმე შეიძლება იყოს ერთდროულად."""
+    low = (text or "").lower()
+    out = []
+    if "fog" in low or "ნისლ" in low:
+        out.append("fog")
+    elif "mist" in low or "ბურუს" in low:
+        out.append("mist")
+    if "thunder" in low or "ელჭექ" in low or "ჭექა" in low:
+        out.append("thunderstorm")
+    if re.search(r"\bwind\b|\bgust", low):
+        out.append("wind")
+    if re.search(r"\bsea\b|w\.h\.", low):
+        out.append("sea")
+    return out
+
+
+def _storm_issued(text: str):
+    """"14.09.26წ. 07სთ20წთ." / "15.09.26 წ. 18:35 სთ." → ("14/09/2026", "07:20")."""
+    m = re.search(r"(\d{2})\.(\d{2})\.(\d{2,4})\s*წ?\.?\s*(\d{1,2})\s*(?:სთ\.?|[:.])\s*(\d{2})",
+                  text or "")
+    if not m:
+        return None, None
+    y = m.group(3)
+    y = ("20" + y) if len(y) == 2 else y
+    return f"{m.group(1)}/{m.group(2)}/{y}", f"{int(m.group(4)):02d}:{m.group(5)}"
+
+
+def _english_block(text: str) -> str:
+    """ინგლისური ნაწილი "STORM WARNING"-იდან ხელმოწერის თარიღამდე."""
+    m = re.search(r"STORM\s+WARNING(.*?)(?:\n\s*\d{2}\.\d{2}\.\d{2}|$)", text or "", re.S | re.I)
+    if not m:
+        return ""
+    return " ".join(m.group(1).split())[:500]
+
+
 def parse_storm_cancellation(pdf_path: str) -> dict:
     """'საშტორმო გაფრთხილების გაუქმება' — შეიცავს ფაქტიურ ამინდს.
 
@@ -194,9 +269,12 @@ def parse_storm_cancellation(pdf_path: str) -> dict:
     # ᲝᲠᲘ ᲤᲝᲠᲛᲐᲢᲘ გვხვდება:
     #   "STORM WARNING 14/6882 CANCELATION"
     #   "CANCELLATION THE STORM WARNING 14/7589"   ← 2026-09-16-ზე დაფიქსირდა
-    for pat in (r"STORM\s+WARNING\s+([\d/]+)\s+CANCEL",
-                r"CANCEL\w*\s+(?:THE\s+)?STORM\s+WARNING\s+([\d/]+)",
-                r"საშტორმო\s+გაფრთხილება\s+([\d/]+)\s*-?ის\s+გაუქმება"):
+    # ⚠ 2026-10-10: "№" ნიშანი დაემატა — რეალურ PDF-ში წერია
+    #   "STORM WARNING №14/7539 Cancelation" და ძველი ნიმუში ვერ იჭერდა.
+    for pat in (r"STORM\s+WARNING\s+№?\s*([\d/]+)\s+CANCEL",
+                r"CANCEL\w*\s+(?:THE\s+)?STORM\s+WARNING\s+№?\s*([\d/]+)",
+                r"storm\s+warning\s+№?\s*([\d/]+)\s+is\s+cancel",
+                r"საშტორმო\s+გაფრთხილება\s+№?\s*([\d/]+)\s*-?\s*ის\s+გაუქმება"):
         m = re.search(pat, text, re.I)
         if m:
             out["cancels"] = m.group(1)
@@ -271,6 +349,18 @@ def parse_storm_cancellation(pdf_path: str) -> dict:
         out["kulevi"]["wind_avg"] = float(m.group(2))
         out["kulevi"]["wind_max"] = float(m.group(3))
 
+    # ── ხილვადობა (ნისლის გაუქმება): "a.w. Poti-Kulevi visibility -10 miles" ──
+    m = re.search(r"Poti[^\n]*?visibility[^\n]*", text, re.I)
+    v = _parse_vis(m.group(0)) if m else None
+    if v:
+        out["poti"]["vis_km"] = v[0]
+
+    # თარიღი ორნიშნა წლით ("14.09.26წ. 10:00სთ.") ზემოთ არ იჭერდა
+    if "date" not in out:
+        d, t = _storm_issued(text)
+        if d:
+            out["date"], out["time"] = d, t
+    out["text_eng"] = _english_block(text)
     return out
 
 
@@ -314,6 +404,54 @@ def parse_storm_warning(pdf_path: str) -> dict:
     if m:
         out["poti"]["sea_state"] = float(m.group(1))
         out["poti"]["wave_cm"] = (float(m.group(2)), float(m.group(3)))
+
+    # ── ალტერნატიული ფორმატი (14/7588):
+    #   "Wind NW/W 6-11 m/sec, with ocasionally gusts 12-15 m/sec."
+    #   "Sea 3-4/ 4 state (W.H 80-180/ 125-250cm)"
+    #   "A.W. (Poti)- SW 4-5 m/sec."
+    if "wind_range" not in fc:
+        m = re.search(r"Wind\s+[NSEW/]+\s+(\d+)\s*-\s*(\d+)\s*m/sec.{0,40}?gusts?\s+"
+                      r"(\d+)(?:\s*-\s*(\d+))?\s*m/sec", text, re.I | re.S)
+        if m:
+            fc["wind_range"] = (float(m.group(1)), float(m.group(2)))
+            fc["gust_max"] = float(m.group(4) or m.group(3))
+    if "wave_cm" not in fc:
+        m = re.search(r"sea\s+([\d\-/ ]+?)\s*state\s*\(\s*W\.?\s*H\.?\s*"
+                      r"([\d\-/ ]+?)\s*cm", text, re.I)
+        if m:
+            nums = [float(x) for x in re.findall(r"\d+", m.group(2))]
+            if len(nums) >= 2:
+                fc["wave_cm"] = (min(nums), max(nums))
+            st = [float(x) for x in re.findall(r"\d+", m.group(1))]
+            if st:
+                fc["sea_state"] = max(st)
+    if "wind_range" not in out["poti"]:
+        m = re.search(r"a\.\s*w\.\s*\(Poti\)\s*[-–:]?\s*([NSEW]{1,3})\s*(\d+)\s*-\s*(\d+)\s*m/sec",
+                      text, re.I)
+        if m:
+            out["poti"]["wind_dir_txt"] = m.group(1).upper()
+            out["poti"]["wind_range"] = (float(m.group(2)), float(m.group(3)))
+
+    # ── ნისლი / ხილვადობა (დაემატა 2026-10-10) ──
+    # ინგლისური ბლოკი ორ ნაწილად: პროგნოზი "A.W."-მდე, nowcast — მის შემდეგ.
+    eng = _english_block(text)
+    out["text_eng"] = eng
+    out["phenomena"] = _storm_phenomena(eng or text)
+    parts = re.split(r"(?i)\ba\.\s*w\.", eng, maxsplit=1)
+    fc_part = parts[0]
+    aw_part = parts[1] if len(parts) > 1 else ""
+    v = _parse_vis(fc_part)
+    if v:
+        fc["vis_km"] = (v[0], v[1])
+        fc["vis_text"] = v[2]
+    i = aw_part.lower().find("poti")
+    v = _parse_vis(aw_part[i:]) if i >= 0 else None
+    if v:
+        out["poti"]["vis_km"] = v[0]
+
+    d, t = _storm_issued(text)
+    if d:
+        out["date"], out["time"] = d, t
 
     return out
 

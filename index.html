@@ -1582,8 +1582,16 @@ function renderMtaAdvisory(d) {
   const notes = (ENG && Array.isArray(a.notes_eng) && a.notes_eng.length)
     ? a.notes_eng : a.notes;
   document.getElementById('mta-advisory-text').textContent = ' ' + notes.join(' · ');
-  document.getElementById('mta-advisory-until').textContent =
-    a.valid_until ? (ENG ? '  · valid until ' : '  · ძალაშია ') + a.valid_until : '';
+  // საშტორმო (kind: 'storm') — გამოცემის დრო, ვადა მხოლოდ შენიშვნისაა
+  const when = a.kind === 'storm' && a.issued
+    ? (ENG ? '  · issued ' : '  · გამოცემულია ') + a.issued.slice(11)
+    : (a.valid_until ? (ENG ? '  · valid until ' : '  · ძალაშია ') + a.valid_until : '');
+  document.getElementById('mta-advisory-until').textContent = when;
+  // საშტორმო წითლად, რომ ჩვეულებრივ შენიშვნაში არ აირიოს
+  const storm = a.kind === 'storm';
+  box.style.color       = storm ? 'var(--txt-danger)' : 'var(--txt-warn)';
+  box.style.background  = storm ? 'rgba(245,90,90,0.12)' : 'rgba(240,192,74,0.12)';
+  box.style.borderColor = storm ? 'rgba(245,90,90,0.55)' : 'rgba(240,192,74,0.5)';
   box.style.display = 'flex';
 }
 
