@@ -231,6 +231,71 @@ def _english_block(text: str) -> str:
     return " ".join(m.group(1).split())[:500]
 
 
+# ─── ქარი და მოქმედების ვადა ინგლისური ტექსტიდან (2026-10-11) ───
+# 14/8372: "easterly winds of 10-15 m/s will persist until the second half
+# of October 13, 2026, with occasional gusts of 23-28 m/s.
+# A.W (Poti) Wind- Easterly 12-16 m/s." — ერთეული "m/s" (არა "m/sec"),
+# მიმართულება სიტყვით. ძველი ნიმუშები ვერცერთს ვერ იჭერდნენ.
+_DIR_WORDS = {
+    "northerly": "N", "north-easterly": "NE", "northeasterly": "NE",
+    "easterly": "E", "south-easterly": "SE", "southeasterly": "SE",
+    "southerly": "S", "south-westerly": "SW", "southwesterly": "SW",
+    "westerly": "W", "north-westerly": "NW", "northwesterly": "NW",
+}
+_EN_MONTHS = {m: i for i, m in enumerate(
+    ["january", "february", "march", "april", "may", "june", "july",
+     "august", "september", "october", "november", "december"], 1)}
+_MS = r"m\s*/\s*s(?:ec)?\.?"
+
+
+def _storm_valid_until(eng: str):
+    """"until the second half of October 13, 2026" → "2026-10-13 23:59"."""
+    m = re.search(r"until\s+(?:the\s+)?(?:(first|second)\s+half\s+of\s+)?([A-Za-z]+)\s+"
+                  r"(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{4})", eng or "", re.I)
+    if m and m.group(2).lower() in _EN_MONTHS:
+        hhmm = "12:00" if (m.group(1) or "").lower() == "first" else "23:59"
+        return f"{m.group(4)}-{_EN_MONTHS[m.group(2).lower()]:02d}-{int(m.group(3)):02d} {hhmm}"
+    m = re.search(r"until\s+(\d{1,2})\.(\d{1,2})\.(\d{2,4})", eng or "", re.I)
+    if m:
+        y = m.group(3) if len(m.group(3)) == 4 else "20" + m.group(3)
+        return f"{y}-{int(m.group(2)):02d}-{int(m.group(1)):02d} 23:59"
+    return None
+
+
+def storm_fields_from_eng(eng: str) -> dict:
+    """საშტორმოს ინგლისური ბლოკიდან: პროგნოზის ქარი/დაქროლვა, ფოთის
+    ფაქტობრივი ქარი და მოქმედების ვადა. ცარიელი ველები — უბრალოდ აკლია."""
+    out = {"forecast": {}, "poti": {}, "valid_until": _storm_valid_until(eng)}
+    parts = re.split(r"(?i)\ba\.?\s*w\.?\s*(?=\(|poti|wind)", eng or "", maxsplit=1)
+    fc_part = parts[0]
+    aw_part = parts[1] if len(parts) > 1 else ""
+
+    m = re.search(r"wind\w*\D{0,30}?(\d+)\s*-\s*(\d+)\s*" + _MS, fc_part, re.I)
+    if m:
+        out["forecast"]["wind_range"] = (float(m.group(1)), float(m.group(2)))
+    m = re.search(r"gusts?\D{0,20}?(\d+)(?:\s*-\s*(\d+))?\s*" + _MS, fc_part, re.I)
+    if m:
+        out["forecast"]["gust_max"] = float(m.group(2) or m.group(1))
+        out["forecast"]["gust_range"] = (float(m.group(1)), float(m.group(2) or m.group(1)))
+
+    i = aw_part.lower().find("poti")
+    seg = aw_part[i:] if i >= 0 else ""
+    # ფოთის ნაწილი ყულევამდე
+    j = seg.lower().find("kulevi")
+    seg = seg[:j] if j > 0 else seg
+    m = re.search(r"(\d+)\s*-\s*(\d+)\s*" + _MS, seg, re.I)
+    if m:
+        out["poti"]["wind_range"] = (float(m.group(1)), float(m.group(2)))
+        w = re.search(r"\b((?:north|south)-?(?:east|west)erly|easterly|westerly|northerly|southerly)\b", seg, re.I)
+        if w:
+            out["poti"]["wind_dir_txt"] = _DIR_WORDS.get(w.group(1).lower().replace(" ", ""), "")
+        else:
+            l = re.search(r"\b([NSEW]{1,3})\s*\d", seg)
+            if l:
+                out["poti"]["wind_dir_txt"] = l.group(1).upper()
+    return out
+
+
 def parse_storm_cancellation(pdf_path: str) -> dict:
     """'საშტორმო გაფრთხილების გაუქმება' — შეიცავს ფაქტიურ ამინდს.
 
@@ -409,12 +474,6 @@ def parse_storm_warning(pdf_path: str) -> dict:
     #   "Wind NW/W 6-11 m/sec, with ocasionally gusts 12-15 m/sec."
     #   "Sea 3-4/ 4 state (W.H 80-180/ 125-250cm)"
     #   "A.W. (Poti)- SW 4-5 m/sec."
-    if "wind_range" not in fc:
-        m = re.search(r"Wind\s+[NSEW/]+\s+(\d+)\s*-\s*(\d+)\s*m/sec.{0,40}?gusts?\s+"
-                      r"(\d+)(?:\s*-\s*(\d+))?\s*m/sec", text, re.I | re.S)
-        if m:
-            fc["wind_range"] = (float(m.group(1)), float(m.group(2)))
-            fc["gust_max"] = float(m.group(4) or m.group(3))
     if "wave_cm" not in fc:
         m = re.search(r"sea\s+([\d\-/ ]+?)\s*state\s*\(\s*W\.?\s*H\.?\s*"
                       r"([\d\-/ ]+?)\s*cm", text, re.I)
@@ -425,18 +484,18 @@ def parse_storm_warning(pdf_path: str) -> dict:
             st = [float(x) for x in re.findall(r"\d+", m.group(1))]
             if st:
                 fc["sea_state"] = max(st)
-    if "wind_range" not in out["poti"]:
-        m = re.search(r"a\.\s*w\.\s*\(Poti\)\s*[-–:]?\s*([NSEW]{1,3})\s*(\d+)\s*-\s*(\d+)\s*m/sec",
-                      text, re.I)
-        if m:
-            out["poti"]["wind_dir_txt"] = m.group(1).upper()
-            out["poti"]["wind_range"] = (float(m.group(2)), float(m.group(3)))
-
     # ── ნისლი / ხილვადობა (დაემატა 2026-10-10) ──
     # ინგლისური ბლოკი ორ ნაწილად: პროგნოზი "A.W."-მდე, nowcast — მის შემდეგ.
     eng = _english_block(text)
     out["text_eng"] = eng
     out["phenomena"] = _storm_phenomena(eng or text)
+    extra = storm_fields_from_eng(eng)
+    for k, v in extra["forecast"].items():
+        fc.setdefault(k, v)
+    for k, v in extra["poti"].items():
+        out["poti"].setdefault(k, v)
+    if extra.get("valid_until"):
+        out["valid_until"] = extra["valid_until"]
     parts = re.split(r"(?i)\ba\.\s*w\.", eng, maxsplit=1)
     fc_part = parts[0]
     aw_part = parts[1] if len(parts) > 1 else ""

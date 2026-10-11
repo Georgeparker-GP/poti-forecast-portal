@@ -904,6 +904,10 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         else:
             wind_gusts    = wind_speed
             gust_estimated = True
+        # დაქროლვა მდგრად ქარზე დაბალი ფიზიკურად ვერ იქნება. 2026-10-11 01:07:
+        # Open-Meteo მიუწვდომელი იყო და Stormglass-ის 3.52 „რეალურმა“ დაქროლვამ
+        # 3.96 მ/წმ საშუალოს ქვემოთ ჩამოიწია.
+        wind_gusts = max(wind_gusts, wind_speed)
 
         # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
         wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
@@ -1363,6 +1367,20 @@ def _forecast_advisory():
             for period in ("day", "night"):
                 blk = poti.get(period) or {}
                 g_list, e_list = [], []
+                # ⚠ 2026-10-11: MTA-ს დაქროლვის პროგნოზი (მაგ. 22–27 მ/წმ)
+                #   ზოლზე არ ჩანდა — მხოლოდ `_note` ველები. მოდელები
+                #   ძლიერ ქარს 1.5–2-ჯერ ანაკლებენ, ამიტომ ≥ გემების
+                #   ზღვარზე სინოპტიკოსის რიცხვი ეკრანზე უნდა იყოს.
+                gst = blk.get("gust")
+                if isinstance(gst, (list, tuple)) and gst:
+                    try:
+                        lo, hi = float(gst[0]), float(gst[-1])
+                    except (TypeError, ValueError):
+                        lo = hi = 0.0
+                    if hi >= THRESHOLDS["wind_vessel"]:
+                        ws = " ".join(str(blk.get("wind_speed") or "").split())
+                        g_list.append(f"პროგნოზით დაქროლვა {lo:g}–{hi:g} მ/წმ" + (f" (ქარი {ws})" if ws else ""))
+                        e_list.append(f"forecast gusts {lo:g}–{hi:g} m/s" + (f" (wind {ws})" if ws else ""))
                 for k, v in blk.items():
                     if not (k.endswith("_note") and v):
                         continue
@@ -1401,7 +1419,13 @@ def _forecast_advisory():
 # ⚠ სტატუსს არ ცვლის (იგივე პრინციპი, რაც `_forecast_advisory`-ზე):
 #   ეს დეკლარაციაა და არა გაზომვა. ეკრანზე ჩანს, ვერდიქტი — უცვლელი.
 
-STORM_ADVISORY_MAX_H = 12    # გაუქმების გარეშეც ამის შემდეგ აღარ ჩანს
+# ⚠ 2026-10-11: 12 → 48 სთ. 14/8372 (09:55, ქარი 13 ოქტომბრამდე) 21:55-ზე
+#   ზოლიდან გაქრა — 23:00-ზე კი ოპერაციები ქარის გამო შეჩერდა. ახლა
+#   ბიულეტენის საკუთარი ვადა (`valid_until`) მთავარია, გაუქმება კი მას
+#   ხურავს; ეს რიცხვი მხოლოდ სათადარიგოა, თუ არც ვადა წერია და
+#   გაუქმებაც დაიკარგა.
+STORM_ADVISORY_MAX_H = 48
+STORM_VALID_GRACE_H  = 3     # ვადის შემდეგ ცოტა ხანს კიდევ ჩანს
 
 _PHEN_LBL = {
     "fog":          ("ნისლი", "fog"),
@@ -1443,7 +1467,15 @@ def _storm_advisory(entries, now=None):
         t = _mta_entry_dt(e)
         if not t or t > now + timedelta(minutes=30):
             continue
-        if (now - t).total_seconds() / 3600 > STORM_ADVISORY_MAX_H:
+        vu = None
+        if e.get("valid_until"):
+            try:
+                vu = datetime.strptime(e["valid_until"], "%Y-%m-%d %H:%M").replace(tzinfo=TBILISI_TZ)
+            except ValueError:
+                vu = None
+        limit = (vu + timedelta(hours=STORM_VALID_GRACE_H)) if vu \
+            else (t + timedelta(hours=STORM_ADVISORY_MAX_H))
+        if now > limit:
             continue
         no = e.get("bulletin_no")
         cancelled = False
@@ -1486,7 +1518,11 @@ def _storm_advisory(entries, now=None):
     if isinstance(wr, (list, tuple)) and len(wr) == 2:
         g = f"ქარი {wr[0]:g}–{wr[1]:g} მ/წმ"
         en = f"wind {wr[0]:g}–{wr[1]:g} m/s"
-        if fc.get("gust_max"):
+        gr = fc.get("gust_range")
+        if isinstance(gr, (list, tuple)) and len(gr) == 2 and gr[0] != gr[1]:
+            g += f", დაქროლვა {gr[0]:g}–{gr[1]:g}"
+            en += f", gusts {gr[0]:g}–{gr[1]:g}"
+        elif fc.get("gust_max"):
             g += f", დაქროლვა {fc['gust_max']:g}"
             en += f", gusts {fc['gust_max']:g}"
         notes.append(g)
@@ -1507,7 +1543,7 @@ def _storm_advisory(entries, now=None):
         "notes_eng": notes_eng,
         "bulletin": e.get("bulletin_no"),
         "issued": t.strftime("%Y-%m-%d %H:%M"),
-        "valid_until": None,
+        "valid_until": e.get("valid_until"),
         "source": "MTA",
     }
 
@@ -1529,7 +1565,7 @@ def load_mta_advisory():
     if fc:
         storm["notes"] = storm["notes"] + list(fc.get("notes") or [])
         storm["notes_eng"] = storm["notes_eng"] + list(fc.get("notes_eng") or [])
-        storm["valid_until"] = fc.get("valid_until")
+        storm["valid_until"] = storm.get("valid_until") or fc.get("valid_until")
     return storm
 
 

@@ -317,7 +317,19 @@ class StormAdvisoryTest(unittest.TestCase):
         self.assertIsNone(fetch._storm_advisory(E, self._at("2026-09-14 10:05")))
 
     def test_expires_without_cancel(self):
-        self.assertIsNone(fetch._storm_advisory([self.WARN], self._at("2026-09-14 20:00")))
+        # ვადა არ წერია და გაუქმება არ მოსულა — 48 სთ სათადარიგო ლიმიტი
+        self.assertIsNotNone(fetch._storm_advisory([self.WARN], self._at("2026-09-15 20:00")))
+        self.assertIsNone(fetch._storm_advisory([self.WARN], self._at("2026-09-16 08:00")))
+
+    def test_explicit_validity_keeps_banner(self):
+        # 14/8372: 09:55-ზე, "until the second half of October 13" — 12 სთ-ში არ უნდა გაქრეს
+        w = {"type": "storm_warning", "bulletin_no": "14/8372", "date": "11/10/2026",
+             "time": "09:55", "phenomena": ["wind"], "valid_until": "2026-10-13 23:59",
+             "forecast": {"wind_range": [10, 15], "gust_max": 28}, "poti": {"wind_range": [12, 16]}}
+        a = fetch._storm_advisory([w], self._at("2026-10-11 23:00"))
+        self.assertEqual(a["valid_until"], "2026-10-13 23:59")
+        self.assertIn("ქარი 10–15 მ/წმ, დაქროლვა 28", a["notes"])
+        self.assertIsNone(fetch._storm_advisory([w], self._at("2026-10-14 03:00")))
 
     def test_other_area_ignored(self):
         w = {**self.WARN, "area": "batumi"}
@@ -336,6 +348,70 @@ class StormAdvisoryTest(unittest.TestCase):
                 fetch.refresh_mta_advisory_only()
             adv = json.load(open(out))["mta_advisory"]
             self.assertEqual(adv["bulletin"], "14/7539")
+
+
+class StormWindParserTest(unittest.TestCase):
+    TXT = ("In the area of Poti-Kulevi, easterly winds of 10-15 m/s will persist until the "
+           "second half of October 13, 2026, with occasional gusts of 23-28 m/s. "
+           "A.W (Poti) Wind- Easterly 12-16 m/s. (Kulevi) wind- Easterly 4-6 m/s.")
+
+    def test_ms_units_and_validity(self):
+        r = mta_parser.storm_fields_from_eng(self.TXT)
+        self.assertEqual(r["forecast"], {"wind_range": (10.0, 15.0), "gust_max": 28.0,
+                                         "gust_range": (23.0, 28.0)})
+        self.assertEqual(r["poti"], {"wind_range": (12.0, 16.0), "wind_dir_txt": "E"})
+        self.assertEqual(r["valid_until"], "2026-10-13 23:59")
+
+    def test_repair_backfills_from_text(self):
+        log = {"entries": [{"type": "storm_warning", "bulletin_no": "14/8372",
+                            "date": "11/10/2026", "time": "09:55",
+                            "source_file": "x.pdf", "forecast": {}, "poti": {},
+                            "phenomena": ["wind"], "text_eng": self.TXT}]}
+        self.assertGreater(mta_ingest._repair_storm_entries(log), 0)
+        e = log["entries"][0]
+        self.assertEqual(e["valid_until"], "2026-10-13 23:59")
+        self.assertEqual(e["forecast"]["gust_max"], 28.0)
+        self.assertEqual(mta_ingest._repair_storm_entries(log), 0)
+
+
+class ForecastGustNoteTest(unittest.TestCase):
+    def test_mta_gust_forecast_shown(self):
+        import json, tempfile
+        e = {"type": "forecast", "bulletin_no": "14/8381",
+             "valid": "11/10/ 2026 წ. 22:00 სთ-დან 12/10/ 2026 წ. 10:00 სთ-მდე",
+             "poti": {"day": {"wind_speed": "12-17", "gust": [22.0, 27.0]},
+                      "night": {"wind_speed": "12-17", "gust": [22.0, 27.0]}}}
+        with tempfile.TemporaryDirectory() as d:
+            lg = os.path.join(d, "mta_log.json")
+            json.dump({"entries": [e]}, open(lg, "w"))
+            with mock.patch.object(fetch, "MTA_LOG_FILE", lg), \
+                 mock.patch.object(fetch, "datetime", wraps=fetch.datetime) as dt:
+                dt.now.return_value = StormAdvisoryTest._at("2026-10-11 23:00")
+                a = fetch.load_mta_advisory()
+        self.assertEqual(a["notes"], ["პროგნოზით დაქროლვა 22–27 მ/წმ (ქარი 12-17)"])
+
+    def test_weak_gusts_not_shown(self):
+        blk = {"day": {"wind_speed": "6-11", "gust": [13.0, 15.0]}}
+        e = {"type": "forecast", "valid": "11/10/ 2026 წ. 22:00 სთ-დან 12/10/ 2026 წ. 10:00 სთ-მდე",
+             "poti": blk}
+        import json, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            lg = os.path.join(d, "mta_log.json")
+            json.dump({"entries": [e]}, open(lg, "w"))
+            with mock.patch.object(fetch, "MTA_LOG_FILE", lg), \
+                 mock.patch.object(fetch, "datetime", wraps=fetch.datetime) as dt:
+                dt.now.return_value = StormAdvisoryTest._at("2026-10-11 23:00")
+                self.assertIsNone(fetch.load_mta_advisory())
+
+
+class GustClampTest(unittest.TestCase):
+    def test_gust_not_below_wind(self):
+        yr = _hours(1, wind_speed=3.96, wind_gusts=4.95, gust_estimated=True,
+                    wind_direction=63.0, precipitation=None, visibility_km=10.0)
+        sg = _hours(1, wind_speed=2.2, wind_gusts=3.52, wind_direction=60.0,
+                    precipitation=None, visibility_km=24.0)
+        out = fetch.compute_consensus(yr, None, None, None, None, sg, None, None)
+        self.assertGreaterEqual(out[0]["wind_gusts"], out[0]["wind_speed"])
 
 
 if __name__ == "__main__":
