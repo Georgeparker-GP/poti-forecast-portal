@@ -414,5 +414,27 @@ class GustClampTest(unittest.TestCase):
         self.assertGreaterEqual(out[0]["wind_gusts"], out[0]["wind_speed"])
 
 
+class GustCalibrationTest(unittest.TestCase):
+    def test_consensus_gust_calibrated_raw_kept(self):
+        src = _hours(1, wind_speed=5.0, wind_gusts=8.0, wind_direction=80.0,
+                     precipitation=0.0, visibility_km=10.0)
+        h = fetch.compute_consensus(src, None, None, None, None, None, None, None)[0]
+        self.assertEqual(h["wind_gusts_raw"], 8.0)
+        self.assertEqual(h["wind_gusts"], round(8.0 * fetch.GUST_CALIBRATION, 2))
+        if fetch.GUST_CALIBRATION >= 1.25:
+            self.assertEqual(h["status"], "barge")          # 8 × 1.3 = 10.4 ≥ 10
+
+    def test_squall_uses_raw_gusts(self):
+        cur = {"wind_speed": 4.0, "wind_gusts": 6.5, "wind_gusts_raw": 5.0, "precipitation": 0}
+        nxt = {"wind_speed": 8.0, "wind_gusts": 13.0, "wind_gusts_raw": 10.0, "precipitation": 0}
+        self.assertIsNone(fetch._detect_squall([cur, nxt], 0))
+
+    def test_daily_summary_calibrated(self):
+        day = [{"date": "2026-10-12", "wind_max": 8.0, "gust_max": 14.0}]
+        r = fetch.build_daily_summary(day, [])[0]
+        self.assertEqual(r["gust_max_raw"], 14.0)
+        self.assertEqual(r["gust_max"], round(14.0 * fetch.GUST_CALIBRATION, 2))
+
+
 if __name__ == "__main__":
     unittest.main()

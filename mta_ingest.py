@@ -402,6 +402,10 @@ def _compare_to_portal(parsed: dict, portal: dict) -> dict:
     if mta_gust is not None and p_gust is not None:
         cmp["wind_mta"]    = mta_gust
         cmp["wind_portal"] = p_gust
+        # 2026-10-12-დან wind_gusts კალიბრირებულია (×GUST_CALIBRATION);
+        # ნედლიც ვინახავთ, რომ ძველ ისტორიასთან შედარება სწორი დარჩეს.
+        if portal.get("wind_gusts_raw") is not None:
+            cmp["wind_portal_raw"] = portal["wind_gusts_raw"]
         cmp["wind_delta"]  = round(mta_gust - p_gust, 2)
 
     # საშუალო ქარიც — MTA-ს wind_avg vs პორტალის wind_speed.

@@ -122,6 +122,20 @@ THRESHOLDS = {
     "vis_cranes":      0.08,  #  80 მ — ამწე ჩერდება
 }
 
+# ═══ დაქროლვის კალიბრაცია (2026-10-12) ═══
+# მოდელები ძლიერ ქარს სისტემატურად ანაკლებენ. MTA-ს ფაქტობრივ
+# ბიულეტენებთან 51 ზუსტი (საათით დამთხვეული) შედარებიდან, MTA-ს
+# მაქსიმუმი ≥10 მ/წმ — 10 შემთხვევა, MTA/პორტალი მედიანა ≈1.43.
+# კატეგორიის (ოპერაციული/ბორანი/გემები/შეჩერება) სიზუსტე:
+#   ×1.0 → 42 სწორი, 0 ზედმეტი, 9 ნაკლები
+#   ×1.3 → 43 სწორი, 4 ზედმეტი, 4 ნაკლები   ← არჩეული
+#   ×1.4 → 41 სწორი, 7 ზედმეტი, 3 ნაკლები
+# ×1.3-ის 4 ზედმეტი ყველა „ბორნის“ დონეზეა და ზღვართან ახლოს (MTA 8–9 მ/წმ);
+# გემების/შეჩერების დონეზე ცრუ განგაში არც ერთი. სექტორული კოეფიციენტისთვის
+# მონაცემი ჯერ ცოტაა (აღმოსავლეთი — 3 ზუსტი შემთხვევა).
+# ნედლი მნიშვნელობა `wind_gusts_raw`-ში ინახება; 1.0 კალიბრაციას თიშავს.
+GUST_CALIBRATION = 1.3
+
 BASE_WEIGHTS = {
     "best_match": 0.22, "gfs": 0.13, "icon_eu": 0.09, "ecmwf": 0.25,
     "yr_no": 0.13, "stormglass": 0.17, "owm": 0.08,
@@ -485,8 +499,12 @@ def build_daily_summary(daily_atmo, daily_marine):
     result = []
     for a in daily_atmo:
         wave_max = wave_by_date.get(a["date"], 0.0)
-        status, alerts = _compute_status(a["wind_max"], a["gust_max"], wave_max, 999)
-        result.append({**a, "wave_max": wave_max, "status": status, "alerts": alerts})
+        # იგივე კალიბრაცია, რაც საათობრივზე — თორემ კვირის ხედი სხვა ვერდიქტს მისცემდა
+        gust = a["gust_max"] * GUST_CALIBRATION if a["gust_max"] is not None else None
+        status, alerts = _compute_status(a["wind_max"], gust, wave_max, 999)
+        result.append({**a, "gust_max": _r(gust) if gust is not None else None,
+                       "gust_max_raw": a["gust_max"], "wave_max": wave_max,
+                       "status": status, "alerts": alerts})
     return result
 
 
@@ -908,6 +926,8 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # Open-Meteo მიუწვდომელი იყო და Stormglass-ის 3.52 „რეალურმა“ დაქროლვამ
         # 3.96 მ/წმ საშუალოს ქვემოთ ჩამოიწია.
         wind_gusts = max(wind_gusts, wind_speed)
+        wind_gusts_raw = wind_gusts
+        wind_gusts = wind_gusts * GUST_CALIBRATION
 
         # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
         wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
@@ -1080,6 +1100,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "time": atmo_best[i]["time"],
             "wind_speed": _r(wind_speed),
             "wind_gusts": _r(wind_gusts),
+            "wind_gusts_raw": _r(wind_gusts_raw),
             "wind_direction": _r(wind_direction, 0),
             "precipitation": _r(precip),
             "precip_sources": precip_sources,
@@ -2197,9 +2218,11 @@ def _detect_squall(fc: list, now_idx: int) -> dict | None:
     cur  = fc[now_idx]
     nxt  = fc[now_idx + 1]
 
-    g_now   = cur.get("wind_gusts", 0) or 0
+    # შკვალის ზღვრები ნედლ მოდელურ დაქროლვაზეა მორგებული — კალიბრაციამ
+    # gust factor-ი (gusts − wind) არ უნდა გაბეროს და ალერტების სიხშირე შეცვალოს.
+    g_now   = cur.get("wind_gusts_raw", cur.get("wind_gusts", 0)) or 0
     w_now   = cur.get("wind_speed",  0) or 0
-    g_next  = nxt.get("wind_gusts", 0) or 0
+    g_next  = nxt.get("wind_gusts_raw", nxt.get("wind_gusts", 0)) or 0
     w_next  = nxt.get("wind_speed",  0) or 0
     p_next  = nxt.get("precipitation", 0) or 0
 
@@ -2790,12 +2813,13 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "next_update":    (datetime.now(TBILISI_TZ) + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M"),
             "sources_used":   sources_used,
             "forecast_hours": len(consensus),
+            "gust_calibration": GUST_CALIBRATION,
             # ზღვრები ერთ ადგილას: index.html მათ აქედან კითხულობს, ამიტომ
             # backend-სა და frontend-ს შორის აცდენა აღარ შეიძლება.
             "thresholds":     dict(THRESHOLDS),
         },
         "current": {k: now.get(k, v) for k, v in {
-            "time": "", "wind_speed": 0, "wind_gusts": 0,
+            "time": "", "wind_speed": 0, "wind_gusts": 0, "wind_gusts_raw": None,
             "wind_direction": 0, "wave_height": 0, "precipitation": 0,
             "visibility_km": 10, "wave_period": 0, "wave_direction": 0,
             "swell_height": 0, "swell_period": 0, "swell_direction": 0,
