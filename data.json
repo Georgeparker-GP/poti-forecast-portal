@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-10-12 12:07",
-    "next_update": "2026-10-12 13:07",
+    "last_update": "2026-10-12 13:07",
+    "next_update": "2026-10-12 14:07",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
@@ -27,55 +27,55 @@
     }
   },
   "current": {
-    "time": "2026-10-12T12:00",
-    "wind_speed": 10.45,
-    "wind_gusts": 20.28,
-    "wind_gusts_raw": 15.6,
+    "time": "2026-10-12T13:00",
+    "wind_speed": 9.89,
+    "wind_gusts": 19.89,
+    "wind_gusts_raw": 15.3,
     "wind_direction": 86.0,
     "wave_height": 0.89,
     "precipitation": 0.0,
-    "visibility_km": 36.12,
-    "wave_period": 3.4,
+    "visibility_km": 37.31,
+    "wave_period": 3.35,
     "wave_direction": 83.0,
     "swell_height": 0.09,
-    "swell_period": 4.52,
-    "swell_direction": 234.0,
-    "wind_wave_height": 0.74,
-    "water_temp": 21.62,
-    "current_speed": 0.14,
-    "air_temp": 23.9,
-    "feels_like": 20.2,
+    "swell_period": 4.44,
+    "swell_direction": 212.0,
+    "wind_wave_height": 0.72,
+    "water_temp": 21.64,
+    "current_speed": 0.13,
+    "air_temp": 24.8,
+    "feels_like": 21.2,
     "status": "vessel",
     "alerts": [
-      "ქარის აფეთქება: 20.3 მ/წმ (გემების ლიმიტი: 17.0)"
+      "ქარის აფეთქება: 19.9 მ/წმ (გემების ლიმიტი: 17.0)"
     ],
-    "wind_spread": 0.87,
+    "wind_spread": 0.75,
     "confidence": "high",
     "source_count": 3,
     "dir_agreement": 1.0,
     "dir_fallback": false,
     "precip_sources": 0,
-    "precip_total": 5,
+    "precip_total": 4,
     "precip_agreement": 0,
     "wave_estimated": false,
     "gust_estimated": false,
-    "wave_max": 1.2,
-    "wave_min": 0.34,
+    "wave_max": 1.16,
+    "wave_min": 0.32,
     "wave_sources": 5,
-    "wave_copernicus": 0.57,
+    "wave_copernicus": 0.53,
     "visibility_min": 24.13,
     "vis_estimated": false,
-    "humidity": 55.0,
-    "dew_point": 14.2,
-    "pressure": 1013.2,
+    "humidity": 52.0,
+    "dew_point": 14.4,
+    "pressure": 1013.1,
     "thunderstorm": false
   },
   "summary_24h": {
-    "window_start": "2026-10-12T12:00",
-    "window_end": "2026-10-13T11:00",
+    "window_start": "2026-10-12T13:00",
+    "window_end": "2026-10-13T12:00",
     "window_hours": 24,
     "max_wave_height": 0.89,
-    "max_wind_gusts": 20.28,
+    "max_wind_gusts": 19.89,
     "total_precip_24h": 0,
     "max_precip_rate": 0,
     "rain_hours": 0,
@@ -85,8 +85,8 @@
     "operational_hours": 14,
     "forward_hours": 48,
     "restricted_hours": {
-      "barge": 16,
-      "vessel": 18
+      "barge": 17,
+      "vessel": 17
     },
     "overall_status": "vessel"
   },
@@ -603,10 +603,10 @@
     },
     {
       "time": "2026-10-12T11:00",
-      "wind_speed": 10.21,
+      "wind_speed": 10.05,
       "wind_gusts": 20.28,
       "wind_gusts_raw": 15.6,
-      "wind_direction": 86.0,
+      "wind_direction": 85.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 4,
@@ -639,22 +639,22 @@
       "alerts": [
         "ქარის აფეთქება: 20.3 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.56,
+      "wind_spread": 0.52,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
-      "source_count": 3,
+      "source_count": 2,
       "wind_pool": "elite"
     },
     {
       "time": "2026-10-12T12:00",
-      "wind_speed": 10.45,
+      "wind_speed": 10.13,
       "wind_gusts": 20.28,
       "wind_gusts_raw": 15.6,
-      "wind_direction": 86.0,
+      "wind_direction": 85.0,
       "precipitation": 0.0,
       "precip_sources": 0,
-      "precip_total": 5,
+      "precip_total": 4,
       "precip_agreement": 0,
       "visibility_km": 36.12,
       "visibility_min": 24.13,
@@ -684,22 +684,22 @@
       "alerts": [
         "ქარის აფეთქება: 20.3 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.87,
+      "wind_spread": 0.65,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
-      "source_count": 3,
+      "source_count": 2,
       "wind_pool": "elite"
     },
     {
       "time": "2026-10-12T13:00",
-      "wind_speed": 9.8,
+      "wind_speed": 9.89,
       "wind_gusts": 19.89,
       "wind_gusts_raw": 15.3,
       "wind_direction": 86.0,
       "precipitation": 0.0,
       "precip_sources": 0,
-      "precip_total": 5,
+      "precip_total": 4,
       "precip_agreement": 0,
       "visibility_km": 37.31,
       "visibility_min": 24.13,
@@ -729,7 +729,7 @@
       "alerts": [
         "ქარის აფეთქება: 19.9 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.63,
+      "wind_spread": 0.75,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -738,7 +738,7 @@
     },
     {
       "time": "2026-10-12T14:00",
-      "wind_speed": 9.09,
+      "wind_speed": 9.17,
       "wind_gusts": 18.98,
       "wind_gusts_raw": 14.6,
       "wind_direction": 84.0,
@@ -774,7 +774,7 @@
       "alerts": [
         "ქარის აფეთქება: 19.0 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.64,
+      "wind_spread": 0.75,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -783,7 +783,7 @@
     },
     {
       "time": "2026-10-12T15:00",
-      "wind_speed": 8.54,
+      "wind_speed": 8.57,
       "wind_gusts": 17.29,
       "wind_gusts_raw": 13.3,
       "wind_direction": 82.0,
@@ -819,7 +819,7 @@
       "alerts": [
         "ქარის აფეთქება: 17.3 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.49,
+      "wind_spread": 0.53,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -828,10 +828,10 @@
     },
     {
       "time": "2026-10-12T16:00",
-      "wind_speed": 8.33,
+      "wind_speed": 8.44,
       "wind_gusts": 16.51,
       "wind_gusts_raw": 12.7,
-      "wind_direction": 82.0,
+      "wind_direction": 83.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -864,7 +864,7 @@
       "alerts": [
         "ქარის სიჩქარე: 16.5 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.67,
+      "wind_spread": 0.8,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -873,7 +873,7 @@
     },
     {
       "time": "2026-10-12T17:00",
-      "wind_speed": 8.16,
+      "wind_speed": 8.18,
       "wind_gusts": 15.21,
       "wind_gusts_raw": 11.7,
       "wind_direction": 85.0,
@@ -909,7 +909,7 @@
       "alerts": [
         "ქარის სიჩქარე: 15.2 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.93,
+      "wind_spread": 0.96,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -918,7 +918,7 @@
     },
     {
       "time": "2026-10-12T18:00",
-      "wind_speed": 8.24,
+      "wind_speed": 8.11,
       "wind_gusts": 14.56,
       "wind_gusts_raw": 11.2,
       "wind_direction": 83.0,
@@ -954,7 +954,7 @@
       "alerts": [
         "ქარის სიჩქარე: 14.6 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 1.21,
+      "wind_spread": 1.04,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -963,7 +963,7 @@
     },
     {
       "time": "2026-10-12T19:00",
-      "wind_speed": 8.32,
+      "wind_speed": 8.23,
       "wind_gusts": 14.69,
       "wind_gusts_raw": 11.3,
       "wind_direction": 84.0,
@@ -999,7 +999,7 @@
       "alerts": [
         "ქარის სიჩქარე: 14.7 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 1.4,
+      "wind_spread": 1.3,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1008,7 +1008,7 @@
     },
     {
       "time": "2026-10-12T20:00",
-      "wind_speed": 8.44,
+      "wind_speed": 8.33,
       "wind_gusts": 14.69,
       "wind_gusts_raw": 11.3,
       "wind_direction": 84.0,
@@ -1044,7 +1044,7 @@
       "alerts": [
         "ქარის სიჩქარე: 14.7 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 1.41,
+      "wind_spread": 1.26,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1053,10 +1053,10 @@
     },
     {
       "time": "2026-10-12T21:00",
-      "wind_speed": 9.05,
+      "wind_speed": 8.94,
       "wind_gusts": 15.86,
       "wind_gusts_raw": 12.2,
-      "wind_direction": 83.0,
+      "wind_direction": 84.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -1089,7 +1089,7 @@
       "alerts": [
         "ქარის სიჩქარე: 15.9 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 1.28,
+      "wind_spread": 1.16,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1098,10 +1098,10 @@
     },
     {
       "time": "2026-10-12T22:00",
-      "wind_speed": 9.24,
+      "wind_speed": 9.27,
       "wind_gusts": 16.64,
       "wind_gusts_raw": 12.8,
-      "wind_direction": 86.0,
+      "wind_direction": 87.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -1134,7 +1134,7 @@
       "alerts": [
         "ქარის სიჩქარე: 16.6 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 1.31,
+      "wind_spread": 1.34,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1143,7 +1143,7 @@
     },
     {
       "time": "2026-10-12T23:00",
-      "wind_speed": 9.74,
+      "wind_speed": 9.82,
       "wind_gusts": 17.94,
       "wind_gusts_raw": 13.8,
       "wind_direction": 86.0,
@@ -1179,7 +1179,7 @@
       "alerts": [
         "ქარის აფეთქება: 17.9 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 1.57,
+      "wind_spread": 1.66,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "medium",
@@ -1188,7 +1188,7 @@
     },
     {
       "time": "2026-10-13T00:00",
-      "wind_speed": 9.89,
+      "wind_speed": 9.98,
       "wind_gusts": 18.33,
       "wind_gusts_raw": 14.1,
       "wind_direction": 87.0,
@@ -1224,7 +1224,7 @@
       "alerts": [
         "ქარის აფეთქება: 18.3 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 1.77,
+      "wind_spread": 1.86,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "medium",
@@ -1233,7 +1233,7 @@
     },
     {
       "time": "2026-10-13T01:00",
-      "wind_speed": 10.09,
+      "wind_speed": 10.23,
       "wind_gusts": 18.72,
       "wind_gusts_raw": 14.4,
       "wind_direction": 88.0,
@@ -1269,7 +1269,7 @@
       "alerts": [
         "ქარის აფეთქება: 18.7 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 1.54,
+      "wind_spread": 1.68,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "medium",
@@ -1278,7 +1278,7 @@
     },
     {
       "time": "2026-10-13T02:00",
-      "wind_speed": 10.01,
+      "wind_speed": 10.1,
       "wind_gusts": 18.72,
       "wind_gusts_raw": 14.4,
       "wind_direction": 88.0,
@@ -1314,7 +1314,7 @@
       "alerts": [
         "ქარის აფეთქება: 18.7 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 1.33,
+      "wind_spread": 1.42,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1323,7 +1323,7 @@
     },
     {
       "time": "2026-10-13T03:00",
-      "wind_speed": 9.95,
+      "wind_speed": 10.03,
       "wind_gusts": 18.33,
       "wind_gusts_raw": 14.1,
       "wind_direction": 88.0,
@@ -1359,7 +1359,7 @@
       "alerts": [
         "ქარის აფეთქება: 18.3 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 1.17,
+      "wind_spread": 1.27,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1368,7 +1368,7 @@
     },
     {
       "time": "2026-10-13T04:00",
-      "wind_speed": 9.9,
+      "wind_speed": 10.09,
       "wind_gusts": 18.2,
       "wind_gusts_raw": 14.0,
       "wind_direction": 86.0,
@@ -1404,7 +1404,7 @@
       "alerts": [
         "ქარის აფეთქება: 18.2 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 1.12,
+      "wind_spread": 1.34,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1413,7 +1413,7 @@
     },
     {
       "time": "2026-10-13T05:00",
-      "wind_speed": 9.91,
+      "wind_speed": 10.21,
       "wind_gusts": 18.59,
       "wind_gusts_raw": 14.3,
       "wind_direction": 87.0,
@@ -1449,7 +1449,7 @@
       "alerts": [
         "ქარის აფეთქება: 18.6 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 1.03,
+      "wind_spread": 1.34,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1458,7 +1458,7 @@
     },
     {
       "time": "2026-10-13T06:00",
-      "wind_speed": 9.85,
+      "wind_speed": 10.02,
       "wind_gusts": 18.46,
       "wind_gusts_raw": 14.2,
       "wind_direction": 88.0,
@@ -1494,7 +1494,7 @@
       "alerts": [
         "ქარის აფეთქება: 18.5 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 1.04,
+      "wind_spread": 1.22,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1503,10 +1503,10 @@
     },
     {
       "time": "2026-10-13T07:00",
-      "wind_speed": 9.59,
+      "wind_speed": 9.73,
       "wind_gusts": 18.07,
       "wind_gusts_raw": 13.9,
-      "wind_direction": 87.0,
+      "wind_direction": 88.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -1539,7 +1539,7 @@
       "alerts": [
         "ქარის აფეთქება: 18.1 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.89,
+      "wind_spread": 1.05,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1548,10 +1548,10 @@
     },
     {
       "time": "2026-10-13T08:00",
-      "wind_speed": 9.37,
+      "wind_speed": 9.48,
       "wind_gusts": 17.68,
       "wind_gusts_raw": 13.6,
-      "wind_direction": 88.0,
+      "wind_direction": 87.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -1584,7 +1584,7 @@
       "alerts": [
         "ქარის აფეთქება: 17.7 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.79,
+      "wind_spread": 0.92,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1593,7 +1593,7 @@
     },
     {
       "time": "2026-10-13T09:00",
-      "wind_speed": 9.07,
+      "wind_speed": 8.88,
       "wind_gusts": 17.68,
       "wind_gusts_raw": 13.6,
       "wind_direction": 88.0,
@@ -1629,7 +1629,7 @@
       "alerts": [
         "ქარის აფეთქება: 17.7 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.73,
+      "wind_spread": 0.45,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1638,10 +1638,10 @@
     },
     {
       "time": "2026-10-13T10:00",
-      "wind_speed": 8.73,
+      "wind_speed": 8.35,
       "wind_gusts": 17.81,
       "wind_gusts_raw": 13.7,
-      "wind_direction": 88.0,
+      "wind_direction": 87.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -1674,7 +1674,7 @@
       "alerts": [
         "ქარის აფეთქება: 17.8 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.83,
+      "wind_spread": 0.17,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1683,10 +1683,10 @@
     },
     {
       "time": "2026-10-13T11:00",
-      "wind_speed": 7.55,
+      "wind_speed": 7.3,
       "wind_gusts": 17.68,
       "wind_gusts_raw": 13.6,
-      "wind_direction": 88.0,
+      "wind_direction": 87.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -1719,7 +1719,7 @@
       "alerts": [
         "ქარის აფეთქება: 17.7 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 0.9,
+      "wind_spread": 0.6,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1728,10 +1728,10 @@
     },
     {
       "time": "2026-10-13T12:00",
-      "wind_speed": 6.81,
+      "wind_speed": 6.64,
       "wind_gusts": 17.16,
       "wind_gusts_raw": 13.2,
-      "wind_direction": 88.0,
+      "wind_direction": 87.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -1764,7 +1764,7 @@
       "alerts": [
         "ქარის აფეთქება: 17.2 მ/წმ (გემების ლიმიტი: 17.0)"
       ],
-      "wind_spread": 1.19,
+      "wind_spread": 0.99,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1773,7 +1773,7 @@
     },
     {
       "time": "2026-10-13T13:00",
-      "wind_speed": 5.42,
+      "wind_speed": 5.26,
       "wind_gusts": 16.12,
       "wind_gusts_raw": 12.4,
       "wind_direction": 88.0,
@@ -1809,7 +1809,7 @@
       "alerts": [
         "ქარის სიჩქარე: 16.1 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 1.38,
+      "wind_spread": 1.26,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1818,7 +1818,7 @@
     },
     {
       "time": "2026-10-13T14:00",
-      "wind_speed": 4.53,
+      "wind_speed": 4.31,
       "wind_gusts": 14.56,
       "wind_gusts_raw": 11.2,
       "wind_direction": 86.0,
@@ -1854,7 +1854,7 @@
       "alerts": [
         "ქარის სიჩქარე: 14.6 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.82,
+      "wind_spread": 0.53,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -1863,7 +1863,7 @@
     },
     {
       "time": "2026-10-13T15:00",
-      "wind_speed": 3.9,
+      "wind_speed": 3.85,
       "wind_gusts": 10.27,
       "wind_gusts_raw": 7.9,
       "wind_direction": 94.0,
@@ -1899,7 +1899,7 @@
       "alerts": [
         "ქარის სიჩქარე: 10.3 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.93,
+      "wind_spread": 0.85,
       "dir_agreement": 0.99,
       "dir_fallback": false,
       "confidence": "high",
@@ -1908,10 +1908,10 @@
     },
     {
       "time": "2026-10-13T16:00",
-      "wind_speed": 2.59,
+      "wind_speed": 2.43,
       "wind_gusts": 5.72,
       "wind_gusts_raw": 4.4,
-      "wind_direction": 117.0,
+      "wind_direction": 114.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -1942,8 +1942,8 @@
       "feels_like": 26.2,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.91,
-      "dir_agreement": 0.87,
+      "wind_spread": 0.63,
+      "dir_agreement": 0.85,
       "dir_fallback": false,
       "confidence": "high",
       "source_count": 3,
@@ -1951,10 +1951,10 @@
     },
     {
       "time": "2026-10-13T17:00",
-      "wind_speed": 1.72,
+      "wind_speed": 1.41,
       "wind_gusts": 4.16,
       "wind_gusts_raw": 3.2,
-      "wind_direction": 171.0,
+      "wind_direction": 156.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -1985,8 +1985,8 @@
       "feels_like": 25.6,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.76,
-      "dir_agreement": 0.9,
+      "wind_spread": 0.24,
+      "dir_agreement": 0.8,
       "dir_fallback": false,
       "confidence": "high",
       "source_count": 3,
@@ -1994,14 +1994,14 @@
     },
     {
       "time": "2026-10-13T18:00",
-      "wind_speed": 3.02,
+      "wind_speed": 2.13,
       "wind_gusts": 5.59,
       "wind_gusts_raw": 4.3,
-      "wind_direction": 230.0,
-      "precipitation": 0.7,
-      "precip_sources": 1,
+      "wind_direction": 237.0,
+      "precipitation": 0.0,
+      "precip_sources": 0,
       "precip_total": 5,
-      "precip_agreement": 16,
+      "precip_agreement": 0,
       "visibility_km": 31.63,
       "visibility_min": 24.13,
       "humidity": 75.0,
@@ -2028,23 +2028,23 @@
       "feels_like": 24.6,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 1.75,
-      "dir_agreement": 0.7,
+      "wind_spread": 0.44,
+      "dir_agreement": 0.79,
       "dir_fallback": false,
-      "confidence": "medium",
+      "confidence": "high",
       "source_count": 3,
       "wind_pool": "elite"
     },
     {
       "time": "2026-10-13T19:00",
-      "wind_speed": 3.25,
+      "wind_speed": 2.97,
       "wind_gusts": 5.85,
       "wind_gusts_raw": 4.5,
       "wind_direction": 191.0,
-      "precipitation": 0.8,
-      "precip_sources": 1,
+      "precipitation": 0.0,
+      "precip_sources": 0,
       "precip_total": 5,
-      "precip_agreement": 16,
+      "precip_agreement": 0,
       "visibility_km": 24.6,
       "visibility_min": 12.42,
       "humidity": 74.0,
@@ -2071,8 +2071,8 @@
       "feels_like": 24.2,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.84,
-      "dir_agreement": 0.44,
+      "wind_spread": 0.41,
+      "dir_agreement": 0.46,
       "dir_fallback": true,
       "confidence": "high",
       "source_count": 3,
@@ -2080,7 +2080,7 @@
     },
     {
       "time": "2026-10-13T20:00",
-      "wind_speed": 2.7,
+      "wind_speed": 1.82,
       "wind_gusts": 6.24,
       "wind_gusts_raw": 4.8,
       "wind_direction": 228.0,
@@ -2114,19 +2114,19 @@
       "feels_like": 24.3,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 2.15,
+      "wind_spread": 0.7,
       "dir_agreement": 0.4,
       "dir_fallback": true,
-      "confidence": "medium",
+      "confidence": "high",
       "source_count": 3,
       "wind_pool": "elite"
     },
     {
       "time": "2026-10-13T21:00",
-      "wind_speed": 3.56,
+      "wind_speed": 3.53,
       "wind_gusts": 5.2,
       "wind_gusts_raw": 4.0,
-      "wind_direction": 64.0,
+      "wind_direction": 70.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2157,7 +2157,7 @@
       "feels_like": 23.1,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.84,
+      "wind_spread": 0.81,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2166,10 +2166,10 @@
     },
     {
       "time": "2026-10-13T22:00",
-      "wind_speed": 4.73,
+      "wind_speed": 4.59,
       "wind_gusts": 8.06,
       "wind_gusts_raw": 6.2,
-      "wind_direction": 72.0,
+      "wind_direction": 76.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2200,8 +2200,8 @@
       "feels_like": 20.8,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.87,
-      "dir_agreement": 0.99,
+      "wind_spread": 0.65,
+      "dir_agreement": 0.98,
       "dir_fallback": false,
       "confidence": "high",
       "source_count": 3,
@@ -2209,10 +2209,10 @@
     },
     {
       "time": "2026-10-13T23:00",
-      "wind_speed": 4.41,
+      "wind_speed": 4.27,
       "wind_gusts": 8.97,
       "wind_gusts_raw": 6.9,
-      "wind_direction": 77.0,
+      "wind_direction": 78.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2243,7 +2243,7 @@
       "feels_like": 20.8,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.85,
+      "wind_spread": 0.65,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2252,10 +2252,10 @@
     },
     {
       "time": "2026-10-14T00:00",
-      "wind_speed": 4.68,
+      "wind_speed": 4.74,
       "wind_gusts": 8.71,
       "wind_gusts_raw": 6.7,
-      "wind_direction": 75.0,
+      "wind_direction": 76.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2286,7 +2286,7 @@
       "feels_like": 21.3,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 1.23,
+      "wind_spread": 1.28,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2295,10 +2295,10 @@
     },
     {
       "time": "2026-10-14T01:00",
-      "wind_speed": 4.58,
+      "wind_speed": 4.53,
       "wind_gusts": 9.36,
       "wind_gusts_raw": 7.2,
-      "wind_direction": 77.0,
+      "wind_direction": 78.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2329,7 +2329,7 @@
       "feels_like": 20.9,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 1.29,
+      "wind_spread": 1.24,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2338,10 +2338,10 @@
     },
     {
       "time": "2026-10-14T02:00",
-      "wind_speed": 4.57,
+      "wind_speed": 4.38,
       "wind_gusts": 8.71,
       "wind_gusts_raw": 6.7,
-      "wind_direction": 81.0,
+      "wind_direction": 82.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2372,7 +2372,7 @@
       "feels_like": 20.7,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 1.28,
+      "wind_spread": 1.08,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2381,10 +2381,10 @@
     },
     {
       "time": "2026-10-14T03:00",
-      "wind_speed": 5.1,
+      "wind_speed": 5.01,
       "wind_gusts": 9.62,
       "wind_gusts_raw": 7.4,
-      "wind_direction": 78.0,
+      "wind_direction": 80.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2415,7 +2415,7 @@
       "feels_like": 20.6,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 1.76,
+      "wind_spread": 1.69,
       "dir_agreement": 0.99,
       "dir_fallback": false,
       "confidence": "medium",
@@ -2424,10 +2424,10 @@
     },
     {
       "time": "2026-10-14T04:00",
-      "wind_speed": 5.01,
+      "wind_speed": 4.96,
       "wind_gusts": 10.4,
       "wind_gusts_raw": 8.0,
-      "wind_direction": 79.0,
+      "wind_direction": 78.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2460,7 +2460,7 @@
       "alerts": [
         "ქარის სიჩქარე: 10.4 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 1.37,
+      "wind_spread": 1.32,
       "dir_agreement": 0.99,
       "dir_fallback": false,
       "confidence": "high",
@@ -2512,7 +2512,7 @@
     },
     {
       "time": "2026-10-14T06:00",
-      "wind_speed": 5.21,
+      "wind_speed": 5.12,
       "wind_gusts": 9.36,
       "wind_gusts_raw": 7.2,
       "wind_direction": 80.0,
@@ -2546,7 +2546,7 @@
       "feels_like": 19.1,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.83,
+      "wind_spread": 0.75,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2555,7 +2555,7 @@
     },
     {
       "time": "2026-10-14T07:00",
-      "wind_speed": 5.43,
+      "wind_speed": 5.46,
       "wind_gusts": 10.01,
       "wind_gusts_raw": 7.7,
       "wind_direction": 79.0,
@@ -2591,7 +2591,7 @@
       "alerts": [
         "ქარის სიჩქარე: 10.0 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.94,
+      "wind_spread": 0.97,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2600,10 +2600,10 @@
     },
     {
       "time": "2026-10-14T08:00",
-      "wind_speed": 5.49,
+      "wind_speed": 5.58,
       "wind_gusts": 10.27,
       "wind_gusts_raw": 7.9,
-      "wind_direction": 78.0,
+      "wind_direction": 77.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2636,7 +2636,7 @@
       "alerts": [
         "ქარის სიჩქარე: 10.3 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.69,
+      "wind_spread": 0.75,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2645,10 +2645,10 @@
     },
     {
       "time": "2026-10-14T09:00",
-      "wind_speed": 5.38,
+      "wind_speed": 5.36,
       "wind_gusts": 10.53,
       "wind_gusts_raw": 8.1,
-      "wind_direction": 78.0,
+      "wind_direction": 77.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2681,7 +2681,7 @@
       "alerts": [
         "ქარის სიჩქარე: 10.5 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.35,
+      "wind_spread": 0.32,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2690,7 +2690,7 @@
     },
     {
       "time": "2026-10-14T10:00",
-      "wind_speed": 5.36,
+      "wind_speed": 5.5,
       "wind_gusts": 10.66,
       "wind_gusts_raw": 8.2,
       "wind_direction": 78.0,
@@ -2726,7 +2726,7 @@
       "alerts": [
         "ქარის სიჩქარე: 10.7 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.32,
+      "wind_spread": 0.39,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2735,10 +2735,10 @@
     },
     {
       "time": "2026-10-14T11:00",
-      "wind_speed": 6.32,
+      "wind_speed": 6.71,
       "wind_gusts": 12.22,
       "wind_gusts_raw": 9.4,
-      "wind_direction": 83.0,
+      "wind_direction": 84.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2771,7 +2771,7 @@
       "alerts": [
         "ქარის სიჩქარე: 12.2 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.83,
+      "wind_spread": 1.02,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2780,7 +2780,7 @@
     },
     {
       "time": "2026-10-14T12:00",
-      "wind_speed": 5.8,
+      "wind_speed": 6.14,
       "wind_gusts": 11.7,
       "wind_gusts_raw": 9.0,
       "wind_direction": 82.0,
@@ -2816,7 +2816,7 @@
       "alerts": [
         "ქარის სიჩქარე: 11.7 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.74,
+      "wind_spread": 0.97,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2825,10 +2825,10 @@
     },
     {
       "time": "2026-10-14T13:00",
-      "wind_speed": 5.49,
+      "wind_speed": 5.85,
       "wind_gusts": 11.57,
       "wind_gusts_raw": 8.9,
-      "wind_direction": 82.0,
+      "wind_direction": 83.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2861,7 +2861,7 @@
       "alerts": [
         "ქარის სიჩქარე: 11.6 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.45,
+      "wind_spread": 0.32,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2870,10 +2870,10 @@
     },
     {
       "time": "2026-10-14T14:00",
-      "wind_speed": 4.91,
+      "wind_speed": 5.1,
       "wind_gusts": 11.57,
       "wind_gusts_raw": 8.9,
-      "wind_direction": 80.0,
+      "wind_direction": 82.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2906,7 +2906,7 @@
       "alerts": [
         "ქარის სიჩქარე: 11.6 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.35,
+      "wind_spread": 0.06,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2915,10 +2915,10 @@
     },
     {
       "time": "2026-10-14T15:00",
-      "wind_speed": 4.15,
+      "wind_speed": 4.24,
       "wind_gusts": 11.18,
       "wind_gusts_raw": 8.6,
-      "wind_direction": 75.0,
+      "wind_direction": 76.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2951,7 +2951,7 @@
       "alerts": [
         "ქარის სიჩქარე: 11.2 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.41,
+      "wind_spread": 0.34,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -2960,10 +2960,10 @@
     },
     {
       "time": "2026-10-14T16:00",
-      "wind_speed": 2.98,
+      "wind_speed": 3.28,
       "wind_gusts": 10.4,
       "wind_gusts_raw": 8.0,
-      "wind_direction": 74.0,
+      "wind_direction": 75.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -2996,7 +2996,7 @@
       "alerts": [
         "ქარის სიჩქარე: 10.4 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.82,
+      "wind_spread": 0.52,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -3005,10 +3005,10 @@
     },
     {
       "time": "2026-10-14T17:00",
-      "wind_speed": 2.62,
+      "wind_speed": 2.65,
       "wind_gusts": 8.84,
       "wind_gusts_raw": 6.8,
-      "wind_direction": 68.0,
+      "wind_direction": 75.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -3039,8 +3039,8 @@
       "feels_like": 27.2,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.46,
-      "dir_agreement": 0.98,
+      "wind_spread": 0.44,
+      "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
       "source_count": 3,
@@ -3048,10 +3048,10 @@
     },
     {
       "time": "2026-10-14T18:00",
-      "wind_speed": 3.2,
+      "wind_speed": 3.29,
       "wind_gusts": 7.8,
       "wind_gusts_raw": 6.0,
-      "wind_direction": 53.0,
+      "wind_direction": 54.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -3091,10 +3091,10 @@
     },
     {
       "time": "2026-10-14T19:00",
-      "wind_speed": 4.04,
+      "wind_speed": 4.06,
       "wind_gusts": 7.93,
       "wind_gusts_raw": 6.1,
-      "wind_direction": 54.0,
+      "wind_direction": 57.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -3125,7 +3125,7 @@
       "feels_like": 24.9,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.22,
+      "wind_spread": 0.26,
       "dir_agreement": 0.99,
       "dir_fallback": false,
       "confidence": "high",
@@ -3134,10 +3134,10 @@
     },
     {
       "time": "2026-10-14T20:00",
-      "wind_speed": 4.83,
+      "wind_speed": 4.94,
       "wind_gusts": 9.23,
       "wind_gusts_raw": 7.1,
-      "wind_direction": 58.0,
+      "wind_direction": 62.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -3168,8 +3168,8 @@
       "feels_like": 23.5,
       "status": "operational",
       "alerts": [],
-      "wind_spread": 0.3,
-      "dir_agreement": 0.99,
+      "wind_spread": 0.39,
+      "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
       "source_count": 3,
@@ -3177,10 +3177,10 @@
     },
     {
       "time": "2026-10-14T21:00",
-      "wind_speed": 5.78,
+      "wind_speed": 5.89,
       "wind_gusts": 10.53,
       "wind_gusts_raw": 8.1,
-      "wind_direction": 67.0,
+      "wind_direction": 72.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -3213,8 +3213,8 @@
       "alerts": [
         "ქარის სიჩქარე: 10.5 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.47,
-      "dir_agreement": 0.99,
+      "wind_spread": 0.59,
+      "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
       "source_count": 3,
@@ -3222,10 +3222,10 @@
     },
     {
       "time": "2026-10-14T22:00",
-      "wind_speed": 6.74,
+      "wind_speed": 7.1,
       "wind_gusts": 12.09,
       "wind_gusts_raw": 9.3,
-      "wind_direction": 77.0,
+      "wind_direction": 81.0,
       "precipitation": 0.0,
       "precip_sources": 0,
       "precip_total": 5,
@@ -3258,7 +3258,7 @@
       "alerts": [
         "ქარის სიჩქარე: 12.1 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.81,
+      "wind_spread": 1.01,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
@@ -3267,13 +3267,13 @@
     },
     {
       "time": "2026-10-14T23:00",
-      "wind_speed": 7.17,
+      "wind_speed": 7.48,
       "wind_gusts": 12.74,
       "wind_gusts_raw": 9.8,
-      "wind_direction": 81.0,
+      "wind_direction": 83.0,
       "precipitation": 0.0,
       "precip_sources": 0,
-      "precip_total": 4,
+      "precip_total": 5,
       "precip_agreement": 0,
       "visibility_km": 35.69,
       "visibility_min": 24.13,
@@ -3303,11 +3303,11 @@
       "alerts": [
         "ქარის სიჩქარე: 12.7 მ/წმ (ბორნის ლიმიტი: 10.0)"
       ],
-      "wind_spread": 0.95,
+      "wind_spread": 1.08,
       "dir_agreement": 1.0,
       "dir_fallback": false,
       "confidence": "high",
-      "source_count": 2,
+      "source_count": 3,
       "wind_pool": "elite"
     }
   ],
@@ -3416,80 +3416,79 @@
   ],
   "models_now": {
     "best": {
-      "w": 9.7,
-      "g": 15.4,
-      "d": 82.0,
+      "w": 9.38,
+      "g": 15.0,
+      "d": 83.0,
       "p": 0.0,
-      "t": 23.9,
-      "v": 40.9
+      "t": 24.8,
+      "v": 41.48
     },
     "gfs": {
-      "w": 12.26,
-      "g": 9.7,
-      "d": 84.0,
+      "w": 11.7,
+      "g": 9.2,
+      "d": 83.0,
       "p": 0.0,
-      "t": 23.5,
+      "t": 24.6,
       "v": 24.14
     },
     "icon_eu": {
-      "w": 9.18,
-      "g": 15.6,
-      "d": 82.0,
+      "w": 8.87,
+      "g": 15.3,
+      "d": 83.0,
       "p": 0.0,
-      "t": 23.9,
-      "v": 40.9
+      "t": 24.8,
+      "v": 41.48
     },
     "ecmwf": {
-      "w": 10.47,
-      "g": 14.6,
-      "d": 86.0,
+      "w": 9.83,
+      "g": 14.1,
+      "d": 85.0,
       "p": 0.0,
-      "t": 24.0,
-      "v": 44.58
+      "t": 24.9,
+      "v": 47.94
     },
     "yr_no": {
-      "w": 11.3,
-      "g": 14.12,
-      "d": 89.7,
-      "p": 0.0,
+      "w": 10.7,
+      "g": 13.38,
+      "d": 90.6,
       "v": 10.0
     },
     "marine": {
-      "wave": 0.74,
-      "per": 3.4,
+      "wave": 0.72,
+      "per": 3.35,
       "sw": 0.04,
-      "sw_p": 4.45,
-      "ww": 0.74
+      "sw_p": 4.3,
+      "ww": 0.72
     },
     "stormglass": {
-      "wave": 1.08,
-      "w": 8.04,
+      "wave": 1.09,
+      "w": 7.44,
       "v": 24.13
     },
     "copernicus": {
-      "wave": 0.57,
-      "per": 2.3,
-      "dir": 90.3,
+      "wave": 0.53,
+      "per": 2.26,
+      "dir": 89.19,
       "sw": 0.01,
       "sw2": 0.01,
-      "max": 0.78,
-      "crest": 0.45,
-      "kul": 0.59
+      "max": 0.72,
+      "crest": 0.41,
+      "kul": 0.56
     },
     "wave_models": {
       "ewam": {
-        "wave": 0.34,
+        "wave": 0.32,
         "per": 2.05,
-        "dir": 84.0,
+        "dir": 85.0,
         "sw": 0.02,
-        "sw_p": 2.6
+        "sw_p": 2.55
       },
       "gwam": {
-        "wave": 1.2,
-        "per": 4.25,
+        "wave": 1.16,
+        "per": 4.2,
         "dir": 95.0,
         "sw": 0.02,
-        "sw_p": 4.1
+        "sw_p": 4.25
       }
     }
   }
