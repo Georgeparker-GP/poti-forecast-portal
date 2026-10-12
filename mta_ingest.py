@@ -18,7 +18,7 @@ import json, os, glob, sys, logging, re
 from collections import Counter
 from datetime import datetime, timezone, timedelta
 
-from mta_parser import parse_mta_pdf, wave_cm_to_m
+from mta_parser import parse_mta_pdf, wave_cm_to_m, storm_fields_from_eng, _storm_phenomena
 
 TBILISI_TZ   = timezone(timedelta(hours=4))
 BULLETIN_DIR = "mta_bulletins"
@@ -200,6 +200,28 @@ def _repair_storm_entries(dblog: dict) -> int:
             if d:
                 e["date"], e["time"] = d, t
                 n += 1
+        # 2026-10-11: ქარი "m/s"-ით და ვადა ("until ... October 13") ძველი
+        #   პარსერით არ იკითხებოდა. text_eng შენახულია — იქიდან ვავსებთ
+        #   მხოლოდ აკლებულ ველებს, არსებულს არ ვეხებით.
+        if e.get("type") == "storm_warning" and e.get("text_eng"):
+            ex = storm_fields_from_eng(e["text_eng"])
+            changed = False
+            for blk in ("forecast", "poti"):
+                cur = e.get(blk) if isinstance(e.get(blk), dict) else {}
+                for k, v in ex[blk].items():
+                    if k not in cur:
+                        cur[k] = v
+                        changed = True
+                e[blk] = cur
+            if ex.get("valid_until") and not e.get("valid_until"):
+                e["valid_until"] = ex["valid_until"]
+                changed = True
+            if not e.get("phenomena"):
+                ph = _storm_phenomena(e["text_eng"])
+                if ph:
+                    e["phenomena"] = ph
+                    changed = True
+            n += changed
     return n
 
 
@@ -380,6 +402,10 @@ def _compare_to_portal(parsed: dict, portal: dict) -> dict:
     if mta_gust is not None and p_gust is not None:
         cmp["wind_mta"]    = mta_gust
         cmp["wind_portal"] = p_gust
+        # 2026-10-12-დან wind_gusts კალიბრირებულია (×GUST_CALIBRATION);
+        # ნედლიც ვინახავთ, რომ ძველ ისტორიასთან შედარება სწორი დარჩეს.
+        if portal.get("wind_gusts_raw") is not None:
+            cmp["wind_portal_raw"] = portal["wind_gusts_raw"]
         cmp["wind_delta"]  = round(mta_gust - p_gust, 2)
 
     # საშუალო ქარიც — MTA-ს wind_avg vs პორტალის wind_speed.

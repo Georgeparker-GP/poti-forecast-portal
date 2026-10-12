@@ -122,6 +122,20 @@ THRESHOLDS = {
     "vis_cranes":      0.08,  #  80 მ — ამწე ჩერდება
 }
 
+# ═══ დაქროლვის კალიბრაცია (2026-10-12) ═══
+# მოდელები ძლიერ ქარს სისტემატურად ანაკლებენ. MTA-ს ფაქტობრივ
+# ბიულეტენებთან 51 ზუსტი (საათით დამთხვეული) შედარებიდან, MTA-ს
+# მაქსიმუმი ≥10 მ/წმ — 10 შემთხვევა, MTA/პორტალი მედიანა ≈1.43.
+# კატეგორიის (ოპერაციული/ბორანი/გემები/შეჩერება) სიზუსტე:
+#   ×1.0 → 42 სწორი, 0 ზედმეტი, 9 ნაკლები
+#   ×1.3 → 43 სწორი, 4 ზედმეტი, 4 ნაკლები   ← არჩეული
+#   ×1.4 → 41 სწორი, 7 ზედმეტი, 3 ნაკლები
+# ×1.3-ის 4 ზედმეტი ყველა „ბორნის“ დონეზეა და ზღვართან ახლოს (MTA 8–9 მ/წმ);
+# გემების/შეჩერების დონეზე ცრუ განგაში არც ერთი. სექტორული კოეფიციენტისთვის
+# მონაცემი ჯერ ცოტაა (აღმოსავლეთი — 3 ზუსტი შემთხვევა).
+# ნედლი მნიშვნელობა `wind_gusts_raw`-ში ინახება; 1.0 კალიბრაციას თიშავს.
+GUST_CALIBRATION = 1.3
+
 BASE_WEIGHTS = {
     "best_match": 0.22, "gfs": 0.13, "icon_eu": 0.09, "ecmwf": 0.25,
     "yr_no": 0.13, "stormglass": 0.17, "owm": 0.08,
@@ -485,8 +499,12 @@ def build_daily_summary(daily_atmo, daily_marine):
     result = []
     for a in daily_atmo:
         wave_max = wave_by_date.get(a["date"], 0.0)
-        status, alerts = _compute_status(a["wind_max"], a["gust_max"], wave_max, 999)
-        result.append({**a, "wave_max": wave_max, "status": status, "alerts": alerts})
+        # იგივე კალიბრაცია, რაც საათობრივზე — თორემ კვირის ხედი სხვა ვერდიქტს მისცემდა
+        gust = a["gust_max"] * GUST_CALIBRATION if a["gust_max"] is not None else None
+        status, alerts = _compute_status(a["wind_max"], gust, wave_max, 999)
+        result.append({**a, "gust_max": _r(gust) if gust is not None else None,
+                       "gust_max_raw": a["gust_max"], "wave_max": wave_max,
+                       "status": status, "alerts": alerts})
     return result
 
 
@@ -904,6 +922,12 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         else:
             wind_gusts    = wind_speed
             gust_estimated = True
+        # დაქროლვა მდგრად ქარზე დაბალი ფიზიკურად ვერ იქნება. 2026-10-11 01:07:
+        # Open-Meteo მიუწვდომელი იყო და Stormglass-ის 3.52 „რეალურმა“ დაქროლვამ
+        # 3.96 მ/წმ საშუალოს ქვემოთ ჩამოიწია.
+        wind_gusts = max(wind_gusts, wind_speed)
+        wind_gusts_raw = wind_gusts
+        wind_gusts = wind_gusts * GUST_CALIBRATION
 
         # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
         wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
@@ -1076,6 +1100,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             "time": atmo_best[i]["time"],
             "wind_speed": _r(wind_speed),
             "wind_gusts": _r(wind_gusts),
+            "wind_gusts_raw": _r(wind_gusts_raw),
             "wind_direction": _r(wind_direction, 0),
             "precipitation": _r(precip),
             "precip_sources": precip_sources,
@@ -1363,6 +1388,20 @@ def _forecast_advisory():
             for period in ("day", "night"):
                 blk = poti.get(period) or {}
                 g_list, e_list = [], []
+                # ⚠ 2026-10-11: MTA-ს დაქროლვის პროგნოზი (მაგ. 22–27 მ/წმ)
+                #   ზოლზე არ ჩანდა — მხოლოდ `_note` ველები. მოდელები
+                #   ძლიერ ქარს 1.5–2-ჯერ ანაკლებენ, ამიტომ ≥ გემების
+                #   ზღვარზე სინოპტიკოსის რიცხვი ეკრანზე უნდა იყოს.
+                gst = blk.get("gust")
+                if isinstance(gst, (list, tuple)) and gst:
+                    try:
+                        lo, hi = float(gst[0]), float(gst[-1])
+                    except (TypeError, ValueError):
+                        lo = hi = 0.0
+                    if hi >= THRESHOLDS["wind_vessel"]:
+                        ws = " ".join(str(blk.get("wind_speed") or "").split())
+                        g_list.append(f"პროგნოზით დაქროლვა {lo:g}–{hi:g} მ/წმ" + (f" (ქარი {ws})" if ws else ""))
+                        e_list.append(f"forecast gusts {lo:g}–{hi:g} m/s" + (f" (wind {ws})" if ws else ""))
                 for k, v in blk.items():
                     if not (k.endswith("_note") and v):
                         continue
@@ -1401,7 +1440,13 @@ def _forecast_advisory():
 # ⚠ სტატუსს არ ცვლის (იგივე პრინციპი, რაც `_forecast_advisory`-ზე):
 #   ეს დეკლარაციაა და არა გაზომვა. ეკრანზე ჩანს, ვერდიქტი — უცვლელი.
 
-STORM_ADVISORY_MAX_H = 12    # გაუქმების გარეშეც ამის შემდეგ აღარ ჩანს
+# ⚠ 2026-10-11: 12 → 48 სთ. 14/8372 (09:55, ქარი 13 ოქტომბრამდე) 21:55-ზე
+#   ზოლიდან გაქრა — 23:00-ზე კი ოპერაციები ქარის გამო შეჩერდა. ახლა
+#   ბიულეტენის საკუთარი ვადა (`valid_until`) მთავარია, გაუქმება კი მას
+#   ხურავს; ეს რიცხვი მხოლოდ სათადარიგოა, თუ არც ვადა წერია და
+#   გაუქმებაც დაიკარგა.
+STORM_ADVISORY_MAX_H = 48
+STORM_VALID_GRACE_H  = 3     # ვადის შემდეგ ცოტა ხანს კიდევ ჩანს
 
 _PHEN_LBL = {
     "fog":          ("ნისლი", "fog"),
@@ -1443,7 +1488,15 @@ def _storm_advisory(entries, now=None):
         t = _mta_entry_dt(e)
         if not t or t > now + timedelta(minutes=30):
             continue
-        if (now - t).total_seconds() / 3600 > STORM_ADVISORY_MAX_H:
+        vu = None
+        if e.get("valid_until"):
+            try:
+                vu = datetime.strptime(e["valid_until"], "%Y-%m-%d %H:%M").replace(tzinfo=TBILISI_TZ)
+            except ValueError:
+                vu = None
+        limit = (vu + timedelta(hours=STORM_VALID_GRACE_H)) if vu \
+            else (t + timedelta(hours=STORM_ADVISORY_MAX_H))
+        if now > limit:
             continue
         no = e.get("bulletin_no")
         cancelled = False
@@ -1486,7 +1539,11 @@ def _storm_advisory(entries, now=None):
     if isinstance(wr, (list, tuple)) and len(wr) == 2:
         g = f"ქარი {wr[0]:g}–{wr[1]:g} მ/წმ"
         en = f"wind {wr[0]:g}–{wr[1]:g} m/s"
-        if fc.get("gust_max"):
+        gr = fc.get("gust_range")
+        if isinstance(gr, (list, tuple)) and len(gr) == 2 and gr[0] != gr[1]:
+            g += f", დაქროლვა {gr[0]:g}–{gr[1]:g}"
+            en += f", gusts {gr[0]:g}–{gr[1]:g}"
+        elif fc.get("gust_max"):
             g += f", დაქროლვა {fc['gust_max']:g}"
             en += f", gusts {fc['gust_max']:g}"
         notes.append(g)
@@ -1507,7 +1564,7 @@ def _storm_advisory(entries, now=None):
         "notes_eng": notes_eng,
         "bulletin": e.get("bulletin_no"),
         "issued": t.strftime("%Y-%m-%d %H:%M"),
-        "valid_until": None,
+        "valid_until": e.get("valid_until"),
         "source": "MTA",
     }
 
@@ -1529,7 +1586,7 @@ def load_mta_advisory():
     if fc:
         storm["notes"] = storm["notes"] + list(fc.get("notes") or [])
         storm["notes_eng"] = storm["notes_eng"] + list(fc.get("notes_eng") or [])
-        storm["valid_until"] = fc.get("valid_until")
+        storm["valid_until"] = storm.get("valid_until") or fc.get("valid_until")
     return storm
 
 
@@ -2161,9 +2218,11 @@ def _detect_squall(fc: list, now_idx: int) -> dict | None:
     cur  = fc[now_idx]
     nxt  = fc[now_idx + 1]
 
-    g_now   = cur.get("wind_gusts", 0) or 0
+    # შკვალის ზღვრები ნედლ მოდელურ დაქროლვაზეა მორგებული — კალიბრაციამ
+    # gust factor-ი (gusts − wind) არ უნდა გაბეროს და ალერტების სიხშირე შეცვალოს.
+    g_now   = cur.get("wind_gusts_raw", cur.get("wind_gusts", 0)) or 0
     w_now   = cur.get("wind_speed",  0) or 0
-    g_next  = nxt.get("wind_gusts", 0) or 0
+    g_next  = nxt.get("wind_gusts_raw", nxt.get("wind_gusts", 0)) or 0
     w_next  = nxt.get("wind_speed",  0) or 0
     p_next  = nxt.get("precipitation", 0) or 0
 
@@ -2754,12 +2813,13 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "next_update":    (datetime.now(TBILISI_TZ) + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M"),
             "sources_used":   sources_used,
             "forecast_hours": len(consensus),
+            "gust_calibration": GUST_CALIBRATION,
             # ზღვრები ერთ ადგილას: index.html მათ აქედან კითხულობს, ამიტომ
             # backend-სა და frontend-ს შორის აცდენა აღარ შეიძლება.
             "thresholds":     dict(THRESHOLDS),
         },
         "current": {k: now.get(k, v) for k, v in {
-            "time": "", "wind_speed": 0, "wind_gusts": 0,
+            "time": "", "wind_speed": 0, "wind_gusts": 0, "wind_gusts_raw": None,
             "wind_direction": 0, "wave_height": 0, "precipitation": 0,
             "visibility_km": 10, "wave_period": 0, "wave_direction": 0,
             "swell_height": 0, "swell_period": 0, "swell_direction": 0,

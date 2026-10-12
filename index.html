@@ -1583,9 +1583,10 @@ function renderMtaAdvisory(d) {
     ? a.notes_eng : a.notes;
   document.getElementById('mta-advisory-text').textContent = ' ' + notes.join(' · ');
   // საშტორმო (kind: 'storm') — გამოცემის დრო, ვადა მხოლოდ შენიშვნისაა
+  const until = a.valid_until ? (ENG ? '  · valid until ' : '  · ძალაშია ') + a.valid_until : '';
   const when = a.kind === 'storm' && a.issued
-    ? (ENG ? '  · issued ' : '  · გამოცემულია ') + a.issued.slice(11)
-    : (a.valid_until ? (ENG ? '  · valid until ' : '  · ძალაშია ') + a.valid_until : '');
+    ? (ENG ? '  · issued ' : '  · გამოცემულია ') + a.issued + until
+    : until;
   document.getElementById('mta-advisory-until').textContent = when;
   // საშტორმო წითლად, რომ ჩვეულებრივ შენიშვნაში არ აირიოს
   const storm = a.kind === 'storm';
@@ -1706,6 +1707,12 @@ function render(d) {
   setCard('card-wind','c-wind', c.wind_speed,
     w>=THR.suspended?'danger': w>=THR.vessel?'alert': w>=THR.barge?'warn':'ok');
   document.getElementById('c-gusts').textContent = fmt(c.wind_gusts);
+  // კალიბრაცია გამჭვირვალედ: ნედლი მოდელური დაქროლვა და კოეფიციენტი
+  const _gk = d.meta && d.meta.gust_calibration;
+  document.getElementById('c-gusts').title = (_gk && _gk !== 1 && c.wind_gusts_raw != null)
+    ? (currentLang==='eng' ? `Calibrated ×${_gk} · model ${fmt(c.wind_gusts_raw)} m/s`
+                           : `კალიბრირებული ×${_gk} · მოდელი ${fmt(c.wind_gusts_raw)} მ/წმ`)
+    : '';
   renderConfidence(c);
   setBar('bar-wind', (c.wind_gusts||0)/30,
     (c.wind_gusts||0)>=THR.suspended?'rd': (c.wind_gusts||0)>=THR.vessel?'or': (c.wind_gusts||0)>=THR.barge?'yw':'gn');
