@@ -481,5 +481,32 @@ class NoBargeLevelTest(unittest.TestCase):
         self.assertIn(("barge", "vessel"), fetch.NOTIFY_TRANSITIONS)
 
 
+class BilingualNoteTest(unittest.TestCase):
+    def test_numbers_borrowed_across_languages(self):
+        f = fetch._fmt_mta_note
+        self.assertEqual(
+            f("wind_speed_note", "დღის შუალედში ცვალებადი 5-10 მ/წმ. In the middle of the day variable",
+              {"wind_speed": "7-12"}),
+            ("ქარი 7-12, მინაწერი დღის შუალედში ცვალებადი 5-10 მ/წმ",
+             "Wind 7-12, note In the middle of the day variable 5-10 m/s"))
+        self.assertEqual(fetch._split_bilingual("საღამის In the evening 8-13"),
+                         ("საღამის 8-13", "In the evening 8-13"))
+
+    def test_bilingual_base_and_units(self):
+        g, e = fetch._fmt_mta_note(
+            "wind_speed_note", "ღამის 2 ნახ.-დან აღმოსავლეთი From the second half of the night Easterly 10-15/17",
+            {"wind_speed": "8-13 დროგამოშვებით დაქროლვა Occasional gusts 15-20"})
+        self.assertNotIn("Occasional", g)
+        self.assertNotIn("დროგამოშვებით", e)
+        self.assertTrue(e.startswith("Wind 8-13 Occasional gusts 15-20"))
+        self.assertEqual(fetch._split_bilingual("დაქროლვა 12-15 მ/წმ. Gust 12-15 m/sec."),
+                         ("დაქროლვა 12-15", "Gust 12-15"))
+
+    def test_plain_notes(self):
+        self.assertEqual(fetch._fmt_mta_note("precip_note", "ელჭექი Thunderstorm", {}),
+                         ("ელჭექი", "Thunderstorm"))
+        self.assertEqual(fetch._split_bilingual("8-13"), ("8-13", "8-13"))
+
+
 if __name__ == "__main__":
     unittest.main()
