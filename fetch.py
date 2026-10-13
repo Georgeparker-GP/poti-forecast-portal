@@ -1339,6 +1339,27 @@ def _merge_period_notes(per_geo, per_eng):
     return notes, notes_eng
 
 
+def _forecast_until_from_name(fname):
+    """პროგნოზის ვადა ფაილის სახელიდან, როცა `valid` ტექსტიდან ვერ ამოიკითხა.
+
+    ⚠ 2026-10-13: 99 პროგნოზიდან 24-ს `valid` ცარიელი ჰქონდა — მათ შორის
+    WF14/8391 (12.10, დაქროლვა 20–25 მ/წმ), რომელიც ამიტომ ზოლზე არ ჩანდა.
+    სახელში დაწყება ყოველთვის წერია: "..._WF_14.8391_12.10.26_10.00_სთ..pdf".
+    „საღამოს“ პროგნოზი 22:00-დან 12 სთ მოქმედებს, დღის — 10:00-დან 24 სთ.
+    """
+    m = re.search(r"_(\d{1,2})\.(\d{1,2})\.(\d{2,4})_(\d{1,2})[.:](\d{2})", fname or "")
+    if not m:
+        return None
+    y = int(m.group(3)) + (2000 if len(m.group(3)) == 2 else 0)
+    try:
+        start = datetime(y, int(m.group(2)), int(m.group(1)), int(m.group(4)), int(m.group(5)),
+                         tzinfo=TBILISI_TZ)
+    except ValueError:
+        return None
+    hours = 12 if "საღამოს" in (fname or "") else 24
+    return start + timedelta(hours=hours)
+
+
 def _forecast_advisory():
     """MTA-ს სინოპტიკოსის შენიშვნა — მოქმედი ფანჯრით.
 
@@ -1373,12 +1394,16 @@ def _forecast_advisory():
             # მოქმედის ფანჯარა valid-იდან: "...26/08/ 2026 წ. 10:00 სთ-მდე"
             valid = e.get("valid") or ""
             ends = re.findall(r"(\d{1,2})/\s*(\d{1,2})/\s*(\d{4}).{0,14}?(\d{1,2})[:.](\d{2})", valid)
-            if not ends:
-                continue
-            d, mo, y, hh, mm = ends[-1]
-            try:
-                until = datetime(int(y), int(mo), int(d), int(hh), int(mm), tzinfo=TBILISI_TZ)
-            except Exception:
+            until = None
+            if ends:
+                d, mo, y, hh, mm = ends[-1]
+                try:
+                    until = datetime(int(y), int(mo), int(d), int(hh), int(mm), tzinfo=TBILISI_TZ)
+                except Exception:
+                    until = None
+            if until is None:
+                until = _forecast_until_from_name(e.get("source_file"))
+            if until is None:
                 continue
             if until <= now:
                 continue   # ვადაგასულია
