@@ -1214,8 +1214,7 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
               <span data-i18n="fld_wave">ტალღა</span></label>
           </span>
           <span class="wind-key" id="key-wind">
-            <i style="background:#5ec8b4"></i>&lt;10
-            <i style="background:#f0c24f"></i>10–17
+            <i style="background:#5ec8b4"></i>&lt;17
             <i style="background:#f08a3c"></i>17–21.5
             <i style="background:#ef5b5b"></i>≥21.5 <span style="opacity:.7">მ/წმ</span>
           </span>
@@ -1293,7 +1292,6 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
 // გადაიწერება (`applyThresholds`). 2026-08-22-მდე ორი მხარე განსხვავებულ
 // ცხრილს იყენებდა და ერთსა და იმავე საათზე ორი ვერდიქტი გამოდიოდა.
 const THR = {
-  barge:     10.0,   // ბორნის მანევრირება შეზღუდულია   (MTA)
   vessel:    17.0,   // გემების მანევრირება შეზღუდულია  (MTA)
   suspended: 21.5,   // ამწეები + გემების მანევრირება შეჩერება (MTA)
   // ტალღა განზრახ დაწეულია 2.0-დან: დადასტურებულია, რომ ტალღის კონსენსუსი
@@ -1309,7 +1307,7 @@ const THR = {
 
 // meta.thresholds (fetch.py-ის სახელებით) → THR. მხოლოდ ვალიდური რიცხვები.
 const THR_KEYS = {
-  wind_barge: 'barge', wind_vessel: 'vessel', wind_suspended: 'suspended',
+  wind_vessel: 'vessel', wind_suspended: 'suspended',
   wave_height: 'wave', vis_vessel: 'visVessel', vis_cranes: 'visCranes',
 };
 function applyThresholds(t) {
@@ -1431,8 +1429,6 @@ function computeStatus(h) {
     return 'suspended';
   if (maxWind >= THR.vessel || v <= THR.visVessel)
     return 'vessel';
-  if (maxWind >= THR.barge)
-    return 'barge';
   return 'operational';
 }
 
@@ -1650,7 +1646,8 @@ function render(d) {
   const ai = document.getElementById('alert-items');
   if (ai) ai.innerHTML = (c.alerts||[]).map(a=>`<span>▲ ${a}</span>`).join('');
 
-  // ops panel — 2 panels: cranes & vessel maneuvering (with barge sub-state)
+  // ops panel — 2 panels: cranes & vessel maneuvering
+  // (ბორნის ცალკე საფეხური მოხსნილია 2026-10-13 — ბორნები გემებთან ერთად იზღუდება)
   const w = Math.max(c.wind_speed||0, c.wind_gusts||0);
   const wv= c.wave_height||0;
   // ⚠ 2026-09-16 აუდიტი: პანელები `visibility_km`-ს იყენებდნენ,
@@ -1686,14 +1683,10 @@ function render(d) {
       ? (isEng ? `Visibility ${Math.round(vis*1000)} m (limit ${Math.round(THR.visVessel*1000)} m)`
                : `ხილვადობა ${Math.round(vis*1000)} მ (ზღვარი ${Math.round(THR.visVessel*1000)} მ)`)
       : (isEng ? 'Wind ≥ 17 m/s' : 'ქარი ≥ 17 მ/წმ');
-  } else if (w >= THR.barge) {
-    vesselLevel = 'warn';
-    vesselText  = isEng ? 'Vessel Manoeuvring — Permitted' : 'გემების მანევრირება — ნებადართული';
-    vesselSub   = isEng ? '⚠ Barge movement restricted (Wind ≥ 10 m/s)' : '⚠ ბორნის მიმოსვლა შეზღუდულია (ქარი ≥ 10 მ/წმ)';
   } else {
     vesselLevel = 'ok';
     vesselText  = isEng ? 'Vessel Manoeuvring — Permitted' : 'გემების მანევრირება — ნებადართული';
-    vesselSub   = isEng ? 'Limits: Barge ≥10 | Manoeuvre ≥17 m/s' : 'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 მ/წმ';
+    vesselSub   = isEng ? 'Limit: Manoeuvre ≥17 m/s' : 'ზღვარი: მანევრი ≥17 მ/წმ';
   }
 
   setOps('ops-vessel', vesselLevel, vesselText);
@@ -1705,7 +1698,7 @@ function render(d) {
 
   // metric cards
   setCard('card-wind','c-wind', c.wind_speed,
-    w>=THR.suspended?'danger': w>=THR.vessel?'alert': w>=THR.barge?'warn':'ok');
+    w>=THR.suspended?'danger': w>=THR.vessel?'alert':'ok');
   document.getElementById('c-gusts').textContent = fmt(c.wind_gusts);
   // კალიბრაცია გამჭვირვალედ: ნედლი მოდელური დაქროლვა და კოეფიციენტი
   const _gk = d.meta && d.meta.gust_calibration;
@@ -1715,7 +1708,7 @@ function render(d) {
     : '';
   renderConfidence(c);
   setBar('bar-wind', (c.wind_gusts||0)/30,
-    (c.wind_gusts||0)>=THR.suspended?'rd': (c.wind_gusts||0)>=THR.vessel?'or': (c.wind_gusts||0)>=THR.barge?'yw':'gn');
+    (c.wind_gusts||0)>=THR.suspended?'rd': (c.wind_gusts||0)>=THR.vessel?'or':'gn');
 
   // ტალღა. თუ ორივე საზღვაო წყარო ჩავარდა, მნიშვნელობა ქარიდანაა შეფასებული —
   // ეს ვიზუალურად უნდა განსხვავდებოდეს გაზომილისგან.
@@ -1954,8 +1947,7 @@ function render(d) {
       // ქარის მნიშვნელობა იღებება ზღვრებთან მიმართებაში — ოპერატორი
       // ერთი შეხედვით ხედავს, რომელი საათი უახლოვდება ლიმიტს.
       const wLvl = v => v >= THR.suspended ? 'v-crit'
-                      : v >= THR.vessel    ? 'v-alert'
-                      : v >= THR.barge     ? 'v-warn' : 'v-ok';
+                      : v >= THR.vessel    ? 'v-alert' : 'v-ok';
       const vLvl = v => v >= THR.wave ? 'v-crit' : v >= THR.wave*0.7 ? 'v-warn' : 'v-ok';
       const rLvl = v => v >= 5 ? 'v-alert' : v >= 2 ? 'v-warn' : 'v-ok';
       const ENG = currentLang==='eng';
@@ -2042,7 +2034,7 @@ function render(d) {
   // ── v2: სასიგნალო დაფა და სპარკლაინები ──
   renderSignal(c, fcFuture);
   const sp = fcFuture.slice(0, 13);
-  renderSpark('sp-wind', sp.map(h=>h.wind_gusts), THR.barge,  'var(--bl)');
+  renderSpark('sp-wind', sp.map(h=>h.wind_gusts), THR.vessel, 'var(--bl)');
   renderSpark('sp-wave', sp.map(h=>h.wave_height), THR.wave,  'var(--tl)');
   renderSpark('sp-vis',  sp.map(h=>h.visibility_km), THR.visVessel, 'var(--sb)');
   renderSpark('sp-rain', sp.map(h=>h.precipitation), null,    'var(--ac)');
@@ -2092,7 +2084,7 @@ function buildTable(fc) {
     const nc  = i===0?'row-now':'';
     const w   = h.wind_speed||0, g=h.wind_gusts||0;
     const mw  = Math.max(w,g);
-    const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':'t-gn';
+    const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or':'t-gn';
     const vc  = (h.wave_height||0)>=THR.wave?'t-rd': (h.wave_height||0)>=1.2?'t-yw':'t-gn';
     const _v = h.visibility_km!=null ? h.visibility_km : 99;
     const visc= _v<=THR.visCranes?'t-rd': _v<=THR.visVessel?'t-or': _v<=1?'t-yw':'t-mu';
@@ -2106,7 +2098,7 @@ function buildTable(fc) {
       <td class="t-time">${h.time.slice(0,16).replace('T',' ')}${i===0?' ▶':''}</td>
       <td class="t-num ${tc}">${temp}</td>
       <td class="t-num ${wc}">${fmt(h.wind_speed)}</td>
-      <td class="t-num ${mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':''}">${fmt(h.wind_gusts)}</td>
+      <td class="t-num ${mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or':''}">${fmt(h.wind_gusts)}</td>
       <td class="t-num t-mu">${dir}</td>
       <td class="t-num ${vc}">${fmt(h.wave_height)}</td>
       <td class="t-num ${(h.precipitation||0)>=2?'t-yw':'t-mu'}">${fmt(h.precipitation)}</td>
@@ -2154,7 +2146,7 @@ function renderWeekMini(daily){
   const rows = daily.slice(0,7).map((d,i)=>{
     const dt   = new Date(d.date+'T00:00');
     const mw   = Math.max(d.wind_max||0, d.gust_max||0);
-    const wCol = mw>=THR.suspended?'var(--rd)': mw>=THR.vessel?'var(--or)': mw>=THR.barge?'var(--yw)':'var(--gn)';
+    const wCol = mw>=THR.suspended?'var(--rd)': mw>=THR.vessel?'var(--or)':'var(--gn)';
     const vCol = (d.wave_max||0)>=THR.wave?'var(--rd)': (d.wave_max||0)>=1.2?'var(--yw)':'var(--tl)';
     const rn   = d.precip_sum||0;
     const rCol = rn>=25?'var(--rd)': rn>=10?'var(--or)': rn>=1?'var(--bl)':'var(--mu)';
@@ -2193,7 +2185,7 @@ function buildWeekTable(daily) {
     const rc  = st==='suspended'?'row-suspended':'';
     const nc  = i===0?'row-now':'';
     const mw  = Math.max(d.wind_max||0, d.gust_max||0);
-    const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':'t-gn';
+    const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or':'t-gn';
     const vc  = (d.wave_max||0)>=THR.wave?'t-rd': (d.wave_max||0)>=1.2?'t-yw':'t-gn';
     const dir = d.wind_dir!=null ? `${Math.round(d.wind_dir)}° ${toCompass(d.wind_dir)}` : '--';
     const tmax = d.temp_max!=null ? fmt(d.temp_max,1) : '--';
@@ -2204,7 +2196,7 @@ function buildWeekTable(daily) {
       <td class="t-time">${dateLabel}</td>
       <td class="t-num t-mu">${tmin}–${tmax}</td>
       <td class="t-num ${wc}">${fmt(d.wind_max)}</td>
-      <td class="t-num ${mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or': mw>=THR.barge?'t-yw':''}">${fmt(d.gust_max)}</td>
+      <td class="t-num ${mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or':''}">${fmt(d.gust_max)}</td>
       <td class="t-num t-mu">${dir}</td>
       <td class="t-num ${vc}">${fmt(d.wave_max)}</td>
       <td class="t-num ${(d.precip_sum||0)>=5?'t-yw':'t-mu'}">${fmt(d.precip_sum)}</td>
@@ -2489,12 +2481,12 @@ function renderSignal(c, fcFuture){
       : `შესაძლო შემდეგი ცვლილება <b>${t}</b> — ${lbl} <span style="color:var(--mu)">(${hit} სთ-ში)</span>`;
   } else {
     const mw = Math.max(c.wind_speed||0, c.wind_gusts||0);
-    const gap = (THR.barge - mw);
+    const gap = (THR.vessel - mw);
     // ვერდიქტი ზემოთ ისედაც ამბობს, რომ პორტი სრულ რეჟიმშია —
     // აქ მხოლოდ ის ემატება, რაც იქ არ წერია: რამდენი მარაგია დარჩენილი.
     wEl.innerHTML = ENG
-      ? `<b>${gap.toFixed(1)} m/s</b> to the barge limit`
-      : `ბორნის ლიმიტამდე <b>${gap.toFixed(1)} მ/წმ</b>`;
+      ? `<b>${gap.toFixed(1)} m/s</b> to the vessel limit`
+      : `გემების ლიმიტამდე <b>${gap.toFixed(1)} მ/წმ</b>`;
   }
 }
 
@@ -2570,7 +2562,7 @@ const I18N = {
   op_cranes:     {geo:'ამწეები — ოპერაციული', eng:'Cranes — Operational'},
   op_cranes_sub: {geo:'შეჩერება: ≥ 21.5 მ/წმ', eng:'Suspended: ≥ 21.5 m/s'},
   op_vessel:     {geo:'გემების მანევრირება — ნებადართული', eng:'Vessel Manoeuvring — Permitted'},
-  op_vessel_sub: {geo:'შეზღუდვები: ბორანი ≥10 | მანევრი ≥17 მ/წმ', eng:'Limits: Barge ≥10 | Manoeuvre ≥17 m/s'},
+  op_vessel_sub: {geo:'ზღვარი: მანევრი ≥17 მ/წმ', eng:'Limit: Manoeuvre ≥17 m/s'},
   lbl_wind:      {geo:'ქარის სიჩქარე', eng:'Wind Speed'},
   lbl_wind_s:    {geo:'ქარი', eng:'Wind'},
   lbl_wave_s:    {geo:'ტალღა', eng:'Wave'},
@@ -2972,11 +2964,10 @@ loadData();
   let windLayer = null, windData = null, windFetchedAt = 0, windIdx = 0;
   let mapMode = 'rain', _rainWasPlaying = true;
 
-  // ფერი — იგივე ზღვრები, რაც სტატუსში (ბორანი/გემი/შეჩერება)
+  // ფერი — იგივე ზღვრები, რაც სტატუსში (გემი/შეჩერება)
   function windColor(v){
     return v >= THR.suspended ? '#ef5b5b'
          : v >= THR.vessel    ? '#f08a3c'
-         : v >= THR.barge     ? '#f0c24f'
          :                      '#5ec8b4';
   }
 

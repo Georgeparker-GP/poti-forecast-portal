@@ -27,7 +27,10 @@ class ComputeStatusTest(unittest.TestCase):
     def test_ladder(self):
         T = fetch.THRESHOLDS
         self.assertEqual(fetch._compute_status(1, 2, 0.2, 10)[0], "operational")
-        self.assertEqual(fetch._compute_status(5, T["wind_barge"], 0.2, 10)[0], "barge")
+        # ბორნის საფეხური მოხსნილია (2026-10-13): 10–17 მ/წმ — სტანდარტული რეჟიმი
+        self.assertNotIn("wind_barge", T)
+        self.assertEqual(fetch._compute_status(5, 12.0, 0.2, 10)[0], "operational")
+        self.assertEqual(fetch._compute_status(5, 16.9, 0.2, 10)[0], "operational")
         self.assertEqual(fetch._compute_status(5, T["wind_vessel"], 0.2, 10)[0], "vessel")
         self.assertEqual(fetch._compute_status(5, T["wind_suspended"], 0.2, 10)[0], "suspended")
         self.assertEqual(fetch._compute_status(1, 2, T["wave_height"], 10)[0], "suspended")
@@ -416,13 +419,13 @@ class GustClampTest(unittest.TestCase):
 
 class GustCalibrationTest(unittest.TestCase):
     def test_consensus_gust_calibrated_raw_kept(self):
-        src = _hours(1, wind_speed=5.0, wind_gusts=8.0, wind_direction=80.0,
+        src = _hours(1, wind_speed=8.0, wind_gusts=14.0, wind_direction=80.0,
                      precipitation=0.0, visibility_km=10.0)
         h = fetch.compute_consensus(src, None, None, None, None, None, None, None)[0]
-        self.assertEqual(h["wind_gusts_raw"], 8.0)
-        self.assertEqual(h["wind_gusts"], round(8.0 * fetch.GUST_CALIBRATION, 2))
+        self.assertEqual(h["wind_gusts_raw"], 14.0)
+        self.assertEqual(h["wind_gusts"], round(14.0 * fetch.GUST_CALIBRATION, 2))
         if fetch.GUST_CALIBRATION >= 1.25:
-            self.assertEqual(h["status"], "barge")          # 8 × 1.3 = 10.4 ≥ 10
+            self.assertEqual(h["status"], "vessel")         # 14 × 1.3 = 18.2 ≥ 17
 
     def test_squall_uses_raw_gusts(self):
         cur = {"wind_speed": 4.0, "wind_gusts": 6.5, "wind_gusts_raw": 5.0, "precipitation": 0}
@@ -460,6 +463,22 @@ class ForecastValidityFallbackTest(unittest.TestCase):
                 a = fetch.load_mta_advisory()
         self.assertEqual(a["valid_until"], "2026-10-13 10:00")
         self.assertTrue(any("20–25" in n for n in sum([n if isinstance(n, list) else [n] for n in a["notes"]], [])))
+
+
+class NoBargeLevelTest(unittest.TestCase):
+    def test_summary_has_no_barge(self):
+        src = _hours(3, wind_speed=8.0, wind_gusts=9.0, wind_direction=80.0,
+                     precipitation=0.0, visibility_km=10.0)
+        cons = fetch.compute_consensus(src, None, None, None, None, None, None, None)
+        with mock.patch.object(fetch, "load_mta_advisory", return_value=None):
+            out = fetch.build_output(cons, ["x"])
+        s = out["summary_24h"]
+        self.assertNotIn("barge", s["restricted_hours"])
+        self.assertEqual(s["overall_status"], "operational")   # 9 × 1.3 = 11.7 — ადრე „ბორანი“
+
+    def test_old_barge_cache_no_false_notification(self):
+        self.assertNotIn(("barge", "operational"), fetch.NOTIFY_TRANSITIONS)
+        self.assertIn(("barge", "vessel"), fetch.NOTIFY_TRANSITIONS)
 
 
 if __name__ == "__main__":

@@ -99,8 +99,11 @@ YR_NO_INTERVAL      = 1   # yr.no ყოველ საათში გან�
 # ახალი პრინციპი: ზღვრები = MTA-ს ოფიციალური ლიმიტები, უცვლელად.
 # ანაკლების პრობლემა უნდა გადაწყდეს გაზომვის დონეზე (მოდელების კალიბრაცია),
 # და არა ზღვრების ჩუმი დაწევით.
+# ⚠ 2026-10-13: ბორნის საფეხური (10 მ/წმ) მოხსნილია. პრაქტიკაში ბორნები
+#   გემებთან ერთად იზღუდება და ერთად იხსნება — ცალკე საფეხური ცრუ
+#   „შეზღუდვას“ აჩვენებდა 10–17 მ/წმ ქარზე. სტატუსი ახლა სამსაფეხურიანია:
+#   operational → vessel (≥17) → suspended (≥21.5).
 THRESHOLDS = {
-    "wind_barge":     10.0,   # ბორნის მანევრირება შეზღუდულია
     "wind_vessel":    17.0,   # გემების მანევრირება შეზღუდულია
     "wind_suspended": 21.5,   # ამწეები + გემების მანევრირება შეჩერებულია
     "wave_height":     1.50,  # ტალღა → შეჩერება. დაწეულია 2.0-დან განზრახ:
@@ -1740,9 +1743,6 @@ def _compute_status(wind, gusts, wave, vis, vis_min=None):
     elif max_wind >= THRESHOLDS["wind_vessel"]:
         alerts.append(f"ქარის აფეთქება: {max_wind:.1f} მ/წმ (გემების ლიმიტი: {THRESHOLDS['wind_vessel']})")
         esc("vessel")
-    elif max_wind >= THRESHOLDS["wind_barge"]:
-        alerts.append(f"ქარის სიჩქარე: {max_wind:.1f} მ/წმ (ბორნის ლიმიტი: {THRESHOLDS['wind_barge']})")
-        esc("barge")
 
     if (wave or 0) >= THRESHOLDS["wave_height"]:
         alerts.append(f"ტალღის სიმაღლე: {wave:.2f} მ (ლიმიტი: {THRESHOLDS['wave_height']})")
@@ -1801,11 +1801,13 @@ STATUS_KA    = {"operational": "სტანდარტული რეჟი�
 # ოთხსაფეხურიან კიბეზე ყველა გადასვლა მნიშვნელოვანია — როგორც გამკაცრება,
 # ისე შემსუბუქება. ცალკეული წყვილების ჩამოთვლის ნაცვლად: ნებისმიერი
 # ცვლილება, სადაც ორივე მდგომარეობა ცნობილია.
-_STATES = ("operational", "barge", "vessel", "suspended")
+_STATES = ("operational", "vessel", "suspended")
 NOTIFY_TRANSITIONS = {(a, b) for a in _STATES for b in _STATES if a != b} | {
-    # ძველი cache-იდან გადმოსვლა
-    ("warning", "operational"), ("warning", "barge"),
-    ("warning", "vessel"), ("warning", "suspended"),
+    # ძველი cache-იდან გადმოსვლა („warning“, „barge“ — მოხსნილი საფეხურები).
+    # barge → operational განზრახ არ არის: ეს ცვლილება მხოლოდ საფეხურის
+    # მოხსნის შედეგია და ყალბ „სტატუსი შეიცვალა“ შეტყობინებას გამოიწვევდა.
+    ("warning", "operational"), ("warning", "vessel"), ("warning", "suspended"),
+    ("barge", "vessel"), ("barge", "suspended"),
 }
 
 
@@ -2827,8 +2829,7 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
     w48   = fwd[:48]
     susp   = sum(1 for h in w48 if h["status"] == "suspended")
     vessel = sum(1 for h in w48 if h["status"] == "vessel")
-    barge  = sum(1 for h in w48 if h["status"] in ("barge", "warning"))
-    warn   = vessel + barge          # ნებისმიერი შეზღუდვა, შეჩერების გარდა
+    warn   = vessel                  # ნებისმიერი შეზღუდვა, შეჩერების გარდა
     return {
         "meta": {
             "location":       LOCATION["name"],
@@ -2886,9 +2887,9 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "warning_hours":     warn,
             "operational_hours": max(0, len(w48) - susp - warn),
             "forward_hours":     len(w48),
-            "restricted_hours":  {"barge": barge, "vessel": vessel},
+            "restricted_hours":  {"vessel": vessel},
             "overall_status":    ("suspended" if susp else "vessel" if vessel
-                                  else "barge" if barge else "operational"),
+                                  else "operational"),
         },
         "mta_advisory": load_mta_advisory(),
         "forecast": consensus,
