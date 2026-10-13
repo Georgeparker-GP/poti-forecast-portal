@@ -1313,20 +1313,71 @@ _NOTE_BASE = {
 _PERIOD_LBL = {"day": ("დღე", "Day"), "night": ("ღამე", "Night")}
 
 
+_UNIT_TAIL = re.compile(r"\s*(?:მ/წმ|m\s*/\s*s(?:ec)?)\.?\s*$", re.I)
+_NUM_TAIL = re.compile(r"\d[\d\-–/., ]*(?:\s*\([^)]*\))?\s*$")
+
+
+def _split_bilingual(txt):
+    """MTA-ს ორენოვანი შენიშვნა → (ქართული, ინგლისური).
+
+    ⚠ 2026-10-13: შენიშვნა ერთ სტრიქონად მოდის — ჯერ ქართული, მერე
+    ინგლისური, რიცხვები კი ხშირად მხოლოდ ერთ მხარესაა:
+      "დღის შუალედში ცვალებადი 5-10 მ/წმ. In the middle of the day variable"
+      "საღამის In the evening 8-13"
+    ადრე ორივე ენაზე მთლიანი, შერეული ტექსტი ჩანდა. ახლა იყოფა პირველ
+    ლათინურ სიტყვაზე; თუ ერთ მხარეს ბოლო რიცხვითი ნაწილი აკლია, მეორიდან
+    გადმოდის. ერთეული (მ/წმ, m/sec) იჭრება — საჭიროებისამებრ ფორმატერი
+    თავად დაამატებს სწორ ენაზე.
+    """
+    m = re.search(r"[A-Za-z]{2,}", txt)
+    if not m:
+        geo = eng = txt
+    else:
+        geo, eng = txt[:m.start()], txt[m.start():]
+    geo = _UNIT_TAIL.sub("", geo.strip(" .,;-")).strip(" .,;-")
+    eng = _UNIT_TAIL.sub("", eng.strip(" .,;")).strip(" .,;")
+    if not geo:
+        geo = eng
+    if not eng:
+        eng = geo
+
+    def tail(x):
+        t = _NUM_TAIL.search(x)
+        return t.group(0).strip() if t else ""
+
+    # თავში მდგომი რიცხვი ("8-13 დროგამოშვებით დაქროლვა Occasional gusts 15-20")
+    # ორივე ენას ეკუთვნის — ქართული სიტყვების წინ დგას და გაყოფისას იკარგებოდა.
+    lead = re.match(r"^\d[\d\-–/.,]*", geo)
+    if m and lead and not eng.startswith(lead.group(0)):
+        eng = f"{lead.group(0)} {eng}"
+
+    gt, et = tail(geo), tail(eng)
+    if et and not gt and et not in geo:
+        geo = f"{geo} {et}"
+    if gt and not et and gt not in eng:
+        eng = f"{eng} {gt}"
+    return geo, eng
+
+
 def _fmt_mta_note(key, val, blk):
     """(ქართული, ინგლისური) წყვილი ერთი შენიშვნისთვის."""
     txt = " ".join(str(val).split())
     if not txt:
         return None, None
+    geo, eng = _split_bilingual(txt)
     meta = _NOTE_BASE.get(key)
     if not meta:
-        return txt, txt          # თავისთავად გასაგები ტექსტი (მაგ. precip_note)
+        return geo, eng          # თავისთავად გასაგები ტექსტი (მაგ. precip_note)
     base_key, lbl_geo, lbl_eng, unit_geo, unit_eng = meta
+    ug = f" {unit_geo}" if geo[-1:].isdigit() else ""
+    ue = f" {unit_eng}" if eng[-1:].isdigit() else ""
     base = " ".join(str(blk.get(base_key) or "").split())
     if base:
-        return (f"{lbl_geo} {base}, მინაწერი {txt} {unit_geo}",
-                f"{lbl_eng} {base}, note {txt} {unit_eng}")
-    return f"{lbl_geo} {txt} {unit_geo}", f"{lbl_eng} {txt} {unit_eng}"
+        # ძირითადი ველიც შეიძლება ორენოვანი იყოს: "8-13 დროგამოშვებით დაქროლვა Occasional gusts 15-20"
+        bg, be = _split_bilingual(base)
+        return (f"{lbl_geo} {bg}, მინაწერი {geo}{ug}",
+                f"{lbl_eng} {be}, note {eng}{ue}")
+    return f"{lbl_geo} {geo}{ug}", f"{lbl_eng} {eng}{ue}"
 
 
 def _merge_period_notes(per_geo, per_eng):
