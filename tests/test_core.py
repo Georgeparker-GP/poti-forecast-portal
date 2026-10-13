@@ -436,5 +436,31 @@ class GustCalibrationTest(unittest.TestCase):
         self.assertEqual(r["gust_max"], round(14.0 * fetch.GUST_CALIBRATION, 2))
 
 
+class ForecastValidityFallbackTest(unittest.TestCase):
+    def test_until_from_filename(self):
+        f = fetch._forecast_until_from_name
+        self.assertEqual(f("ამინდის_პროგნოზი_ფოთი_WF_14.8391_12.10.26_10.00_სთ..pdf").strftime("%Y-%m-%d %H:%M"),
+                         "2026-10-13 10:00")
+        self.assertEqual(f("საღამოს_ამინდის_პროგნოზი_ფოთი_WF_14.7225_2.09.26_22.00_სთ..pdf").strftime("%Y-%m-%d %H:%M"),
+                         "2026-09-03 10:00")
+        self.assertIsNone(f("3_დღიანი_ამინდის_პროგნოზი_ფოთი-_ყულევი_09.09.26-_11.09.26_წ."))
+
+    def test_forecast_without_valid_still_shown(self):
+        import json, tempfile
+        e = {"type": "forecast", "bulletin_no": "WF14/8391", "valid": None,
+             "source_file": "ამინდის_პროგნოზი_ფოთი_WF_14.8391_12.10.26_10.00_სთ..pdf",
+             "poti": {"day": {"wind_speed": "12-17", "gust": [20.0, 25.0]},
+                      "night": {"wind_speed": "10-15", "gust": [20.0, 25.0]}}}
+        with tempfile.TemporaryDirectory() as d:
+            lg = os.path.join(d, "mta_log.json")
+            json.dump({"entries": [e]}, open(lg, "w"))
+            with mock.patch.object(fetch, "MTA_LOG_FILE", lg), \
+                 mock.patch.object(fetch, "datetime", wraps=fetch.datetime) as dt:
+                dt.now.return_value = StormAdvisoryTest._at("2026-10-12 18:00")
+                a = fetch.load_mta_advisory()
+        self.assertEqual(a["valid_until"], "2026-10-13 10:00")
+        self.assertTrue(any("20–25" in n for n in sum([n if isinstance(n, list) else [n] for n in a["notes"]], [])))
+
+
 if __name__ == "__main__":
     unittest.main()
