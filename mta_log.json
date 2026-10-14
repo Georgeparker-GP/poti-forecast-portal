@@ -14604,9 +14604,168 @@
       },
       "portal_time": "2026-10-14T04:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-10-14 10:07",
+      "source_file": "ამინდის_პროგნოზი_ფოთი_WF_14.8519_14.10.26_10.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "6-11",
+          "wind_speed_note": "დაქროლვა 12-17",
+          "wave_cm": "10-50",
+          "sea_state": "2",
+          "vis_miles": "5-10",
+          "cloud": "ცვალებადი\nVariable",
+          "precip": "უნალექო\nNo precipitation"
+        },
+        "night": {
+          "wind_speed": "8-13",
+          "wind_speed_note": "დაქროლვა 15-20",
+          "wave_cm": "10-50/30-70",
+          "sea_state": "2/2-3",
+          "vis_miles": "5-10",
+          "cloud": "ცვალებადი\nVariable",
+          "precip": "უნალექო\nNo precipitation"
+        }
+      },
+      "bulletin_no": "WF14/8519",
+      "valid": "10/14/2026 სსიპ საზღვაო ტრანსპორტის სააგენტო 50 ბაქოს ქუჩა 6000 ბათუმი, საქართველო ტელ: +995 422 27 49 25/26 info@mta.gov.ge \u0000\u0000\u0000\u0000 \u0000\u0000\u0000\u0000\u0000\u0000\u0000 \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000 \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000 14 / ოქტომბერი / 2026 წ. KA020136740894126 № WF14/8519 ამინდის პროგნოზი Weather forecast ფოთი ყულევი Poti Kulevi 14/10/ 2026 წ. 10:00 სთ-დან 15/10/ 2026 წ. 10:00 სთ-მდე",
+      "bulletin_no_source": "pdf",
+      "vs_portal_forecast": {
+        "issued": "2026-10-14 10:00",
+        "blocks": [
+          {
+            "block": "day1",
+            "window": "2026-10-14T10:00 → 16:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                6.0,
+                11.0
+              ],
+              "portal": [
+                5.27,
+                6.79
+              ],
+              "overlap": true,
+              "max_delta": 4.21,
+              "mid_delta": 2.47
+            },
+            "wave": {
+              "mta": [
+                0.1,
+                0.5
+              ],
+              "portal": [
+                0.27,
+                0.33
+              ],
+              "overlap": true,
+              "max_delta": 0.17,
+              "mid_delta": -0.0
+            }
+          },
+          {
+            "block": "day2",
+            "window": "2026-10-14T16:00 → 22:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                6.0,
+                11.0
+              ],
+              "portal": [
+                4.74,
+                7.18
+              ],
+              "overlap": true,
+              "max_delta": 3.82,
+              "mid_delta": 2.54
+            },
+            "wave": {
+              "mta": [
+                0.1,
+                0.5
+              ],
+              "portal": [
+                0.22,
+                0.27
+              ],
+              "overlap": true,
+              "max_delta": 0.23,
+              "mid_delta": 0.05
+            }
+          },
+          {
+            "block": "night1",
+            "window": "2026-10-14T22:00 → 04:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                4.38,
+                7.42
+              ],
+              "overlap": false,
+              "max_delta": 5.58,
+              "mid_delta": 4.6
+            },
+            "wave": {
+              "mta": [
+                0.1,
+                0.5
+              ],
+              "portal": [
+                0.26,
+                0.32
+              ],
+              "overlap": true,
+              "max_delta": 0.18,
+              "mid_delta": 0.01
+            }
+          },
+          {
+            "block": "night2",
+            "window": "2026-10-15T04:00 → 10:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                4.48,
+                8.61
+              ],
+              "overlap": true,
+              "max_delta": 4.39,
+              "mid_delta": 3.96
+            },
+            "wave": {
+              "mta": [
+                0.3,
+                0.7
+              ],
+              "portal": [
+                0.25,
+                0.45
+              ],
+              "overlap": true,
+              "max_delta": 0.25,
+              "mid_delta": 0.15
+            }
+          }
+        ],
+        "wind_overlap": "3/4",
+        "wave_overlap": "4/4"
+      }
     }
   ],
-  "last_ingest": "2026-10-14 05:07",
+  "last_ingest": "2026-10-14 10:07",
   "storm_windows": [
     {
       "warning": "14/6882",
