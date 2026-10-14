@@ -14821,9 +14821,202 @@
       },
       "portal_time": "2026-10-14T16:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-10-14 22:07",
+      "source_file": "საღამოს_ამინდის_პროგნოზი_ფოთი_WF_14.8528_14.10.26_22.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "10-15",
+          "gust": [
+            18.0,
+            23.0
+          ],
+          "wave_cm": "10-30/20-50",
+          "sea_state": "2",
+          "vis_miles": "5-10",
+          "cloud": "ძირითადად მოღრუბლული\nMostly cloudy",
+          "precip": "უმეტესად უნალექოდ\nMainly dry"
+        },
+        "night": {
+          "wind_speed": "8-13",
+          "gust": [
+            18.0,
+            23.0
+          ],
+          "wave_cm": "10-30/20-50",
+          "sea_state": "2",
+          "vis_miles": "5-10",
+          "cloud": "ძირითადად მოღრუბლული\nMostly cloudy",
+          "precip": "უმეტესად უნალექოდ\nMainly dry"
+        }
+      },
+      "valid": "10/14/2026 სსიპ საზღვაო ტრანსპორტის სააგენტო 50 ბაქოს ქუჩა 6000 ბათუმი, საქართველო ტელ: +995 422 27 49 25/26 info@mta.gov.ge \u0000\u0000\u0000\u0000 \u0000\u0000\u0000\u0000\u0000\u0000\u0000 \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000 \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000 14 / ოქტომბერი / 2026 წ. KA020194059083626 № 14/8528 საღამოს ამინდის პროგნოზი Night weather forecast ფოთი ყულევი 14/10/ 2026 წ. 22:00 სთ-დან (Poti) (Kulevi) ღამე ღამე 15/10/ 2026 წ. 10:00 სთ-მდე",
+      "bulletin_no": "WF14/8528",
+      "bulletin_no_source": "filename",
+      "vs_portal_forecast": {
+        "issued": "2026-10-14 22:00",
+        "blocks": [
+          {
+            "block": "day1",
+            "window": "2026-10-15T10:00 → 16:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                10.0,
+                15.0
+              ],
+              "portal": [
+                7.07,
+                8.83
+              ],
+              "overlap": false,
+              "max_delta": 6.17,
+              "mid_delta": 4.55
+            },
+            "wave": {
+              "mta": [
+                0.1,
+                0.3
+              ],
+              "portal": [
+                0.4,
+                0.58
+              ],
+              "overlap": false,
+              "max_delta": -0.28,
+              "mid_delta": -0.29
+            }
+          },
+          {
+            "block": "day2",
+            "window": "2026-10-15T16:00 → 22:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                10.0,
+                15.0
+              ],
+              "portal": [
+                4.92,
+                7.41
+              ],
+              "overlap": false,
+              "max_delta": 7.59,
+              "mid_delta": 6.33
+            },
+            "wave": {
+              "mta": [
+                0.2,
+                0.5
+              ],
+              "portal": [
+                0.32,
+                0.39
+              ],
+              "overlap": true,
+              "max_delta": 0.11,
+              "mid_delta": -0.01
+            }
+          },
+          {
+            "block": "night1",
+            "window": "2026-10-14T22:00 → 04:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                4.36,
+                8.07
+              ],
+              "overlap": true,
+              "max_delta": 4.93,
+              "mid_delta": 4.29
+            },
+            "wave": {
+              "mta": [
+                0.1,
+                0.3
+              ],
+              "portal": [
+                0.36,
+                0.51
+              ],
+              "overlap": false,
+              "max_delta": -0.21,
+              "mid_delta": -0.23
+            }
+          },
+          {
+            "block": "night2",
+            "window": "2026-10-15T04:00 → 10:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                4.87,
+                6.86
+              ],
+              "overlap": false,
+              "max_delta": 6.14,
+              "mid_delta": 4.63
+            },
+            "wave": {
+              "mta": [
+                0.2,
+                0.5
+              ],
+              "portal": [
+                0.29,
+                0.56
+              ],
+              "overlap": true,
+              "max_delta": -0.06,
+              "mid_delta": -0.08
+            }
+          }
+        ],
+        "wind_overlap": "1/4",
+        "wave_overlap": "2/4"
+      }
+    },
+    {
+      "ingested_at": "2026-10-14 22:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8329_14.10.2026წ._22.00_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/8529",
+      "forecast": {
+        "wind_range": [
+          10.0,
+          15.0
+        ],
+        "gust_max": 23.0,
+        "gust_range": [
+          18.0,
+          23.0
+        ]
+      },
+      "text_eng": "In the area of Poti-Kulevi, easterly winds of 10-15 m/s will persist until the end of the day 15.10.26, with occasional gusts of 18-23 m/s. Actual Wather : (Poti) Wind- Easterly 12-16 m/s. (Kulevi) wind- Easterly 7-12 m/s.",
+      "phenomena": [
+        "wind"
+      ],
+      "date": "14/10/2026",
+      "time": "22:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-10-14T22:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-10-14 17:07",
+  "last_ingest": "2026-10-14 22:07",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -14961,6 +15154,13 @@
       "issued": "2026-10-11T09:55",
       "cancelled": "2026-10-13T13:15",
       "duration_h": 51.3
+    },
+    {
+      "warning": "14/8529",
+      "cancel": null,
+      "issued": "2026-10-14T22:00",
+      "cancelled": null,
+      "open": true
     }
   ]
 }
