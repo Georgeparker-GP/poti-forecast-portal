@@ -14763,9 +14763,67 @@
         "wind_overlap": "3/4",
         "wave_overlap": "4/4"
       }
+    },
+    {
+      "ingested_at": "2026-10-14 17:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.8523_14.10.2026_წ._16_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 90.0,
+        "wind_avg": 8.0,
+        "wind_max": 13.0,
+        "wave_cm": [
+          10.0,
+          15.0
+        ],
+        "sea_state": 2.0,
+        "sea_level": "-14",
+        "rip_current": null,
+        "sea_temp": 22.0,
+        "vis_miles": 10.0,
+        "cloud": "ძირითადად\nმოღრუბლული\nMostly cloudy",
+        "precip": "უნალექოდ\nNo precipitation",
+        "air_temp": 28.0,
+        "humidity": 44.0,
+        "pressure": 1015.7
+      },
+      "bulletin_no": "14/8523",
+      "date": "14 / ოქტომბერი / 2026",
+      "time": "16:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 13.0,
+        "wind_portal": 9.23,
+        "wind_portal_raw": 7.1,
+        "wind_delta": 3.77,
+        "wind_avg_mta": 8.0,
+        "wind_avg_portal": 5.1,
+        "wind_avg_delta": 2.9,
+        "wave_mta": 0.12,
+        "wave_portal": 0.22,
+        "wave_delta": -0.1,
+        "dir_mta": 90.0,
+        "dir_portal": 72.0,
+        "dir_delta": 18.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 37.04,
+        "vis_capped": true,
+        "vis_flag": "ok_capped",
+        "precip_mta": "dry",
+        "precip_portal": 0.0,
+        "precip_verdict": "match",
+        "air_temp_mta": 28.0,
+        "air_temp_portal": 26.3,
+        "air_temp_delta": 1.7,
+        "sea_temp_mta": 22.0,
+        "sea_temp_portal": 22.2,
+        "sea_temp_delta": -0.2
+      },
+      "portal_time": "2026-10-14T16:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-10-14 10:07",
+  "last_ingest": "2026-10-14 17:07",
   "storm_windows": [
     {
       "warning": "14/6882",
