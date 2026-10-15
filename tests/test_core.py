@@ -419,9 +419,10 @@ class GustClampTest(unittest.TestCase):
 
 class GustCalibrationTest(unittest.TestCase):
     def test_consensus_gust_calibrated_raw_kept(self):
-        src = _hours(1, wind_speed=8.0, wind_gusts=14.0, wind_direction=80.0,
+        src = _hours(1, wind_speed=8.0, wind_gusts=14.0, wind_direction=270.0,
                      precipitation=0.0, visibility_km=10.0)
-        h = fetch.compute_consensus(src, None, None, None, None, None, None, None)[0]
+        sea = _hours(1, wave_height=0.4, wave_period=4.0, wave_direction=270.0)
+        h = fetch.compute_consensus(src, None, None, None, sea, None, None, None)[0]
         self.assertEqual(h["wind_gusts_raw"], 14.0)
         self.assertEqual(h["wind_gusts"], round(14.0 * fetch.GUST_CALIBRATION, 2))
         if fetch.GUST_CALIBRATION >= 1.25:
@@ -506,6 +507,39 @@ class BilingualNoteTest(unittest.TestCase):
         self.assertEqual(fetch._fmt_mta_note("precip_note", "ელჭექი Thunderstorm", {}),
                          ("ელჭექი", "Thunderstorm"))
         self.assertEqual(fetch._split_bilingual("8-13"), ("8-13", "8-13"))
+
+
+class EastStormTest(unittest.TestCase):
+    """2026-10-15: აღმოსავლეთის ძლიერი ქარი ×1.4, ამწის სიმაღლე 1.09, ×1.6 — გაფრთხილება."""
+    def _h(self, raw, direction, wind=9.0):
+        src = _hours(1, wind_speed=wind, wind_gusts=raw, wind_direction=direction,
+                     precipitation=0.0, visibility_km=10.0)
+        sea = _hours(1, wave_height=0.4, wave_period=4.0, wave_direction=direction)
+        return fetch.compute_consensus(src, None, None, None, sea, None, None, None)[0]
+
+    def test_east_strong_factor(self):
+        self.assertEqual(self._h(14.7, 85)["wind_gusts"], round(14.7 * 1.4, 2))
+        self.assertEqual(self._h(14.7, 270)["wind_gusts"], round(14.7 * 1.3, 2))
+        self.assertEqual(self._h(9.0, 85)["wind_gusts"], round(9.0 * 1.3, 2))   # სუსტი — ×1.3
+
+    def test_crane_height_threshold(self):
+        # 15.10 09:07: ნედლი 14.7, E → 20.6 მ/წმ × 1.09 = 22.4 ≥ 21.5 → შეჩერება (რეალობა: შეჩერება)
+        self.assertEqual(self._h(14.7, 85)["status"], "suspended")
+        # 19.0 მ/წმ × 1.09 = 20.7 < 21.5 → გემები
+        self.assertEqual(fetch._compute_status(9, 19.0, 0.2, 10)[0], "vessel")
+        self.assertEqual(fetch._compute_status(9, 19.8, 0.2, 10)[0], "suspended")
+
+    def test_crane_risk_warning_only(self):
+        # 15.10 07:07: ნედლი 13.8, E → ×1.4 = 19.3 (გემები); ×1.6 = 22.1 → გაფრთხილება
+        h = self._h(13.8, 86)
+        self.assertEqual(h["status"], "vessel")
+        self.assertTrue(h["crane_risk"])
+        self.assertTrue(any("შესაძლებელია ამწეების შეჩერება" in a for a in h["alerts"]))
+        self.assertFalse(self._h(13.8, 270)["crane_risk"])        # დასავლეთი — არა
+        self.assertFalse(self._h(14.7, 85)["crane_risk"])         # უკვე შეჩერებაა — ზედმეტია
+
+    def test_thresholds_exported(self):
+        self.assertEqual(fetch.THRESHOLDS["crane_height_factor"], 1.09)
 
 
 if __name__ == "__main__":
