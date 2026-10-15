@@ -105,7 +105,8 @@ YR_NO_INTERVAL      = 1   # yr.no ყოველ საათში გან�
 #   operational → vessel (≥17) → suspended (≥21.5).
 THRESHOLDS = {
     "wind_vessel":    17.0,   # გემების მანევრირება შეზღუდულია
-    "wind_suspended": 21.5,   # ამწეები + გემების მანევრირება შეჩერებულია
+    "wind_suspended": 21.5,   # ამწეები + გემების მანევრირება შეჩერებულია (ამწის ანემომეტრზე, ~25 მ)
+    "crane_height_factor": 1.09,  # 10 მ → 25 მ დაქროლვა (იხ. CRANE_HEIGHT_FACTOR)
     "wave_height":     1.50,  # ტალღა → შეჩერება. დაწეულია 2.0-დან განზრახ:
                               # დადასტურებულია, რომ ტალღის კონსენსუსი
                               # სისტემატურად ანაკლებს (იხ. observations.md).
@@ -138,6 +139,34 @@ THRESHOLDS = {
 # მონაცემი ჯერ ცოტაა (აღმოსავლეთი — 3 ზუსტი შემთხვევა).
 # ნედლი მნიშვნელობა `wind_gusts_raw`-ში ინახება; 1.0 კალიბრაციას თიშავს.
 GUST_CALIBRATION = 1.3
+
+# ═══ აღმოსავლეთის ძლიერი ქარი და ამწის სიმაღლე (2026-10-15) ═══
+# 11–15.10-ის სამ ეპიზოდზე (ამწეების შეჩერება მომხმარებლის მიერაა
+# დადასტურებული) ×1.3 შეჩერებას ვერცერთხელ იჭერდა. MTA-ს ზუსტ
+# შედარებებში აღმოსავლეთის ძლიერ ქარზე შეფარდება 1.10–1.83-ია (მედ. 1.61).
+# ამწის ზღვრით 19.7 მ/წმ (10 მ), 17 შეჩერების საათზე:
+#   აღმ. ×1.3 → 5/17, ცრუ 0 · ×1.4 → 8/17, ცრუ 1 · ×1.6 → 14/17, ცრუ/ნაადრევი 7
+# შეთანხმებული „შუალედური გზა“: სტატუსი ×1.4-ით, ხოლო ×1.6-ის დონეზე —
+# მხოლოდ გაფრთხილება „შესაძლებელია ამწეების შეჩერება“ (სტატუსს არ ცვლის).
+EAST_SECTOR          = (45.0, 135.0)   # აღმოსავლეთის სექტორი, გრადუსი
+EAST_STRONG_RAW      = 10.0            # მოდელის ნედლი დაქროლვა, საიდანაც ითვლება „ძლიერად“
+GUST_CAL_EAST_STRONG = 1.4             # სტატუსისთვის
+CRANE_WARN_FACTOR    = 1.6             # მხოლოდ ადრეული გაფრთხილებისთვის
+
+# ამწის ანემომეტრი ~25 მ სიმაღლეზეა და შეჩერება მყისიერ დაქროლვაზე ≥21.5 მ/წმ
+# ხდება. დაქროლვის ვერტიკალური პროფილით (α≈0.095) 25 მ / 10 მ ≈ 1.09, ანუ
+# 10-მეტრიან ქარზე ამწის ზღვარი ≈ 19.7 მ/წმ. ოფიციალური 21.5 უცვლელია —
+# იცვლება მხოლოდ ის, რომ მოდელის 10-მეტრიანი დაქროლვა ამწის სიმაღლეზე გადაითვლება.
+CRANE_HEIGHT_FACTOR  = THRESHOLDS["crane_height_factor"]
+
+
+def _calibrate_gust(raw, direction):
+    """ნედლი მოდელური დაქროლვა → (კალიბრირებული, აღმოსავლეთის ძლიერი ქარია თუ არა)."""
+    if raw is None:
+        return None, False
+    east_strong = (direction is not None and EAST_SECTOR[0] <= direction <= EAST_SECTOR[1]
+                   and raw >= EAST_STRONG_RAW)
+    return raw * (GUST_CAL_EAST_STRONG if east_strong else GUST_CALIBRATION), east_strong
 
 BASE_WEIGHTS = {
     "best_match": 0.22, "gfs": 0.13, "icon_eu": 0.09, "ecmwf": 0.25,
@@ -503,7 +532,7 @@ def build_daily_summary(daily_atmo, daily_marine):
     for a in daily_atmo:
         wave_max = wave_by_date.get(a["date"], 0.0)
         # იგივე კალიბრაცია, რაც საათობრივზე — თორემ კვირის ხედი სხვა ვერდიქტს მისცემდა
-        gust = a["gust_max"] * GUST_CALIBRATION if a["gust_max"] is not None else None
+        gust, _ = _calibrate_gust(a["gust_max"], a.get("wind_dir"))
         status, alerts = _compute_status(a["wind_max"], gust, wave_max, 999)
         result.append({**a, "gust_max": _r(gust) if gust is not None else None,
                        "gust_max_raw": a["gust_max"], "wave_max": wave_max,
@@ -929,8 +958,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         # Open-Meteo მიუწვდომელი იყო და Stormglass-ის 3.52 „რეალურმა“ დაქროლვამ
         # 3.96 მ/წმ საშუალოს ქვემოთ ჩამოიწია.
         wind_gusts = max(wind_gusts, wind_speed)
-        wind_gusts_raw = wind_gusts
-        wind_gusts = wind_gusts * GUST_CALIBRATION
+        wind_gusts_raw = wind_gusts     # კალიბრაცია მიმართულების შემდეგ (იხ. ქვემოთ)
 
         # 3. ქარის მიმართულება (ვექტორული საშუალო მხოლოდ ელიტებიდან)
         wind_direction = _vector_avg_direction(active_wind_pool, i, "wind_direction", active_wind_w)
@@ -950,6 +978,12 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             if ref is not None:
                 wind_direction = round(float(ref), 1)
                 dir_fallback = True
+
+        # 3c. კალიბრაცია — მიმართულებაზე დამოკიდებული (აღმოსავლეთის ძლიერი ქარი)
+        wind_gusts, east_strong = _calibrate_gust(wind_gusts_raw, wind_direction)
+        # ადრეული გაფრთხილება: ×1.6-ის დონეზე ამწის ზღვარი გადაილახებოდა
+        crane_risk = bool(east_strong and wind_gusts_raw * CRANE_WARN_FACTOR * CRANE_HEIGHT_FACTOR
+                          >= THRESHOLDS["wind_suspended"])
 
         # 4. Confidence — წყაროებს შორის ქარის სიჩქარის გაფანტვა (std dev).
         #    დაბალი gap = წყაროები თანხმდებიან = მაღალი ნდობა.
@@ -1098,12 +1132,17 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
 
         status, alerts = _compute_status(wind_speed, wind_gusts, wave_h,
                                          visibility, visibility_min)
+        crane_risk = crane_risk and status != "suspended"
+        if crane_risk:
+            alerts.append("შესაძლებელია ამწეების შეჩერება — ძლიერი აღმოსავლეთის ქარი "
+                          "(მოდელები მას ხშირად ანაკლებენ)")
 
         result.append({
             "time": atmo_best[i]["time"],
             "wind_speed": _r(wind_speed),
             "wind_gusts": _r(wind_gusts),
             "wind_gusts_raw": _r(wind_gusts_raw),
+            "crane_risk": crane_risk,
             "wind_direction": _r(wind_direction, 0),
             "precipitation": _r(precip),
             "precip_sources": precip_sources,
@@ -1788,8 +1827,11 @@ def _compute_status(wind, gusts, wave, vis, vis_min=None):
     # ეკრანზე კი მდგრადი ქარი ჩნდებოდა (მაგ. „1.6 მ/წმ (ბორნის ლიმიტი: 10.0)“).
     # დამრგვალებაც აქ ხდება — მნიშვნელობები შეწონილი საშუალოებია და
     # ნედლად სრული მცურავი წერტილით გამოდიოდა.
-    if max_wind >= THRESHOLDS["wind_suspended"]:
-        alerts.append(f"ქარის აფეთქება: {max_wind:.1f} მ/წმ (ლიმიტი: {THRESHOLDS['wind_suspended']})")
+    # ამწის ზღვარი 25 მ-ზეა — 10-მეტრიანი დაქროლვა ამწის სიმაღლეზე გადაითვლება
+    crane_wind = max_wind * THRESHOLDS["crane_height_factor"]
+    if crane_wind >= THRESHOLDS["wind_suspended"]:
+        alerts.append(f"ქარის აფეთქება: {max_wind:.1f} მ/წმ (ამწის სიმაღლეზე ≈{crane_wind:.1f}; "
+                      f"ლიმიტი: {THRESHOLDS['wind_suspended']})")
         esc("suspended")
     elif max_wind >= THRESHOLDS["wind_vessel"]:
         alerts.append(f"ქარის აფეთქება: {max_wind:.1f} მ/წმ (გემების ლიმიტი: {THRESHOLDS['wind_vessel']})")
@@ -2891,12 +2933,13 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "sources_used":   sources_used,
             "forecast_hours": len(consensus),
             "gust_calibration": GUST_CALIBRATION,
+            "gust_calibration_east_strong": GUST_CAL_EAST_STRONG,
             # ზღვრები ერთ ადგილას: index.html მათ აქედან კითხულობს, ამიტომ
             # backend-სა და frontend-ს შორის აცდენა აღარ შეიძლება.
             "thresholds":     dict(THRESHOLDS),
         },
         "current": {k: now.get(k, v) for k, v in {
-            "time": "", "wind_speed": 0, "wind_gusts": 0, "wind_gusts_raw": None,
+            "time": "", "wind_speed": 0, "wind_gusts": 0, "wind_gusts_raw": None, "crane_risk": False,
             "wind_direction": 0, "wave_height": 0, "precipitation": 0,
             "visibility_km": 10, "wave_period": 0, "wave_direction": 0,
             "swell_height": 0, "swell_period": 0, "swell_direction": 0,

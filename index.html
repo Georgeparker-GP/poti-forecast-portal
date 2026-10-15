@@ -1215,8 +1215,8 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
           </span>
           <span class="wind-key" id="key-wind">
             <i style="background:#5ec8b4"></i>&lt;17
-            <i style="background:#f08a3c"></i>17–21.5
-            <i style="background:#ef5b5b"></i>≥21.5 <span style="opacity:.7">მ/წმ</span>
+            <i style="background:#f08a3c"></i>17–19.7
+            <i style="background:#ef5b5b"></i>≥19.7 <span style="opacity:.7">მ/წმ (10 მ; ამწეზე 21.5)</span>
           </span>
           <span class="wind-key" id="key-wave">
             <i style="background:#7cc4ff;border-radius:50%"></i>&lt;0.5
@@ -1293,7 +1293,8 @@ table.rc .rp{font-size:9px;color:var(--mu);opacity:.6;margin-top:2px;
 // ცხრილს იყენებდა და ერთსა და იმავე საათზე ორი ვერდიქტი გამოდიოდა.
 const THR = {
   vessel:    17.0,   // გემების მანევრირება შეზღუდულია  (MTA)
-  suspended: 21.5,   // ამწეები + გემების მანევრირება შეჩერება (MTA)
+  suspended: 21.5,   // ამწეები + გემების მანევრირება შეჩერება (MTA; ამწის ანემომეტრზე, ~25 მ)
+  craneHeight: 1.09, // 10 მ → 25 მ დაქროლვა; ქარის შედარება suspWind-ით (≈19.7 მ/წმ 10 მ-ზე)
   // ტალღა განზრახ დაწეულია 2.0-დან: დადასტურებულია, რომ ტალღის კონსენსუსი
   // სისტემატურად ანაკლებს (26 ივლ: 1.09 მ vs რეალური 1.55–2.50 მ).
   wave:       1.50,
@@ -1305,9 +1306,12 @@ const THR = {
   visCranes:  0.08,  //  80 მ — ამწე ჩერდება
 };
 
+// ქარის შეჩერების ზღვარი 10-მეტრიან დაქროლვაზე (ამწის 21.5 გადათვლილი 10 მ-ზე)
+Object.defineProperty(THR, 'suspWind', { get(){ return THR.suspended / THR.craneHeight; } });
+
 // meta.thresholds (fetch.py-ის სახელებით) → THR. მხოლოდ ვალიდური რიცხვები.
 const THR_KEYS = {
-  wind_vessel: 'vessel', wind_suspended: 'suspended',
+  wind_vessel: 'vessel', wind_suspended: 'suspended', crane_height_factor: 'craneHeight',
   wave_height: 'wave', vis_vessel: 'visVessel', vis_cranes: 'visCranes',
 };
 function applyThresholds(t) {
@@ -1405,9 +1409,9 @@ function statusLabel(c, st, eng) {
   const base = (eng ? STATUS_LBL_ENG : STATUS_LBL)[st] || st;
   if (st !== 'suspended') return base;
   const mw = Math.max(c.wind_speed || 0, c.wind_gusts || 0);
-  // ამწეს მხოლოდ ქარი (≥21.5) ან ინტენსიური ნისლი (≤80 მ) აჩერებს.
+  // ამწეს მხოლოდ ქარი (≥21.5 ამწეზე ≈ 19.7 10 მ-ზე) ან ინტენსიური ნისლი (≤80 მ) აჩერებს.
   // თუ არცერთია, მიზეზი ტალღაა და ამწე მუშაობს.
-  if (mw < THR.suspended && effVis(c) > THR.visCranes) {
+  if (mw < THR.suspWind && effVis(c) > THR.visCranes) {
     return eng ? 'Vessel Manoeuvring Suspended' : 'გემების მანევრირება შეჩერებულია';
   }
   return base;
@@ -1425,7 +1429,7 @@ function computeStatus(h) {
   const v = effVis(h);
   const maxWind = Math.max(w, g);
 
-  if (maxWind >= THR.suspended || wv >= THR.wave || v <= THR.visCranes)
+  if (maxWind >= THR.suspWind || wv >= THR.wave || v <= THR.visCranes)
     return 'suspended';
   if (maxWind >= THR.vessel || v <= THR.visVessel)
     return 'vessel';
@@ -1660,15 +1664,20 @@ function render(d) {
 
   // ამწეები — მხოლოდ suspended ზღვარზე იცვლება
   // ამწეს ᲝᲠᲘ მიზეზი აჩერებს: ქარი ან ინტენსიური ნისლი (≤80 მ).
-  const cranesStop = w >= THR.suspended || vis <= THR.visCranes;
+  const cranesStop = w >= THR.suspWind || vis <= THR.visCranes;
+  // ადრეული გაფრთხილება (2026-10-15): ძლიერ აღმოსავლეთის ქარზე მოდელები
+  // ანაკლებენ — ×1.6-ის დონეზე ამწის ზღვარი გადაილახებოდა. სტატუსს არ ცვლის.
+  const craneRisk = !cranesStop && !!c.crane_risk;
   setOps('ops-cranes',
-    cranesStop ? 'danger' : 'ok',
+    cranesStop ? 'danger' : craneRisk ? 'warn' : 'ok',
     cranesStop
       ? (isEng ? 'Cranes — Suspended' : 'ამწეები — შეჩერებულია')
-      : (isEng ? 'Cranes — Operational' : 'ამწეები — ოპერაციული'));
+      : craneRisk
+        ? (isEng ? 'Cranes — Suspension possible' : 'ამწეები — შესაძლო შეჩერება')
+        : (isEng ? 'Cranes — Operational' : 'ამწეები — ოპერაციული'));
 
   // გემების მანევრირება — 4 დონის ერთიანი ლოგიკა
-  const depBlocked = w >= THR.suspended || wv >= THR.wave || vis <= THR.visCranes;
+  const depBlocked = w >= THR.suspWind || wv >= THR.wave || vis <= THR.visCranes;
   let vesselLevel, vesselText, vesselSub;
 
   if (depBlocked) {
@@ -1693,12 +1702,12 @@ function render(d) {
   const ovs = document.getElementById('ops-vessel-sub');
   if (ovs) ovs.textContent = vesselSub;
   const ocs = document.getElementById('ops-cranes-sub');
-  if (ocs) ocs.textContent = isEng ? 'stop ≥ 21.5 m/s · fog ≤ 80 m'
-                                   : 'შეჩერება ≥ 21.5 მ/წმ · ნისლი ≤ 80 მ';
+  if (ocs) ocs.textContent = isEng ? 'stop ≥ 21.5 m/s at crane (≈19.7 at 10 m) · fog ≤ 80 m'
+                                   : 'შეჩერება ≥ 21.5 მ/წმ ამწეზე (≈19.7 10 მ-ზე) · ნისლი ≤ 80 მ';
 
   // metric cards
   setCard('card-wind','c-wind', c.wind_speed,
-    w>=THR.suspended?'danger': w>=THR.vessel?'alert':'ok');
+    w>=THR.suspWind?'danger': w>=THR.vessel?'alert':'ok');
   document.getElementById('c-gusts').textContent = fmt(c.wind_gusts);
   // კალიბრაცია გამჭვირვალედ: ნედლი მოდელური დაქროლვა და კოეფიციენტი
   const _gk = d.meta && d.meta.gust_calibration;
@@ -1708,7 +1717,7 @@ function render(d) {
     : '';
   renderConfidence(c);
   setBar('bar-wind', (c.wind_gusts||0)/30,
-    (c.wind_gusts||0)>=THR.suspended?'rd': (c.wind_gusts||0)>=THR.vessel?'or':'gn');
+    (c.wind_gusts||0)>=THR.suspWind?'rd': (c.wind_gusts||0)>=THR.vessel?'or':'gn');
 
   // ტალღა. თუ ორივე საზღვაო წყარო ჩავარდა, მნიშვნელობა ქარიდანაა შეფასებული —
   // ეს ვიზუალურად უნდა განსხვავდებოდეს გაზომილისგან.
@@ -1946,7 +1955,7 @@ function render(d) {
     } else {
       // ქარის მნიშვნელობა იღებება ზღვრებთან მიმართებაში — ოპერატორი
       // ერთი შეხედვით ხედავს, რომელი საათი უახლოვდება ლიმიტს.
-      const wLvl = v => v >= THR.suspended ? 'v-crit'
+      const wLvl = v => v >= THR.suspWind ? 'v-crit'
                       : v >= THR.vessel    ? 'v-alert' : 'v-ok';
       const vLvl = v => v >= THR.wave ? 'v-crit' : v >= THR.wave*0.7 ? 'v-warn' : 'v-ok';
       const rLvl = v => v >= 5 ? 'v-alert' : v >= 2 ? 'v-warn' : 'v-ok';
@@ -2084,7 +2093,7 @@ function buildTable(fc) {
     const nc  = i===0?'row-now':'';
     const w   = h.wind_speed||0, g=h.wind_gusts||0;
     const mw  = Math.max(w,g);
-    const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or':'t-gn';
+    const wc  = mw>=THR.suspWind?'t-rd': mw>=THR.vessel?'t-or':'t-gn';
     const vc  = (h.wave_height||0)>=THR.wave?'t-rd': (h.wave_height||0)>=1.2?'t-yw':'t-gn';
     const _v = h.visibility_km!=null ? h.visibility_km : 99;
     const visc= _v<=THR.visCranes?'t-rd': _v<=THR.visVessel?'t-or': _v<=1?'t-yw':'t-mu';
@@ -2098,7 +2107,7 @@ function buildTable(fc) {
       <td class="t-time">${h.time.slice(0,16).replace('T',' ')}${i===0?' ▶':''}</td>
       <td class="t-num ${tc}">${temp}</td>
       <td class="t-num ${wc}">${fmt(h.wind_speed)}</td>
-      <td class="t-num ${mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or':''}">${fmt(h.wind_gusts)}</td>
+      <td class="t-num ${mw>=THR.suspWind?'t-rd': mw>=THR.vessel?'t-or':''}">${fmt(h.wind_gusts)}</td>
       <td class="t-num t-mu">${dir}</td>
       <td class="t-num ${vc}">${fmt(h.wave_height)}</td>
       <td class="t-num ${(h.precipitation||0)>=2?'t-yw':'t-mu'}">${fmt(h.precipitation)}</td>
@@ -2146,7 +2155,7 @@ function renderWeekMini(daily){
   const rows = daily.slice(0,7).map((d,i)=>{
     const dt   = new Date(d.date+'T00:00');
     const mw   = Math.max(d.wind_max||0, d.gust_max||0);
-    const wCol = mw>=THR.suspended?'var(--rd)': mw>=THR.vessel?'var(--or)':'var(--gn)';
+    const wCol = mw>=THR.suspWind?'var(--rd)': mw>=THR.vessel?'var(--or)':'var(--gn)';
     const vCol = (d.wave_max||0)>=THR.wave?'var(--rd)': (d.wave_max||0)>=1.2?'var(--yw)':'var(--tl)';
     const rn   = d.precip_sum||0;
     const rCol = rn>=25?'var(--rd)': rn>=10?'var(--or)': rn>=1?'var(--bl)':'var(--mu)';
@@ -2185,7 +2194,7 @@ function buildWeekTable(daily) {
     const rc  = st==='suspended'?'row-suspended':'';
     const nc  = i===0?'row-now':'';
     const mw  = Math.max(d.wind_max||0, d.gust_max||0);
-    const wc  = mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or':'t-gn';
+    const wc  = mw>=THR.suspWind?'t-rd': mw>=THR.vessel?'t-or':'t-gn';
     const vc  = (d.wave_max||0)>=THR.wave?'t-rd': (d.wave_max||0)>=1.2?'t-yw':'t-gn';
     const dir = d.wind_dir!=null ? `${Math.round(d.wind_dir)}° ${toCompass(d.wind_dir)}` : '--';
     const tmax = d.temp_max!=null ? fmt(d.temp_max,1) : '--';
@@ -2196,7 +2205,7 @@ function buildWeekTable(daily) {
       <td class="t-time">${dateLabel}</td>
       <td class="t-num t-mu">${tmin}–${tmax}</td>
       <td class="t-num ${wc}">${fmt(d.wind_max)}</td>
-      <td class="t-num ${mw>=THR.suspended?'t-rd': mw>=THR.vessel?'t-or':''}">${fmt(d.gust_max)}</td>
+      <td class="t-num ${mw>=THR.suspWind?'t-rd': mw>=THR.vessel?'t-or':''}">${fmt(d.gust_max)}</td>
       <td class="t-num t-mu">${dir}</td>
       <td class="t-num ${vc}">${fmt(d.wave_max)}</td>
       <td class="t-num ${(d.precip_sum||0)>=5?'t-yw':'t-mu'}">${fmt(d.precip_sum)}</td>
@@ -2560,7 +2569,7 @@ const I18N = {
   src_loading:   {geo:'მონაცემები იტვირთება...', eng:'Loading data...'},
   last_updated:  {geo:'ბოლო განახლება', eng:'Last updated'},
   op_cranes:     {geo:'ამწეები — ოპერაციული', eng:'Cranes — Operational'},
-  op_cranes_sub: {geo:'შეჩერება: ≥ 21.5 მ/წმ', eng:'Suspended: ≥ 21.5 m/s'},
+  op_cranes_sub: {geo:'შეჩერება: ≥ 21.5 მ/წმ ამწეზე (≈19.7 10 მ-ზე)', eng:'Suspended: ≥ 21.5 m/s at crane (≈19.7 at 10 m)'},
   op_vessel:     {geo:'გემების მანევრირება — ნებადართული', eng:'Vessel Manoeuvring — Permitted'},
   op_vessel_sub: {geo:'ზღვარი: მანევრი ≥17 მ/წმ', eng:'Limit: Manoeuvre ≥17 m/s'},
   lbl_wind:      {geo:'ქარის სიჩქარე', eng:'Wind Speed'},
@@ -2617,7 +2626,7 @@ const I18N = {
   radar_nodata:  {geo:'⚠️ ამ რეგიონში მიწისზედა რადარი შეზღუდულია — სატელიტ-შეფასება', eng:'⚠️ Ground radar limited in this region — satellite estimate'},
   radar_cov_off: {geo:'დაფარვა: გამორთ.', eng:'Coverage: off'},
   chart_legend:  {geo:'ქარი (ლურჯი) · ტალღა ×5 (ბირთვისფერი) · საოპერ. ზღვრები', eng:'Wind (blue) · Wave ×5 (purple) · Op. limits'},
-  chart_susp:    {geo:'შეჩ. 21.5', eng:'Susp. 21.5'},
+  chart_susp:    {geo:'შეჩ. 19.7', eng:'Susp. 19.7'},
   chart_barge:   {geo:'ბორ. 10', eng:'Barge 10'},
   chart_vessel:  {geo:'გემ. 17', eng:'Vsl. 17'},
   footer_text:   {geo:'ფოთის პორტის შიდა საოპერაციო მონიტორინგი · 48 საათის კონსენსუს-პროგნოზი', eng:'Poti Port internal operational monitoring · 48-hour consensus forecast'},
@@ -2966,7 +2975,7 @@ loadData();
 
   // ფერი — იგივე ზღვრები, რაც სტატუსში (გემი/შეჩერება)
   function windColor(v){
-    return v >= THR.suspended ? '#ef5b5b'
+    return v >= THR.suspWind ? '#ef5b5b'
          : v >= THR.vessel    ? '#f08a3c'
          :                      '#5ec8b4';
   }
