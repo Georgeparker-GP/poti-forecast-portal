@@ -544,3 +544,19 @@ class EastStormTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_forecast_wind_cell_with_gust():
+    from mta_parser import _split_wind_gust
+    assert _split_wind_gust("10-15\nდაქროლვა\nWith gusts 18-23") == ("10-15", (18.0, 23.0))
+    assert _split_wind_gust("8-13\nდროგამოშვებით\nდაქროლვა\nOccasional gusts\n15-18") == ("8-13", (15.0, 18.0))
+    assert _split_wind_gust("6-11") == ("6-11", None)
+
+
+def test_forecast_valid_ignores_footer():
+    from mta_parser import forecast_valid
+    txt = ("10/15/2026 სსიპ ... ტელ: +995 422 27 49 25/26 ... 15/10/ 2026 წ. 10:00 სთ-დან "
+           "Poti Kulevi დღე ღამე 16/10/ 2026 წ. 10:00 სთ-მდე")
+    assert forecast_valid(txt) == "15/10/2026 წ. 10:00 სთ-დან 16/10/2026 წ. 10:00 სთ-მდე"
+    txt2 = "30/09/ 2026 წ. ფოთი ყულევი 10:00 სთ-დან Poti დღე 01/10/ 2026 წ. Day Night 10:00 სთ-მდე"
+    assert forecast_valid(txt2) == "30/09/2026 წ. 10:00 სთ-დან 01/10/2026 წ. 10:00 სთ-მდე"
