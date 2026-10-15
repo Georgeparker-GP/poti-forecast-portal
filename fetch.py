@@ -1419,6 +1419,29 @@ def _fmt_mta_note(key, val, blk):
     return f"{lbl_geo} {geo}{ug}", f"{lbl_eng} {eng}{ue}"
 
 
+_WET_WORDS = ("წვიმ", "ელჭექ", "თოვ", "სეტყვ")
+
+
+def _fmt_mta_precip(raw):
+    """MTA-ს ნალექის პროგნოზი → (ქართ., ინგლ.) ან None, თუ მშრალია.
+
+    ⚠ 2026-10-15: მოკლე შხაპი არც ერთმა მოდელმა არ აჩვენა, MTA-ს
+      პროგნოზში კი „ხანმოკლე წვიმა, ელჭექი“ ეწერა და ზოლზე არ ჩანდა.
+    """
+    txt = " ".join(str(raw or "").split())
+    m = re.search(r"[A-Za-z]{2,}", txt)
+    geo, eng = (txt[:m.start()], txt[m.start():]) if m else (txt, "")
+    if not any(w in geo for w in _WET_WORDS):
+        return None
+
+    def tidy(x):
+        x = re.sub(r"\s*([,.])\s*", r"\1 ", x).strip(" .,;")
+        return re.sub(r"\s+", " ", x)
+
+    geo, eng = tidy(geo), tidy(eng) or tidy(geo)
+    return f"ნალექი: {geo}", f"precipitation: {eng.lower()}"
+
+
 def _merge_period_notes(per_geo, per_eng):
     """დღე/ღამე ერთნაირია → ერთხელ. განსხვავდება → პერიოდის აღნიშვნით."""
     periods = [p for p in ("day", "night") if p in per_geo]
@@ -1520,6 +1543,10 @@ def _forecast_advisory():
                         ws = " ".join(str(blk.get("wind_speed") or "").split())
                         g_list.append(f"პროგნოზით დაქროლვა {lo:g}–{hi:g} მ/წმ" + (f" (ქარი {ws})" if ws else ""))
                         e_list.append(f"forecast gusts {lo:g}–{hi:g} m/s" + (f" (wind {ws})" if ws else ""))
+                pr = _fmt_mta_precip(blk.get("precip"))
+                if pr:
+                    g_list.append(pr[0])
+                    e_list.append(pr[1])
                 for k, v in blk.items():
                     if not (k.endswith("_note") and v):
                         continue

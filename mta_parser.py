@@ -541,6 +541,69 @@ def _fc_num_pair(val: str):
     return val.strip()  # raw ვინახავთ; ინტერპრეტაცია მოგვიანებით (day-ს 2 ბლოკი აქვს)
 
 
+_GUST_IN_CELL = re.compile(r"(?:დაქროლვ\S*|gusts?)\D{0,25}?(\d+(?:[.,]\d+)?)\s*-\s*(\d+(?:[.,]\d+)?)", re.I)
+
+
+def _split_wind_gust(cell):
+    """ქარის უჯრა, რომელშიც დაქროლვაც წერია, ორად იყოფა.
+
+    ⚠ 2026-10-15 (WF14/8540): '10-15\nდაქროლვა\nWith gusts 18-23' —
+      დაქროლვა ცალკე 'note' რიგში კი არა, ქარის უჯრაში იყო. ქარის
+      დიაპაზონი ვერ იკითხებოდა, დაქროლვად კი მეზობელი 8-13 ჩაიწერა.
+    აბრუნებს (ქარის ნედლი სტრიქონი, (lo, hi) ან None).
+    """
+    raw = _fc_num_pair(cell)
+    if not raw:
+        return raw, None
+    m = _GUST_IN_CELL.search(raw)
+    if not m:
+        return raw, None
+    gust = (_num(m.group(1)), _num(m.group(2)))
+    head = raw[:m.start()]
+    w = re.match(r"\s*(\d[\d\s.,/-]*\d|\d)", head)
+    wind = w.group(1).strip() if w else head.strip()
+    return (wind or None), gust
+
+
+def _set_wind(out, day_val, night_val):
+    for col, period in ((day_val, "day"), (night_val, "night")):
+        wind, gust = _split_wind_gust(col)
+        out["poti"][period]["wind_speed"] = wind
+        if gust:
+            out["poti"][period]["gust"] = gust
+
+
+_VALID_START = re.compile(r"\d{1,2}/\d{1,2}/\s*\d{4}\s*წ")
+_DATE_RE = re.compile(r"(\d{1,2})/(\d{1,2})/\s*(\d{4})")
+_TIME_RE = re.compile(r"(?<![\d/])(\d{1,2})[:.](\d{2})(?!\d)")
+
+
+def forecast_valid(text):
+    """→ '15/10/2026 წ. 10:00 სთ-დან 16/10/2026 წ. 10:00 სთ-მდე'.
+
+    ⚠ 2026-10-15: ძველი regex ქვედა კოლონტიტულის თარიღიდან ('10/15/2026')
+      იწყებოდა და მისამართს, ტელეფონს და სხვას იჭერდა. ზოგ PDF-ში კი
+      ცხრილის სათაურები ('Poti Kulevi', 'დღე ღამე') თარიღსა და დროს
+      შორის ერევა. ამიტომ მონაკვეთს 'წ.'-იანი თარიღიდან 'სთ-მდე'-მდე
+      ვჭრით და მასში პირველ/ბოლო თარიღსა და დროს ვიღებთ.
+    """
+    text = text or ""
+    st = _VALID_START.search(text)
+    if not st:
+        return None
+    end = text.find("სთ-მდე", st.start())
+    if end < 0:
+        return None
+    seg = text[st.start():end]
+    dates, times = _DATE_RE.findall(seg), _TIME_RE.findall(seg)
+    if len(dates) < 2 or len(times) < 2:
+        return None
+    (d1, m1, y1), (d2, m2, y2) = dates[0], dates[-1]
+    (h1, n1), (h2, n2) = times[0], times[-1]
+    return (f"{int(d1):02d}/{int(m1):02d}/{y1} წ. {int(h1):02d}:{n1} სთ-დან "
+            f"{int(d2):02d}/{int(m2):02d}/{y2} წ. {int(h2):02d}:{n2} სთ-მდე")
+
+
 def parse_forecast(pdf_path: str) -> dict:
     """'ამინდის პროგნოზი ფოთი' — ცხრილი. ფოთი = სვეტები 1(day),2(night).
 
@@ -555,8 +618,8 @@ def parse_forecast(pdf_path: str) -> dict:
 
     m = re.search(r"№\s*(WF[\d/]+)", text)
     if m: out["bulletin_no"] = m.group(1)
-    m = re.search(r"(\d{2}/\d{2}/\s*\d{4}.*?სთ-დან.*?\d{2}/\d{2}/\s*\d{4}.*?სთ-მდე)", text, re.S)
-    if m: out["valid"] = re.sub(r"\s+", " ", m.group(1)).strip()
+    v = forecast_valid(text)
+    if v: out["valid"] = v
 
     prev_label = None
     last_field = None
@@ -575,20 +638,31 @@ def parse_forecast(pdf_path: str) -> dict:
                 if fld == "wind_speed" and not (day_val or "").strip():
                     prev_label = "wind_speed_pending"
                     continue
-                out["poti"]["day"][fld]   = _fc_num_pair(day_val)
-                out["poti"]["night"][fld] = _fc_num_pair(night_val)
+                if fld == "wind_speed":
+                    _set_wind(out, day_val, night_val)
+                else:
+                    out["poti"]["day"][fld]   = _fc_num_pair(day_val)
+                    out["poti"]["night"][fld] = _fc_num_pair(night_val)
                 last_field = fld
             elif key.startswith("note") and prev_label == "wind_speed_pending":
-                out["poti"]["day"]["wind_speed"]   = _fc_num_pair(day_val)
-                out["poti"]["night"]["wind_speed"] = _fc_num_pair(night_val)
+                _set_wind(out, day_val, night_val)
                 prev_label = None
-            # gust note (Occasional gusts 12-15)
-            elif "note" in key and day_val and "gust" in day_val.lower():
-                mm = re.search(r"(\d+)-(\d+)", day_val)
-                if mm:
-                    g = (float(mm.group(1)), float(mm.group(2)))
-                    out["poti"]["day"]["gust"]   = g
-                    out["poti"]["night"]["gust"] = g
+            # gust note (Occasional gusts 12-15). ქარის უჯრაში ჩაწერილი
+            # დაქროლვა უპირატესია — note მხოლოდ ცარიელ პერიოდს ავსებს.
+            elif "note" in key and any("gust" in (c or "").lower() for c in (day_val, night_val)):
+                cols = {"day": day_val, "night": night_val}
+                g_any = None
+                for period, col in cols.items():
+                    mm = re.search(r"(\d+)\s*-\s*(\d+)", col or "")
+                    if mm and "gust" in (col or "").lower():
+                        cols[period] = (float(mm.group(1)), float(mm.group(2)))
+                        g_any = g_any or cols[period]
+                    else:
+                        cols[period] = None
+                for period in ("day", "night"):
+                    g = cols[period] or g_any
+                    if g and not out["poti"][period].get("gust"):
+                        out["poti"][period]["gust"] = g
                 last_field = None
 
             # დანარჩენი note-ები — ახლა აღარ იკარგება (დაემატა 2026-08-26).

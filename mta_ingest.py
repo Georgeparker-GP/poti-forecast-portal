@@ -18,7 +18,8 @@ import json, os, glob, sys, logging, re
 from collections import Counter
 from datetime import datetime, timezone, timedelta
 
-from mta_parser import parse_mta_pdf, wave_cm_to_m, storm_fields_from_eng, _storm_phenomena
+from mta_parser import (parse_mta_pdf, wave_cm_to_m, storm_fields_from_eng, _storm_phenomena,
+                        _split_wind_gust, forecast_valid)
 
 TBILISI_TZ   = timezone(timedelta(hours=4))
 BULLETIN_DIR = "mta_bulletins"
@@ -222,6 +223,22 @@ def _repair_storm_entries(dblog: dict) -> int:
                     e["phenomena"] = ph
                     changed = True
             n += changed
+        # 2026-10-15: პროგნოზის ქარის უჯრაში ჩაწერილი დაქროლვა
+        #   ('10-15 … With gusts 18-23') და კოლონტიტულიანი valid.
+        if e.get("type") == "forecast":
+            for blk in (e.get("poti") or {}).values():
+                if not isinstance(blk, dict):
+                    continue
+                wind, gust = _split_wind_gust(blk.get("wind_speed"))
+                if gust and (wind != blk.get("wind_speed") or list(gust) != blk.get("gust")):
+                    blk["wind_speed"], blk["gust"] = wind, list(gust)
+                    n += 1
+            v = e.get("valid") or ""
+            if "სთ-დან" in v:
+                fixed = forecast_valid(v)
+                if fixed and fixed != v:
+                    e["valid"] = fixed
+                    n += 1
     return n
 
 
