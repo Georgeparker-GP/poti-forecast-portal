@@ -15729,9 +15729,27 @@
       },
       "portal_time": "2026-10-16T16:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-10-16 21:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8606_16.10.2026წ._20.30_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/8606",
+      "forecast": {},
+      "text_eng": "In the area of Poti-Kulevi, Sea state 3-4/4 (W.h 80-170/125-250სმ.) will persist. A.W (Poti) sea state (w.h 88-161cm ).",
+      "phenomena": [
+        "sea"
+      ],
+      "date": "16/10/2026",
+      "time": "20:30",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-10-16T20:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-10-16 17:07",
+  "last_ingest": "2026-10-16 21:07",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -15881,6 +15899,13 @@
       "warning": "14/8564",
       "cancel": null,
       "issued": "2026-10-15T21:30",
+      "cancelled": null,
+      "open": true
+    },
+    {
+      "warning": "14/8606",
+      "cancel": null,
+      "issued": "2026-10-16T20:30",
       "cancelled": null,
       "open": true
     }
