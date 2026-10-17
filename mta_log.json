@@ -16123,9 +16123,113 @@
         "wind_overlap": "2/4",
         "wave_overlap": "3/4"
       }
+    },
+    {
+      "ingested_at": "2026-10-17 17:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8606_გაუქმება_17.10.2026წ._16.30_სთ..pdf",
+      "type": "storm_cancel",
+      "poti": {
+        "wind_dir_txt": "SW",
+        "wind_dir": 225.0,
+        "wind_avg": 2.0,
+        "wind_max": 4.0,
+        "sea_state": 3.0,
+        "wave_cm": [
+          75.0,
+          125.0
+        ]
+      },
+      "kulevi": {
+        "wind_dir_txt": "SW",
+        "wind_dir": 225.0,
+        "wind_avg": 3.0,
+        "wind_max": 5.0
+      },
+      "bulletin_no": "14/8625",
+      "area": "poti",
+      "cancels": "14/8606",
+      "date": "17/10/2026",
+      "time": "16:30",
+      "text_eng": "14/8606 CANCELATION The storm warning 14/8606 in the area of Poti-Kulevi is canceled. Actual Weather : Poti - SW 2-4 m/sec. Sea swell 3 state (W.H. 75-125 cm). Kulevi - SW 3-5 m/sec.",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 4.0,
+        "wind_portal": 4.03,
+        "wind_portal_raw": 3.1,
+        "wind_delta": -0.03,
+        "wind_avg_mta": 2.0,
+        "wind_avg_portal": 1.88,
+        "wind_avg_delta": 0.12,
+        "wave_mta": 1.0,
+        "wave_portal": 0.73,
+        "wave_delta": 0.27,
+        "dir_mta": 225.0,
+        "dir_portal": 321.0,
+        "dir_delta": 96.0
+      },
+      "portal_time": "2026-10-17T16:00",
+      "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-10-17 17:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.8626_17.10.2026_წ._16_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 283.0,
+        "wind_avg": 2.0,
+        "wind_max": 4.0,
+        "wave_cm": [
+          67.0,
+          115.0
+        ],
+        "sea_state": 3.0,
+        "sea_level": "-5",
+        "rip_current": null,
+        "sea_temp": 22.0,
+        "vis_miles": 10.0,
+        "cloud": "ცვალებადი\nVariable",
+        "precip": "უნალექოდ\nNo precipitation",
+        "air_temp": 21.5,
+        "humidity": 83.0,
+        "pressure": 1012.6
+      },
+      "bulletin_no": "14/8626",
+      "date": "17 / ოქტომბერი / 2026",
+      "time": "16:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 4.0,
+        "wind_portal": 4.03,
+        "wind_portal_raw": 3.1,
+        "wind_delta": -0.03,
+        "wind_avg_mta": 2.0,
+        "wind_avg_portal": 1.88,
+        "wind_avg_delta": 0.12,
+        "wave_mta": 0.91,
+        "wave_portal": 0.73,
+        "wave_delta": 0.18,
+        "dir_mta": 283.0,
+        "dir_portal": 321.0,
+        "dir_delta": 38.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 30.13,
+        "vis_capped": true,
+        "vis_flag": "ok_capped",
+        "precip_mta": "dry",
+        "precip_portal": 0.0,
+        "precip_verdict": "match",
+        "air_temp_mta": 21.5,
+        "air_temp_portal": 21.9,
+        "air_temp_delta": -0.4,
+        "sea_temp_mta": 22.0,
+        "sea_temp_portal": 21.9,
+        "sea_temp_delta": 0.1
+      },
+      "portal_time": "2026-10-17T16:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-10-17 10:07",
+  "last_ingest": "2026-10-17 17:07",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -16280,10 +16384,15 @@
     },
     {
       "warning": "14/8606",
-      "cancel": null,
+      "cancel": "14/8625",
       "issued": "2026-10-16T20:30",
-      "cancelled": null,
-      "open": true
+      "cancelled": "2026-10-17T16:30",
+      "duration_h": 20.0,
+      "portal_hours": 17,
+      "portal_statuses": {
+        "operational": 17
+      },
+      "calm_tail_h": 17
     }
   ]
 }
