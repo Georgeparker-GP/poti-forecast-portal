@@ -16447,9 +16447,38 @@
       },
       "portal_time": "2026-10-18T04:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-10-18 07:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.8640_18.10.2026წ._06.15_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/8640",
+      "forecast": {
+        "wind_range": [
+          10.0,
+          15.0
+        ],
+        "gust_max": 20.0,
+        "gust_range": [
+          17.0,
+          20.0
+        ]
+      },
+      "text_eng": "In the area of Poti-Kulevi , Easterly wind of 10-15 m/sec. with occasional gusts of 17-20 m/sec.will persist until the second half of the day. From the second half of the day, South-Westerly/Westerly wind is expected to strengthen to 10-15 m/sec. with occasional gusts of 20-25 m/sec. until evening . Sea state is expected to be 3-4/4 (w.h. 80-170/125-250 cm). From the morning of 19/10/26 until the second half of the night 4-5/5 (w.h. 150-300/250-400 cm). A.W.: Poti - Easterly wind 12-17 m/sec. Ku",
+      "phenomena": [
+        "wind",
+        "sea"
+      ],
+      "bulletin_no_source": "pdf",
+      "date": "18/10/2026",
+      "time": "06:15",
+      "vs_portal": {},
+      "portal_time": "2026-10-18 07:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-10-18 05:07",
+  "last_ingest": "2026-10-18 07:07",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -16608,6 +16637,13 @@
       "issued": "2026-10-16T20:30",
       "cancelled": "2026-10-17T16:30",
       "duration_h": 20.0
+    },
+    {
+      "warning": "14/8640",
+      "cancel": null,
+      "issued": "2026-10-18T06:15",
+      "cancelled": null,
+      "open": true
     }
   ]
 }
