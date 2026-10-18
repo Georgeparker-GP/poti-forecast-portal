@@ -16392,9 +16392,64 @@
         "wind_overlap": "1/4",
         "wave_overlap": "2/4"
       }
+    },
+    {
+      "ingested_at": "2026-10-18 05:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.8637_18.10.2026_წ._04_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 160.0,
+        "wind_avg": 5.0,
+        "wind_max": 7.0,
+        "wave_cm": [
+          50.0,
+          75.0
+        ],
+        "sea_state": 3.0,
+        "sea_level": "-1",
+        "rip_current": null,
+        "sea_temp": null,
+        "vis_miles": 10.0,
+        "cloud": "ცვალებადი\nPartly cloudy",
+        "precip": "უნალექოდ\nNo precipitation",
+        "air_temp": 20.2,
+        "humidity": 89.0,
+        "pressure": 1010.8
+      },
+      "bulletin_no": "14/8637",
+      "date": "18 / ოქტომბერი / 2026",
+      "time": "04:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 7.0,
+        "wind_portal": 9.23,
+        "wind_portal_raw": 7.1,
+        "wind_delta": -2.23,
+        "wind_avg_mta": 5.0,
+        "wind_avg_portal": 4.67,
+        "wind_avg_delta": 0.33,
+        "wave_mta": 0.62,
+        "wave_portal": 0.46,
+        "wave_delta": 0.16,
+        "dir_mta": 160.0,
+        "dir_portal": 96.0,
+        "dir_delta": 64.0,
+        "vis_mta_km": 18.52,
+        "vis_portal_km": 30.64,
+        "vis_capped": true,
+        "vis_flag": "ok_capped",
+        "precip_mta": "dry",
+        "precip_portal": 0.0,
+        "precip_verdict": "match",
+        "air_temp_mta": 20.2,
+        "air_temp_portal": 21.2,
+        "air_temp_delta": -1.0
+      },
+      "portal_time": "2026-10-18T04:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-10-17 22:07",
+  "last_ingest": "2026-10-18 05:07",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -16552,12 +16607,7 @@
       "cancel": "14/8625",
       "issued": "2026-10-16T20:30",
       "cancelled": "2026-10-17T16:30",
-      "duration_h": 20.0,
-      "portal_hours": 17,
-      "portal_statuses": {
-        "operational": 17
-      },
-      "calm_tail_h": 17
+      "duration_h": 20.0
     }
   ]
 }
