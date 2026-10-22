@@ -568,10 +568,15 @@ table.rc b.v-crit {color:var(--txt-danger);font-weight:700;font-size:15px;}
 table.wk{width:100%;border-collapse:collapse;table-layout:fixed;}
 /* სტატუსის სვეტი განიერია: ქართული „შეჩერება“ ინგლისურ „Susp.“-ზე
    ორჯერ გრძელია და ბეჯი მეზობელს აჭერდა. */
-table.wk col.k-d{width:16%;} table.wk col.k-i{width:6%;}
-table.wk col.k-w{width:12%;} table.wk col.k-g{width:11%;}
-table.wk col.k-v{width:12%;} table.wk col.k-r{width:12%;}
-table.wk col.k-t{width:12%;} table.wk col.k-s{width:19%;}
+table.wk col.k-d{width:14%;} table.wk col.k-i{width:5%;}
+table.wk col.k-w{width:11%;} table.wk col.k-g{width:10%;}
+table.wk col.k-a{width:10%;}
+table.wk col.k-v{width:11%;} table.wk col.k-r{width:11%;}
+table.wk col.k-t{width:11%;} table.wk col.k-s{width:17%;}
+/* ქარის მიმართულება: ისარი ქარის მიმართულებით + კომპასის ასო */
+.wk-dir{white-space:nowrap;}
+.wk-dir i{display:inline-block;font-style:normal;color:var(--mu);margin-right:4px;}
+.wk-dir span{font-size:12.5px;color:var(--sb);}
 /* padding-left აუცილებელია — ქართული სათაურები ("ნალექი" + "სტატუსი")
    ერთმანეთს ეჯახებოდა ვიწრო ეკრანზე */
 table.wk th{
@@ -606,12 +611,13 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 /* ქროლვა და ნალექი რჩება — ესენი გახდა ინფორმაციული.
    ქრება ტემპერატურა: მთელ კვირას თითქმის უცვლელია. */
 @media(max-width:760px){
-  table.wk th:nth-child(7), table.wk td:nth-child(7),
+  table.wk th:nth-child(8), table.wk td:nth-child(8),
   table.wk col.k-t{display:none;}
-  table.wk col.k-d{width:20%;} table.wk col.k-i{width:7%;}
-  table.wk col.k-w{width:13%;} table.wk col.k-g{width:12%;}
-  table.wk col.k-v{width:13%;} table.wk col.k-r{width:13%;}
-  table.wk col.k-s{width:22%;}
+  table.wk col.k-d{width:18%;} table.wk col.k-i{width:6%;}
+  table.wk col.k-w{width:12%;} table.wk col.k-g{width:11%;}
+  table.wk col.k-a{width:11%;}
+  table.wk col.k-v{width:12%;} table.wk col.k-r{width:12%;}
+  table.wk col.k-s{width:18%;}
   table.wk td{padding:9px 4px;}
   .wk-n{font-size:13px;}
   .wk-u{margin-left:2px;}
@@ -620,9 +626,15 @@ table.wk tr.wk-now .wk-day{color:var(--tl);font-weight:700;}
 @media(max-width:480px){
   table.wk th:nth-child(4), table.wk td:nth-child(4),
   table.wk col.k-g{display:none;}
-  table.wk col.k-d{width:22%;} table.wk col.k-i{width:8%;}
-  table.wk col.k-w{width:15%;} table.wk col.k-v{width:15%;}
-  table.wk col.k-r{width:15%;} table.wk col.k-s{width:25%;}
+  /* მიმართულებიდან მხოლოდ ისარი რჩება — თარიღი და სტატუსი არ იჭრება */
+  table.wk col.k-d{width:21%;} table.wk col.k-i{width:7%;}
+  table.wk col.k-w{width:13%;} table.wk col.k-a{width:6%;}
+  table.wk col.k-v{width:13%;} table.wk col.k-r{width:13%;}
+  table.wk col.k-s{width:27%;}
+  table.wk th:nth-child(5){font-size:0;}
+  .wk-dir{text-align:center;}
+  .wk-dir i{margin-right:0;}
+  .wk-dir span{display:none;}
   .wk-day{font-size:12px;}
   .wk-u{font-size:9px;margin-left:1px;}
 }
@@ -2143,8 +2155,8 @@ function renderWeekMini(daily){
   //   „0.70 მ“ მეზობელ სვეტებს ეჯახებოდა. ერთეულის ერთხელ ჩვენება
   //   სამ სვეტში ათავისუფლებს ადგილს და ცხრილს ასუფთავებს.
   const head = ENG
-    ? ['Day','','Wind m/s','Gust','Wave m','Precip mm','Temp','Status']
-    : ['დღე','','ქარი მ/წმ','ქროლვა','ტალღა მ','ნალექი მმ','ტემპ.','სტატუსი'];
+    ? ['Day','','Wind m/s','Gust','Dir','Wave m','Precip mm','Temp','Status']
+    : ['დღე','','ქარი მ/წმ','ქროლვა','მიმართ.','ტალღა მ','ნალექი მმ','ტემპ.','სტატუსი'];
 
   // ზოლის სიგრძე ზღვართან მიმართებაში — ციფრზე სწრაფად იკითხება
   const bar = (v, max, col) => {
@@ -2160,11 +2172,16 @@ function renderWeekMini(daily){
     const rn   = d.precip_sum||0;
     const rCol = rn>=25?'var(--rd)': rn>=10?'var(--or)': rn>=1?'var(--bl)':'var(--mu)';
     const pill = (ENG?PILL_ENG:PILL)[d.status||'operational']||'';
+    // ისარი იქით უთითებს, საითაც ქარი უბერავს (↓ = ჩრდილოეთიდან)
+    const dir  = d.wind_dir!=null
+      ? `<i style="transform:rotate(${Math.round(d.wind_dir)}deg)">↓</i><span>${toCompass(d.wind_dir)}</span>`
+      : '--';
     return `<tr class="${i===0?'wk-now':''}">
       <td class="wk-day">${WD[dt.getDay()]} ${d.date.slice(5).replace('-','.').replace(/^0/,'')}</td>
       <td class="wk-ico">${weekEmoji(d)}</td>
       <td class="wk-n"><b style="color:${wCol}">${fmt(d.wind_max,1)}</b>${bar(d.wind_max||0, 25, wCol)}</td>
       <td class="wk-n"><b style="color:${wCol}">${fmt(d.gust_max,1)}</b></td>
+      <td class="wk-n wk-dir" title="${d.wind_dir!=null?Math.round(d.wind_dir)+'°':''}">${dir}</td>
       <td class="wk-n"><b style="color:${vCol}">${fmt(d.wave_max)}</b>${bar(d.wave_max||0, 3, vCol)}</td>
       <td class="wk-n"><b style="color:${rCol}">${fmt(rn,1)}</b></td>
       <td class="wk-n"><span style="color:var(--txt-cold)">${d.temp_min!=null?Math.round(d.temp_min):'--'}°</span><span
@@ -2174,7 +2191,7 @@ function renderWeekMini(daily){
   }).join('');
 
   el.innerHTML = `<table class="wk">
-    <colgroup><col class="k-d"><col class="k-i"><col class="k-w"><col class="k-g">
+    <colgroup><col class="k-d"><col class="k-i"><col class="k-w"><col class="k-g"><col class="k-a">
       <col class="k-v"><col class="k-r"><col class="k-t"><col class="k-s"></colgroup>
     <thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
     <tbody>${rows}</tbody></table>`;
