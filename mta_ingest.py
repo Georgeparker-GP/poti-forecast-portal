@@ -432,6 +432,9 @@ def _compare_to_portal(parsed: dict, portal: dict) -> dict:
     if mta_avg is not None and p_avg is not None:
         cmp["wind_avg_mta"]    = mta_avg
         cmp["wind_avg_portal"] = p_avg
+        # 2026-10-26-დან wind_speed-იც კალიბრირებულია — ნედლიც ვინახავთ
+        if portal.get("wind_speed_raw") is not None:
+            cmp["wind_avg_portal_raw"] = portal["wind_speed_raw"]
         cmp["wind_avg_delta"]  = round(mta_avg - p_avg, 2)
     # ტალღა — MTA სმ→მ, დიაპაზონის შუა
     wave_m = wave_cm_to_m(poti.get("wave_cm"))

@@ -533,8 +533,12 @@ def build_daily_summary(daily_atmo, daily_marine):
         wave_max = wave_by_date.get(a["date"], 0.0)
         # იგივე კალიბრაცია, რაც საათობრივზე — თორემ კვირის ხედი სხვა ვერდიქტს მისცემდა
         gust, _ = _calibrate_gust(a["gust_max"], a.get("wind_dir"))
-        status, alerts = _compute_status(a["wind_max"], gust, wave_max, 999)
+        k = (gust / a["gust_max"]) if gust and a["gust_max"] else 1.0
+        wind = a["wind_max"] * k if a["wind_max"] is not None else None
+        status, alerts = _compute_status(wind, gust, wave_max, 999)
         result.append({**a, "gust_max": _r(gust) if gust is not None else None,
+                       "wind_max": _r(wind) if wind is not None else None,
+                       "wind_max_raw": a["wind_max"],
                        "gust_max_raw": a["gust_max"], "wave_max": wave_max,
                        "status": status, "alerts": alerts})
     return result
@@ -981,6 +985,16 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
 
         # 3c. კალიბრაცია — მიმართულებაზე დამოკიდებული (აღმოსავლეთის ძლიერი ქარი)
         wind_gusts, east_strong = _calibrate_gust(wind_gusts_raw, wind_direction)
+        # ⚠ 2026-10-26: საშუალო ქარიც იმავე კოეფიციენტით მრავლდება. ადრე
+        #   მხოლოდ დაქროლვა იზრდებოდა და ეკრანზე 8.6 / 18.2 ჩანდა — gust
+        #   factor 2.1, რაც ფიზიკურად არარეალურია (MTA-ზე მედიანა 1.4).
+        #   MTA-ს ფაქტობრივ საშუალოსთან აღმოსავლეთის ქარზე მოდელი ×1.6-ით
+        #   ანაკლებს, ანუ საშუალო დაქროლვაზე მეტადაც კი ცდება. ნედლი
+        #   `wind_speed_raw`-ში რჩება: ტალღის შეფასება და შკვალის დეტექტორი
+        #   ნედლ მოდელურ ქარზეა მორგებული.
+        wind_speed_raw = wind_speed
+        _k = (wind_gusts / wind_gusts_raw) if wind_gusts_raw else 1.0
+        wind_speed = wind_speed_raw * _k if wind_speed_raw is not None else None
         # ადრეული გაფრთხილება: ×1.6-ის დონეზე ამწის ზღვარი გადაილახებოდა
         crane_risk = bool(east_strong and wind_gusts_raw * CRANE_WARN_FACTOR * CRANE_HEIGHT_FACTOR
                           >= THRESHOLDS["wind_suspended"])
@@ -1092,7 +1106,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
             # ორივე საზღვაო წყარო მიუწვდომელია — ქარიდან უხეში შეფასება.
             # კრიტიკულია, რომ შედეგი მოინიშნოს: გაზომილი და გამოთვლილი
             # ტალღა ერთნაირი სანდოობით არ უნდა ჩანდეს (26 ივლისის გაკვეთილი).
-            wave_h = _estimate_wave_from_wind(wind_speed, wind_direction)
+            wave_h = _estimate_wave_from_wind(wind_speed_raw, wind_direction)
             wave_estimated = True
 
         # დიაპაზონი და გაფანტვა — მხოლოდ ინფორმაციული, სტატუსზე გავლენა არ აქვს
@@ -1140,6 +1154,7 @@ def compute_consensus(atmo_best, atmo_gfs, atmo_icon, atmo_ecmwf, marine, stormg
         result.append({
             "time": atmo_best[i]["time"],
             "wind_speed": _r(wind_speed),
+            "wind_speed_raw": _r(wind_speed_raw),
             "wind_gusts": _r(wind_gusts),
             "wind_gusts_raw": _r(wind_gusts_raw),
             "crane_risk": crane_risk,
@@ -2368,9 +2383,9 @@ def _detect_squall(fc: list, now_idx: int) -> dict | None:
     # შკვალის ზღვრები ნედლ მოდელურ დაქროლვაზეა მორგებული — კალიბრაციამ
     # gust factor-ი (gusts − wind) არ უნდა გაბეროს და ალერტების სიხშირე შეცვალოს.
     g_now   = cur.get("wind_gusts_raw", cur.get("wind_gusts", 0)) or 0
-    w_now   = cur.get("wind_speed",  0) or 0
+    w_now   = cur.get("wind_speed_raw", cur.get("wind_speed", 0)) or 0
     g_next  = nxt.get("wind_gusts_raw", nxt.get("wind_gusts", 0)) or 0
-    w_next  = nxt.get("wind_speed",  0) or 0
+    w_next  = nxt.get("wind_speed_raw", nxt.get("wind_speed", 0)) or 0
     p_next  = nxt.get("precipitation", 0) or 0
 
     # კრიტ. 1 — Gust Factor (WMO): სხვაობა gusts − avg_wind
@@ -2966,7 +2981,7 @@ def build_output(consensus, sources_used, daily=None, models_now=None):
             "thresholds":     dict(THRESHOLDS),
         },
         "current": {k: now.get(k, v) for k, v in {
-            "time": "", "wind_speed": 0, "wind_gusts": 0, "wind_gusts_raw": None, "crane_risk": False,
+            "time": "", "wind_speed": 0, "wind_speed_raw": None, "wind_gusts": 0, "wind_gusts_raw": None, "crane_risk": False,
             "wind_direction": 0, "wave_height": 0, "precipitation": 0,
             "visibility_km": 10, "wave_period": 0, "wave_direction": 0,
             "swell_height": 0, "swell_period": 0, "swell_direction": 0,
