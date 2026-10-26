@@ -80,7 +80,7 @@ class StormglassTest(unittest.TestCase):
         # ელიტური აუზი ცარიელია → დეგრადირებული რეჟიმი, სადაც SG მონაწილეობს
         out = fetch.compute_consensus(best, None, None, None, None, sg, None, None)
         self.assertEqual(out[0]["wind_pool"], "degraded")
-        self.assertEqual(out[0]["wind_speed"], 10.0)
+        self.assertEqual(out[0]["wind_speed_raw"], 10.0)
         self.assertEqual(out[0]["source_count"], 1)
 
 
@@ -425,6 +425,9 @@ class GustCalibrationTest(unittest.TestCase):
         h = fetch.compute_consensus(src, None, None, None, sea, None, None, None)[0]
         self.assertEqual(h["wind_gusts_raw"], 14.0)
         self.assertEqual(h["wind_gusts"], round(14.0 * fetch.GUST_CALIBRATION, 2))
+        # საშუალო ქარიც იმავე კოეფიციენტით — gust factor (14/8) უცვლელია
+        self.assertEqual(h["wind_speed_raw"], 8.0)
+        self.assertEqual(h["wind_speed"], round(8.0 * fetch.GUST_CALIBRATION, 2))
         if fetch.GUST_CALIBRATION >= 1.25:
             self.assertEqual(h["status"], "vessel")         # 14 × 1.3 = 18.2 ≥ 17
 
@@ -438,6 +441,14 @@ class GustCalibrationTest(unittest.TestCase):
         r = fetch.build_daily_summary(day, [])[0]
         self.assertEqual(r["gust_max_raw"], 14.0)
         self.assertEqual(r["gust_max"], round(14.0 * fetch.GUST_CALIBRATION, 2))
+        self.assertEqual(r["wind_max_raw"], 8.0)
+        self.assertEqual(r["wind_max"], round(8.0 * fetch.GUST_CALIBRATION, 2))
+
+    def test_wave_estimate_uses_raw_wind(self):
+        src = _hours(1, wind_speed=12.0, wind_gusts=16.0, wind_direction=270.0,
+                     precipitation=0.0, visibility_km=10.0)
+        h = fetch.compute_consensus(src, None, None, None, None, None, None, None)[0]
+        self.assertEqual(h["wave_height"], round(fetch._estimate_wave_from_wind(12.0, 270.0), 2))
 
 
 class ForecastValidityFallbackTest(unittest.TestCase):
