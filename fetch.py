@@ -1918,7 +1918,10 @@ def _compute_status(wind, gusts, wave, vis, vis_min=None):
 #  5.  Telegram შეტყობინება
 # ═══════════════════════════════════════════════════════════════
 
-STATUS_EMOJI = {"operational": "✅", "barge": "⚠️", "vessel": "🟠", "suspended": "🚨",
+# ⚠ 2026-10-27: ტელეგრამი ტექსტის ფერს არ უჭერს მხარს, ამიტომ სტატუსი
+#   ფერადი წრით გამოირჩევა: მწვანე / ნარინჯისფერი / წითელი (პორტალის ფერები).
+#   ადრე ✅ / 🟠 / 🚨 იყო და შეჩერება სხვა სტრიქონებში დაკარგული ჩანდა.
+STATUS_EMOJI = {"operational": "🟢", "barge": "🟡", "vessel": "🟠", "suspended": "🔴",
                 # უკუთავსებადობა: ძველი cache-ის ჩანაწერები
                 "warning": "⚠️"}
 STATUS_EN    = {"operational": "Standard operations",
@@ -2299,7 +2302,7 @@ def send_digest_telegram(output: dict):
             f"🌡 {'Air' if en else 'ჰაერი'}: <b>{c['air_temp']}°C</b>{feels}\n"
             f"🌧 {'Precip' if en else 'ნალექი'}: <b>{p_lbl}</b>\n"
             + _vis_line(c, lang)
-            + f"{'Status' if en else 'სტატუსი'}: <b>{st}</b>\n"
+            + f"{'Status' if en else 'სტატუსი'}: {em} <b>{st}</b>\n"
         )
         if next_hours:
             t += ("─────────────────\n<b>"
@@ -2810,14 +2813,14 @@ def send_sos_alert(output: dict):
                     f"🕐 Now: {now_str}\n"
                     f"⏰ Expected: <b>{t_label}</b> (in ≈1 hour)\n"
                     f"─────────────────\n"
-                    f"🚨 Expected status: <b>{STATUS_EN['suspended']}</b>\n")
+                    f"{STATUS_EMOJI['suspended']} Expected status: <b>{STATUS_EN['suspended']}</b>\n")
             foot = "─────────────────\nPrepare in advance for an operational suspension.\n"
         else:
             head = (f"🆘 <b>SOS — მოსალოდნელია კრიტიკული გაუარესება!</b>\n"
                     f"🕐 ამჟამად: {now_str}\n"
                     f"⏰ მოახლოვდება: <b>{t_label}</b> (≈1 საათში)\n"
                     f"─────────────────\n"
-                    f"🚨 მოსალოდნელი სტატუსი: <b>{STATUS_KA['suspended']}</b>\n")
+                    f"{STATUS_EMOJI['suspended']} მოსალოდნელი სტატუსი: <b>{STATUS_KA['suspended']}</b>\n")
             foot = "─────────────────\nსასურველია დროულად მოემზადოთ საოპერაციო შეჩერებისთვის.\n"
         return (
             head
