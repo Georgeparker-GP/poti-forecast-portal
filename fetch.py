@@ -2294,6 +2294,10 @@ def send_digest_telegram(output: dict):
         t = (
             f"{em} <b>{'Poti Port — current weather' if en else 'ფოთის პორტი — მიმდინარე მეტეო-მონაცემები'}</b>\n"
             f"🕐 {now_str}\n"
+            # ⚠ 2026-10-27: სტატუსი შეტყობინების მთავარი ინფორმაციაა — ზემოთ,
+            #   მთლიანად bold. ტელეგრამი ტექსტის ფერს არ უჭერს მხარს
+            #   (HTML-ში <font>/style არ მუშაობს), ფერს წრე აჩვენებს.
+            f"{em} <b>{'Status' if en else 'სტატუსი'}: {st}</b>\n"
             f"─────────────────\n"
             f"💨 {'Wind' if en else 'ქარი'}: <b>{c['wind_speed']} {u}</b> | "
             f"{'gust' if en else 'დაქროლვა'}: <b>{c['wind_gusts']} {u}</b> | "
@@ -2303,7 +2307,6 @@ def send_digest_telegram(output: dict):
             f"🌡 {'Air' if en else 'ჰაერი'}: <b>{c['air_temp']}°C</b>{feels}\n"
             f"🌧 {'Precip' if en else 'ნალექი'}: <b>{p_lbl}</b>\n"
             + _vis_line(c, lang)
-            + f"{'Status' if en else 'სტატუსი'}: {em} <b>{st}</b>\n"
         )
         if next_hours:
             t += ("─────────────────\n<b>"
