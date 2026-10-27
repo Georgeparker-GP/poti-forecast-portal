@@ -2305,6 +2305,7 @@ def send_digest_telegram(output: dict):
             t += ("─────────────────\n<b>"
                   + ("Next 3 hours:" if en else "მოსალოდნელი მომდევნო 3 საათი:")
                   + "</b>\n")
+            # დაქროლვა და არა საშუალო ქარი — სტატუსს (ამწე 21.5) ის განსაზღვრავს
             for h in next_hours:
                 t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
                 hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
@@ -2312,7 +2313,7 @@ def send_digest_telegram(output: dict):
                 rain_str = _precip_label(h.get("precipitation", 0), h.get("precip_sources"),
                                          h.get("precip_agreement"), h.get("precip_total"), lang)
                 t += (
-                    f"{hem} {t_label} — {temp_str}{'wind' if en else 'ქარი'} {h['wind_speed']} {u}, "
+                    f"{hem} {t_label} — {temp_str}{'gust' if en else 'დაქროლვა'} {h['wind_gusts']} {u}, "
                     f"{'wave' if en else 'ტალღა'} {h['wave_height']} {m}\n"
                     f"     🌧 {rain_str}\n"
                 )
