@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-10-28 00:07",
-    "next_update": "2026-10-28 01:07",
+    "last_update": "2026-10-28 01:07",
+    "next_update": "2026-10-28 02:07",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
@@ -28,54 +28,54 @@
     }
   },
   "current": {
-    "time": "2026-10-28T00:00",
-    "wind_speed": 15.38,
-    "wind_speed_raw": 10.98,
-    "wind_gusts": 23.1,
-    "wind_gusts_raw": 16.5,
+    "time": "2026-10-28T01:00",
+    "wind_speed": 16.37,
+    "wind_speed_raw": 11.69,
+    "wind_gusts": 23.94,
+    "wind_gusts_raw": 17.1,
     "crane_risk": false,
     "wind_direction": 83.0,
-    "wave_height": 1.01,
+    "wave_height": 1.07,
     "precipitation": 0.0,
-    "visibility_km": 30.34,
-    "wave_period": 3.5,
+    "visibility_km": 30.76,
+    "wave_period": 3.6,
     "wave_direction": 81.0,
     "swell_height": 0.08,
-    "swell_period": 4.72,
+    "swell_period": 4.85,
     "swell_direction": 144.0,
-    "wind_wave_height": 0.88,
-    "water_temp": 20.44,
-    "current_speed": 0.14,
-    "air_temp": 20.5,
-    "feels_like": 15.5,
+    "wind_wave_height": 0.94,
+    "water_temp": 20.39,
+    "current_speed": 0.16,
+    "air_temp": 20.4,
+    "feels_like": 15.2,
     "status": "suspended",
     "alerts": [
-      "ქარის აფეთქება: 23.1 მ/წმ (ამწის სიმაღლეზე ≈25.2; ლიმიტი: 21.5)"
+      "ქარის აფეთქება: 23.9 მ/წმ (ამწის სიმაღლეზე ≈26.1; ლიმიტი: 21.5)"
     ],
-    "wind_spread": 0.76,
+    "wind_spread": 0.94,
     "confidence": "high",
     "source_count": 3,
     "dir_agreement": 1.0,
     "dir_fallback": false,
     "precip_sources": 0,
-    "precip_total": 4,
+    "precip_total": 5,
     "precip_agreement": 0,
     "wave_estimated": false,
     "gust_estimated": false,
-    "wave_max": 1.26,
-    "wave_min": 0.34,
+    "wave_max": 1.38,
+    "wave_min": 0.36,
     "wave_sources": 5,
-    "wave_copernicus": 0.67,
-    "visibility_min": 24.0,
+    "wave_copernicus": 0.7,
+    "visibility_min": 24.14,
     "vis_estimated": false,
     "humidity": 59.0,
-    "dew_point": 11.8,
-    "pressure": 1014.3,
+    "dew_point": 11.7,
+    "pressure": 1014.2,
     "thunderstorm": false
   },
   "summary_24h": {
-    "window_start": "2026-10-28T00:00",
-    "window_end": "2026-10-28T23:00",
+    "window_start": "2026-10-28T01:00",
+    "window_end": "2026-10-29T00:00",
     "window_hours": 24,
     "max_wave_height": 1.16,
     "max_wind_gusts": 28.56,
@@ -93,19 +93,13 @@
     "overall_status": "suspended"
   },
   "mta_advisory": {
-    "kind": "storm",
     "notes": [
-      "საშტორმო გაფრთხილება: ქარი",
-      "In the area of Poti-Kulevi Easterly wind intensification is expected in 10-15 m/sec. with occasionali gust 20-25 m/sec. A.W. Poti: E m/sec.",
       "პროგნოზით დაქროლვა 22–27 მ/წმ (ქარი 12-17)"
     ],
     "notes_eng": [
-      "Storm warning: wind",
-      "In the area of Poti-Kulevi Easterly wind intensification is expected in 10-15 m/sec. with occasionali gust 20-25 m/sec. A.W. Poti: E m/sec.",
       "forecast gusts 22–27 m/s (wind 12-17)"
     ],
-    "bulletin": "14/8880",
-    "issued": "2026-10-26 01:00",
+    "bulletin": "WF14/8959",
     "valid_until": "2026-10-28 10:00",
     "source": "MTA"
   },
@@ -3580,79 +3574,80 @@
   ],
   "models_now": {
     "best": {
-      "w": 10.55,
-      "g": 16.2,
-      "d": 80.0,
-      "p": 0.0,
-      "t": 20.5,
-      "v": 24.0
-    },
-    "gfs": {
-      "w": 14.8,
-      "g": 15.1,
+      "w": 10.95,
+      "g": 16.9,
       "d": 81.0,
       "p": 0.0,
-      "t": 19.8,
+      "t": 20.4,
+      "v": 25.16
+    },
+    "gfs": {
+      "w": 14.96,
+      "g": 15.3,
+      "d": 82.0,
+      "p": 0.0,
+      "t": 19.7,
       "v": 24.14
     },
     "icon_eu": {
-      "w": 9.93,
-      "g": 16.5,
+      "w": 10.32,
+      "g": 17.1,
       "d": 81.0,
       "p": 0.0,
-      "t": 20.3,
-      "v": 24.0
+      "t": 20.2,
+      "v": 25.16
     },
     "ecmwf": {
-      "w": 10.94,
-      "g": 15.6,
-      "d": 81.0,
+      "w": 11.71,
+      "g": 16.4,
+      "d": 82.0,
       "p": 0.0,
       "t": 19.6,
       "v": 45.64
     },
     "yr_no": {
-      "w": 11.8,
-      "g": 14.75,
-      "d": 87.2,
+      "w": 12.6,
+      "g": 15.75,
+      "d": 87.5,
+      "p": 0.0,
       "v": 10.0
     },
     "marine": {
-      "wave": 0.88,
-      "per": 3.5,
+      "wave": 0.94,
+      "per": 3.6,
       "sw": 0.04,
-      "sw_p": 4.2,
-      "ww": 0.88
+      "sw_p": 4.3,
+      "ww": 0.94
     },
     "stormglass": {
-      "wave": 1.17,
-      "w": 9.93,
-      "v": 24.13
+      "wave": 1.22,
+      "w": 10.17,
+      "v": 24.14
     },
     "copernicus": {
-      "wave": 0.67,
-      "per": 2.42,
-      "dir": 85.71,
+      "wave": 0.7,
+      "per": 2.48,
+      "dir": 85.54,
       "sw": 0.01,
       "sw2": 0.0,
-      "max": 0.95,
-      "crest": 0.56,
-      "kul": 0.66
+      "max": 0.99,
+      "crest": 0.59,
+      "kul": 0.69
     },
     "wave_models": {
       "ewam": {
-        "wave": 0.34,
-        "per": 2.05,
-        "dir": 80.0,
+        "wave": 0.36,
+        "per": 2.1,
+        "dir": 81.0,
         "sw": 0.0,
-        "sw_p": 2.65
+        "sw_p": 2.6
       },
       "gwam": {
-        "wave": 1.26,
-        "per": 4.05,
+        "wave": 1.38,
+        "per": 4.2,
         "dir": 93.0,
         "sw": 0.02,
-        "sw_p": 3.7
+        "sw_p": 3.9
       }
     }
   }
