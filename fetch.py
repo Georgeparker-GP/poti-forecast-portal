@@ -2265,7 +2265,8 @@ def send_digest_telegram(output: dict):
         return
 
     now_hour = datetime.now(TBILISI_TZ).hour
-    if now_hour not in DIGEST_HOURS:
+    # DIGEST_NOW — ხელით გაშვება (workflow input), მაგ. ფორმატის შესამოწმებლად
+    if now_hour not in DIGEST_HOURS and os.environ.get("DIGEST_NOW", "").lower() != "true":
         return
 
     fc  = output.get("forecast", [])
