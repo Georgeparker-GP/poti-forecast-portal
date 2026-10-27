@@ -10,6 +10,10 @@ on:
         description: 'throttle-ის გამოტოვება (30 წუთზე ადრე განმეორებითი გაშვება)'
         required: false
         default: 'false'
+      digest_now:
+        description: 'Telegram-ის მიმდინარე ანგარიშის გაგზავნა ახლავე (საათის მიუხედავად)'
+        required: false
+        default: 'false'
 
 # ⚠ ერთდროული გაშვებები ერთსა და იმავე ფაილებს (data.json, *_cache.json,
 #   mta_mail_state.json) ცვლიან. რიგში დგებიან და არ უქმდებიან —
@@ -54,6 +58,7 @@ jobs:
           # ⚠ ადრე `event_name == 'workflow_dispatch'` იყო — ყოველთვის true,
           #   რადგან სხვა ტრიგერი აღარ არსებობს. throttle საერთოდ არ მუშაობდა.
           FORCE_REFRESH: ${{ github.event.inputs.force == 'true' }}
+          DIGEST_NOW: ${{ github.event.inputs.digest_now == 'true' }}
         run: python fetch.py
 
       # ── MTA ბიულეტენების მიღება Gmail-იდან ──

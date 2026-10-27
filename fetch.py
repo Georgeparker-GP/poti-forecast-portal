@@ -1918,7 +1918,10 @@ def _compute_status(wind, gusts, wave, vis, vis_min=None):
 #  5.  Telegram შეტყობინება
 # ═══════════════════════════════════════════════════════════════
 
-STATUS_EMOJI = {"operational": "✅", "barge": "⚠️", "vessel": "🟠", "suspended": "🚨",
+# ⚠ 2026-10-27: ტელეგრამი ტექსტის ფერს არ უჭერს მხარს, ამიტომ სტატუსი
+#   ფერადი წრით გამოირჩევა: მწვანე / ნარინჯისფერი / წითელი (პორტალის ფერები).
+#   ადრე ✅ / 🟠 / 🚨 იყო და შეჩერება სხვა სტრიქონებში დაკარგული ჩანდა.
+STATUS_EMOJI = {"operational": "🟢", "barge": "🟡", "vessel": "🟠", "suspended": "🔴",
                 # უკუთავსებადობა: ძველი cache-ის ჩანაწერები
                 "warning": "⚠️"}
 STATUS_EN    = {"operational": "Standard operations",
@@ -2262,7 +2265,8 @@ def send_digest_telegram(output: dict):
         return
 
     now_hour = datetime.now(TBILISI_TZ).hour
-    if now_hour not in DIGEST_HOURS:
+    # DIGEST_NOW — ხელით გაშვება (workflow input), მაგ. ფორმატის შესამოწმებლად
+    if now_hour not in DIGEST_HOURS and os.environ.get("DIGEST_NOW", "").lower() != "true":
         return
 
     fc  = output.get("forecast", [])
@@ -2299,12 +2303,13 @@ def send_digest_telegram(output: dict):
             f"🌡 {'Air' if en else 'ჰაერი'}: <b>{c['air_temp']}°C</b>{feels}\n"
             f"🌧 {'Precip' if en else 'ნალექი'}: <b>{p_lbl}</b>\n"
             + _vis_line(c, lang)
-            + f"{'Status' if en else 'სტატუსი'}: <b>{st}</b>\n"
+            + f"{'Status' if en else 'სტატუსი'}: {em} <b>{st}</b>\n"
         )
         if next_hours:
             t += ("─────────────────\n<b>"
                   + ("Next 3 hours:" if en else "მოსალოდნელი მომდევნო 3 საათი:")
                   + "</b>\n")
+            # დაქროლვა და არა საშუალო ქარი — სტატუსს (ამწე 21.5) ის განსაზღვრავს
             for h in next_hours:
                 t_label = h["time"][11:16] if len(h.get("time", "")) >= 16 else h.get("time", "")
                 hem = STATUS_EMOJI.get(h.get("status"), "ℹ️")
@@ -2312,7 +2317,7 @@ def send_digest_telegram(output: dict):
                 rain_str = _precip_label(h.get("precipitation", 0), h.get("precip_sources"),
                                          h.get("precip_agreement"), h.get("precip_total"), lang)
                 t += (
-                    f"{hem} {t_label} — {temp_str}{'wind' if en else 'ქარი'} {h['wind_speed']} {u}, "
+                    f"{hem} {t_label} — {temp_str}{'gust' if en else 'დაქროლვა'} {h['wind_gusts']} {u}, "
                     f"{'wave' if en else 'ტალღა'} {h['wave_height']} {m}\n"
                     f"     🌧 {rain_str}\n"
                 )
@@ -2809,14 +2814,14 @@ def send_sos_alert(output: dict):
                     f"🕐 Now: {now_str}\n"
                     f"⏰ Expected: <b>{t_label}</b> (in ≈1 hour)\n"
                     f"─────────────────\n"
-                    f"🚨 Expected status: <b>{STATUS_EN['suspended']}</b>\n")
+                    f"{STATUS_EMOJI['suspended']} Expected status: <b>{STATUS_EN['suspended']}</b>\n")
             foot = "─────────────────\nPrepare in advance for an operational suspension.\n"
         else:
             head = (f"🆘 <b>SOS — მოსალოდნელია კრიტიკული გაუარესება!</b>\n"
                     f"🕐 ამჟამად: {now_str}\n"
                     f"⏰ მოახლოვდება: <b>{t_label}</b> (≈1 საათში)\n"
                     f"─────────────────\n"
-                    f"🚨 მოსალოდნელი სტატუსი: <b>{STATUS_KA['suspended']}</b>\n")
+                    f"{STATUS_EMOJI['suspended']} მოსალოდნელი სტატუსი: <b>{STATUS_KA['suspended']}</b>\n")
             foot = "─────────────────\nსასურველია დროულად მოემზადოთ საოპერაციო შეჩერებისთვის.\n"
         return (
             head
