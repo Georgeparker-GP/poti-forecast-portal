@@ -22139,9 +22139,54 @@
         "wind_overlap": "0/4",
         "wave_overlap": "0/4"
       }
+    },
+    {
+      "ingested_at": "2026-10-31 01:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.9107_31.10.2026წ._01.10_სთ..pdf",
+      "type": "storm_warning",
+      "poti": {
+        "wind_range": [
+          5.0,
+          8.0
+        ],
+        "wind_dir_txt": "SE"
+      },
+      "bulletin_no": "14/9107",
+      "forecast": {
+        "wave_cm": [
+          80.0,
+          250.0
+        ],
+        "sea_state": 4.0,
+        "wind_range": [
+          6.0,
+          11.0
+        ],
+        "gust_max": 18.0,
+        "gust_range": [
+          13.0,
+          18.0
+        ]
+      },
+      "text_eng": "In the area of Poti-Kulevi will be maintained sea 3-4/ 4 state (W.H 80-200/ 125-250 cm). Wind SW/W 6-11 m/sec, with ocasionally gusts 13-18 m/sec. A.W. (Poti)- SE 5-8 m/sec. Sea 3-4 (w.h. 112-151 cm.). (Kulevi) - NE 4-7 m/sec.",
+      "phenomena": [
+        "wind",
+        "sea"
+      ],
+      "date": "31/10/2026",
+      "time": "01:10",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 8.0,
+        "wind_portal": 7.93,
+        "wind_portal_raw": 6.1,
+        "wind_delta": 0.07
+      },
+      "portal_time": "2026-10-31T01:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-10-30 22:07",
+  "last_ingest": "2026-10-31 01:07",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -22313,14 +22358,14 @@
       "cancel": "14/9096",
       "issued": "2026-10-26T01:00",
       "cancelled": "2026-10-30T17:15",
-      "duration_h": 112.2,
-      "portal_hours": 18,
-      "portal_statuses": {
-        "suspended": 14,
-        "vessel": 2,
-        "operational": 2
-      },
-      "calm_tail_h": 2
+      "duration_h": 112.2
+    },
+    {
+      "warning": "14/9107",
+      "cancel": null,
+      "issued": "2026-10-31T01:10",
+      "cancelled": null,
+      "open": true
     }
   ]
 }
