@@ -22892,9 +22892,51 @@
       },
       "portal_time": "2026-11-01T16:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-11-01 19:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.9107_გაუქმება_1.11.2026წ._18.20_სთ..pdf",
+      "type": "storm_cancel",
+      "poti": {
+        "wind_dir_txt": "W",
+        "wind_dir": 270.0,
+        "wind_avg": 4.0,
+        "wind_max": 5.0,
+        "sea_state": 3.0,
+        "wave_cm": [
+          60.0,
+          91.0
+        ]
+      },
+      "kulevi": {},
+      "bulletin_no": "14/9143",
+      "area": "poti",
+      "cancels": "14/9107",
+      "date": "01/11/2023",
+      "time": "18:20",
+      "text_eng": "№ 14/9107 CANCELATION The storm warning №14/9107 in the area of Poti-Kulevi is canceled. Actual Weather : Poti -W 4-5 m/sec. Sea swell 3 state (W.H. 60-91 cm). Kulevi W - 4-5 m/sec.",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 5.0,
+        "wind_portal": 4.94,
+        "wind_portal_raw": 3.8,
+        "wind_delta": 0.06,
+        "wind_avg_mta": 4.0,
+        "wind_avg_portal": 2.65,
+        "wind_avg_portal_raw": 2.04,
+        "wind_avg_delta": 1.35,
+        "wave_mta": 0.76,
+        "wave_portal": 0.63,
+        "wave_delta": 0.13,
+        "dir_mta": 270.0,
+        "dir_portal": 333.0,
+        "dir_delta": 63.0
+      },
+      "portal_time": "2026-11-01 19:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-11-01 17:07",
+  "last_ingest": "2026-11-01 19:07",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -23070,10 +23112,10 @@
     },
     {
       "warning": "14/9107",
-      "cancel": null,
+      "cancel": "14/9143",
       "issued": "2026-10-31T01:10",
-      "cancelled": null,
-      "open": true
+      "cancelled": "2023-11-01T18:20",
+      "duration_h": -26262.8
     }
   ]
 }
