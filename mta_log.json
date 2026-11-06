@@ -24984,9 +24984,57 @@
       },
       "portal_time": "2026-11-06T04:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-11-06 17:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14.9308_06.11.2026_წ._16_სთ..pdf",
+      "type": "actual",
+      "poti": {
+        "wind_dir": 54.0,
+        "wind_avg": 3.0,
+        "wind_max": 6.0,
+        "wave_cm": null,
+        "sea_state": [
+          3.0,
+          4.0
+        ],
+        "sea_level": 2.0,
+        "rip_current": null,
+        "sea_temp": 20.0,
+        "cloud": "მოღრუბლული\nCloudy",
+        "precip": "უნალექო\nWithout\npresipitation",
+        "air_temp": 12.8,
+        "humidity": 69.0,
+        "pressure": 1019.0
+      },
+      "bulletin_no": "14/9308",
+      "date": "06 / ნოემბერი / 2026",
+      "time": "16:00",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {
+        "wind_mta": 6.0,
+        "wind_portal": 6.37,
+        "wind_portal_raw": 4.9,
+        "wind_delta": -0.37,
+        "wind_avg_mta": 3.0,
+        "wind_avg_portal": 3.39,
+        "wind_avg_portal_raw": 2.61,
+        "wind_avg_delta": -0.39,
+        "dir_mta": 54.0,
+        "dir_portal": 32.0,
+        "dir_delta": 22.0,
+        "air_temp_mta": 12.8,
+        "air_temp_portal": 13.3,
+        "air_temp_delta": -0.5,
+        "sea_temp_mta": 20.0,
+        "sea_temp_portal": 0.0,
+        "sea_temp_delta": 20.0
+      },
+      "portal_time": "2026-11-06T16:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-11-06 05:07",
+  "last_ingest": "2026-11-06 17:07",
   "storm_windows": [
     {
       "warning": "14/6882",
