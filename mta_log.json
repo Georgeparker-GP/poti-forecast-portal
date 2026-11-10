@@ -26970,9 +26970,25 @@
         "wind_overlap": "3/4",
         "wave_overlap": "3/4"
       }
+    },
+    {
+      "ingested_at": "2026-11-11 03:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.9427_გაუქმება_11.11.2026წ._02.10_სთ..pdf",
+      "type": "storm_cancel",
+      "poti": {},
+      "kulevi": {},
+      "bulletin_no": "14/9427",
+      "area": "poti",
+      "date": "11/11/2026",
+      "time": "02:10",
+      "text_eng": "In the area of Poti-Kulevi Easterly wind intensification will be remained in 8-13 m/sec. with occasionall gust 15-20 m/sec. A.W. Poti: 13-18 E m/sec.",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-11-11T02:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-11-10 22:07",
+  "last_ingest": "2026-11-11 03:07",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -27177,6 +27193,13 @@
       "warning": "14/9326",
       "cancel": null,
       "issued": "2026-11-07T11:20",
+      "cancelled": null,
+      "open": true
+    },
+    {
+      "warning": "14/9427",
+      "cancel": null,
+      "issued": "2026-11-11T02:10",
       "cancelled": null,
       "open": true
     }
