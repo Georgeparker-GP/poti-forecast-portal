@@ -28487,9 +28487,19 @@
         "wind_overlap": "2/4",
         "wave_overlap": "3/4"
       }
+    },
+    {
+      "ingested_at": "2026-11-14 13:07",
+      "source_file": "3_დღიანი_ამინდის_პროგნოზი_ფოთი-_ყულევი_15.11.26-_17.11.26_წ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {},
+        "night": {}
+      },
+      "bulletin_no": null
     }
   ],
-  "last_ingest": "2026-11-14 10:07",
+  "last_ingest": "2026-11-14 13:07",
   "storm_windows": [
     {
       "warning": "14/6882",
