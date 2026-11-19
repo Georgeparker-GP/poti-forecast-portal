@@ -3,8 +3,8 @@
     "location": "ფოთის პორტი",
     "lat": 42.15,
     "lon": 41.67,
-    "last_update": "2026-11-19 18:07",
-    "next_update": "2026-11-19 19:07",
+    "last_update": "2026-11-19 19:07",
+    "next_update": "2026-11-19 20:07",
     "sources_used": [
       "Open-Meteo/best_match",
       "Open-Meteo/GFS",
@@ -28,56 +28,56 @@
     }
   },
   "current": {
-    "time": "2026-11-19T18:00",
-    "wind_speed": 9.42,
-    "wind_speed_raw": 6.73,
-    "wind_gusts": 14.28,
-    "wind_gusts_raw": 10.2,
+    "time": "2026-11-19T19:00",
+    "wind_speed": 7.87,
+    "wind_speed_raw": 5.62,
+    "wind_gusts": 15.26,
+    "wind_gusts_raw": 10.9,
     "crane_risk": false,
-    "wind_direction": 84.0,
-    "wave_height": 0.41,
-    "precipitation": 0.7,
-    "visibility_km": 14.47,
-    "wave_period": 5.25,
-    "wave_direction": 289.0,
+    "wind_direction": 85.0,
+    "wave_height": 0.37,
+    "precipitation": 3.9,
+    "visibility_km": 6.7,
+    "wave_period": 5.45,
+    "wave_direction": 283.0,
     "swell_height": 0.3,
-    "swell_period": 5.58,
+    "swell_period": 5.63,
     "swell_direction": 281.0,
-    "wind_wave_height": 0.14,
-    "water_temp": 16.57,
+    "wind_wave_height": 0.08,
+    "water_temp": 16.54,
     "current_speed": 0.1,
-    "air_temp": 13.8,
-    "feels_like": 11.3,
+    "air_temp": 13.4,
+    "feels_like": 12.6,
     "status": "operational",
     "alerts": [],
-    "wind_spread": 1.25,
-    "confidence": "high",
+    "wind_spread": 2.01,
+    "confidence": "medium",
     "source_count": 3,
     "dir_agreement": 1.0,
     "dir_fallback": false,
-    "precip_sources": 4,
-    "precip_total": 4,
+    "precip_sources": 5,
+    "precip_total": 5,
     "precip_agreement": 100,
     "wave_estimated": false,
     "gust_estimated": false,
-    "wave_max": 0.49,
-    "wave_min": 0.26,
+    "wave_max": 0.44,
+    "wave_min": 0.2,
     "wave_sources": 5,
     "wave_copernicus": 0.28,
-    "visibility_min": 5.5,
+    "visibility_min": 1.86,
     "vis_estimated": false,
-    "humidity": 81.0,
-    "dew_point": 11.0,
-    "pressure": 1007.7,
+    "humidity": 86.0,
+    "dew_point": 11.5,
+    "pressure": 1008.5,
     "thunderstorm": false
   },
   "summary_24h": {
-    "window_start": "2026-11-19T18:00",
-    "window_end": "2026-11-20T17:00",
+    "window_start": "2026-11-19T19:00",
+    "window_end": "2026-11-20T18:00",
     "window_hours": 24,
     "max_wave_height": 1.32,
     "max_wind_gusts": 24.18,
-    "total_precip_24h": 22.5,
+    "total_precip_24h": 22.0,
     "max_precip_rate": 5.4,
     "rain_hours": 15,
     "min_visibility": 6.7,
@@ -91,15 +91,21 @@
     "overall_status": "suspended"
   },
   "mta_advisory": {
+    "kind": "storm",
     "notes": [
+      "საშტორმო გაფრთხილება: ქარი, ღელვა",
+      "In the area of Poti-Kulevi Westerly/South -Westerly wind intensification is expected in 10-15 m/sec.The first half of the night with occasionally gust 20- 25 m/sec. Sea 3-4/ 4 (w.h. 80-170/125-250 cm.). Further intensifi",
       "დღე — ნალექი: ხანმოკლე წვიმა; ქარი 6-11, მინაწერი საღამოს 10-15 დაქროლვა 17-22 მ/წმ; საღამოს დროგამოშვებით წვიმა, ელჭექი",
       "ღამე — პროგნოზით დაქროლვა 15–17 მ/წმ (ქარი 7-12); ნალექი: ხანმოკლე წვიმა; ქარი 7-12, მინაწერი დილით 12-17 მ/წმ"
     ],
     "notes_eng": [
+      "Storm warning: wind, sea",
+      "In the area of Poti-Kulevi Westerly/South -Westerly wind intensification is expected in 10-15 m/sec.The first half of the night with occasionally gust 20- 25 m/sec. Sea 3-4/ 4 (w.h. 80-170/125-250 cm.). Further intensifi",
       "Day — precipitation: briefly rain; Wind 6-11, note საღამოს 10-15 დაქროლვა 17-22 m/s; At the evening occasional rain,Thunderstorm",
       "Night — forecast gusts 15–17 m/s (wind 7-12); precipitation: briefly rain; Wind 7-12, note In the morning 12-17 m/s"
     ],
-    "bulletin": "WF14/9684",
+    "bulletin": "14/9716",
+    "issued": "2026-11-19 18:30",
     "valid_until": "2026-11-20 10:00",
     "source": "MTA"
   },
@@ -3489,79 +3495,80 @@
   ],
   "models_now": {
     "best": {
-      "w": 5.4,
-      "g": 10.5,
-      "d": 89.0,
-      "p": 0.7,
-      "t": 13.8,
-      "v": 22.36
+      "w": 2.6,
+      "g": 9.1,
+      "d": 90.0,
+      "p": 3.9,
+      "t": 13.4,
+      "v": 9.06
     },
     "gfs": {
-      "w": 4.8,
-      "g": 2.1,
-      "d": 90.0,
-      "p": 0.7,
-      "t": 13.8,
-      "v": 17.86
+      "w": 3.9,
+      "g": 2.5,
+      "d": 91.0,
+      "p": 0.4,
+      "t": 13.6,
+      "v": 13.92
     },
     "icon_eu": {
-      "w": 4.7,
-      "g": 10.2,
-      "d": 88.0,
-      "p": 0.5,
-      "t": 13.6,
-      "v": 22.36
+      "w": 2.31,
+      "g": 8.8,
+      "d": 85.0,
+      "p": 3.6,
+      "t": 13.1,
+      "v": 9.06
     },
     "ecmwf": {
-      "w": 7.01,
-      "g": 9.8,
-      "d": 82.0,
-      "p": 0.6,
-      "t": 14.9,
-      "v": 5.5
+      "w": 6.15,
+      "g": 10.9,
+      "d": 83.0,
+      "p": 3.4,
+      "t": 14.6,
+      "v": 1.86
     },
     "yr_no": {
-      "w": 7.6,
-      "g": 9.5,
-      "d": 86.3,
+      "w": 6.9,
+      "g": 8.62,
+      "d": 87.9,
+      "p": 2.4,
       "v": 10.0
     },
     "marine": {
-      "wave": 0.34,
-      "per": 5.25,
+      "wave": 0.32,
+      "per": 5.45,
       "sw": 0.26,
-      "sw_p": 5.45,
-      "ww": 0.14
+      "sw_p": 5.55,
+      "ww": 0.08
     },
     "stormglass": {
-      "wave": 0.49,
-      "w": 3.19,
-      "v": 10.69
+      "wave": 0.44,
+      "w": 2.16,
+      "v": 3.97
     },
     "copernicus": {
       "wave": 0.28,
-      "per": 5.94,
-      "dir": 280.5,
-      "sw": 0.15,
-      "sw2": 0.06,
-      "max": 0.28,
-      "crest": 0.16,
-      "kul": 0.3
+      "per": 6.87,
+      "dir": 279.95,
+      "sw": 0.14,
+      "sw2": 0.1,
+      "max": 0.29,
+      "crest": 0.17,
+      "kul": 0.31
     },
     "wave_models": {
       "ewam": {
-        "wave": 0.26,
-        "per": 1.75,
-        "dir": 89.0,
+        "wave": 0.2,
+        "per": 2.05,
+        "dir": 90.0,
         "sw": 0.06,
-        "sw_p": 2.5
+        "sw_p": 2.1
       },
       "gwam": {
-        "wave": 0.46,
-        "per": 3.2,
-        "dir": 102.0,
-        "sw": 0.3,
-        "sw_p": 4.1
+        "wave": 0.42,
+        "per": 3.25,
+        "dir": 104.0,
+        "sw": 0.36,
+        "sw_p": 3.6
       }
     }
   }
