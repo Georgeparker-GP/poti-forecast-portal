@@ -30749,9 +30749,20 @@
         "wind_overlap": "4/4",
         "wave_overlap": "1/4"
       }
+    },
+    {
+      "ingested_at": "2026-11-19 17:07",
+      "source_file": "ფაქტიური_ამინდი_ფოთი_№_14._19.11.2026_წ._16_სთ..pdf",
+      "type": "actual",
+      "poti": {},
+      "bulletin_no": "11/2026",
+      "bulletin_no_source": "filename",
+      "vs_portal": {},
+      "portal_time": "2026-11-19 17:07",
+      "portal_hour_exact": false
     }
   ],
-  "last_ingest": "2026-11-19 10:12",
+  "last_ingest": "2026-11-19 17:07",
   "storm_windows": [
     {
       "warning": "14/6882",
