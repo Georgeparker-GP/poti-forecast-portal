@@ -31423,9 +31423,26 @@
         "wind_overlap": "1/4",
         "wave_overlap": "3/4"
       }
+    },
+    {
+      "ingested_at": "2026-11-21 02:10",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.9740_გაუქმება_21.11.2026წ._01.35_სთ..pdf",
+      "type": "storm_cancel",
+      "poti": {},
+      "kulevi": {},
+      "bulletin_no": "14/9766",
+      "area": "poti",
+      "cancels": "14/9740",
+      "date": "21/11/2026",
+      "time": "01:35",
+      "text_eng": "14/9740 CANCELLATION The storm warning 14/9740 in the area of Poti-Kulevi is canceled. A.W. (Poti)- Wind Easterly 7-10 m/s. sea state 2-3 (w.h 30-56 cm ) (Kulevi)- Wind Easterly 4-5 m/sec.",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-11-21T01:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-11-20 22:07",
+  "last_ingest": "2026-11-21 02:10",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -31670,10 +31687,15 @@
     },
     {
       "warning": "14/9740",
-      "cancel": null,
+      "cancel": "14/9766",
       "issued": "2026-11-20T12:15",
-      "cancelled": null,
-      "open": true
+      "cancelled": "2026-11-21T01:35",
+      "duration_h": 13.3,
+      "portal_hours": 2,
+      "portal_statuses": {
+        "operational": 2
+      },
+      "calm_tail_h": 2
     }
   ]
 }
