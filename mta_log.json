@@ -32204,9 +32204,168 @@
       },
       "portal_time": "2026-11-22T16:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-11-22 22:07",
+      "source_file": "საღამოს_ამინდის_პროგნოზი_ფოთი_WF_14.9807_22.11.26_22.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "8-13",
+          "wave_cm": "125-250/70-150",
+          "sea_state": "4 /3-4",
+          "vis_miles": "5-10/2-5",
+          "cloud": "მოღრუბლული\nCloudy",
+          "precip": "ხანმოკლე წვიმა\nBriefly rain",
+          "precip_note": "დილით უნალექო In the morning no presipitation"
+        },
+        "night": {
+          "wind_speed": "8-13",
+          "wave_cm": "125-250/70-150",
+          "sea_state": "4 /3-4",
+          "vis_miles": "5-10 /2-5",
+          "cloud": "მოღრუბლული\nCloudy",
+          "precip": "ხანმოკლე წვიმა\nBriefly rain",
+          "precip_note": "დილით უნალექო In the morning no presipitation"
+        }
+      },
+      "valid": "22/11/2026 წ. 22:00 სთ-დან 23/11/2026 წ. 10:00 სთ-მდე",
+      "bulletin_no": "WF14/9807",
+      "bulletin_no_source": "filename",
+      "vs_portal_forecast": {
+        "issued": "2026-11-22 22:00",
+        "blocks": [
+          {
+            "block": "day1",
+            "window": "2026-11-23T10:00 → 16:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                8.48,
+                10.32
+              ],
+              "overlap": true,
+              "max_delta": 2.68,
+              "mid_delta": 1.1
+            },
+            "wave": {
+              "mta": [
+                1.25,
+                2.5
+              ],
+              "portal": [
+                0.75,
+                0.8
+              ],
+              "overlap": false,
+              "max_delta": 1.7,
+              "mid_delta": 1.1
+            }
+          },
+          {
+            "block": "day2",
+            "window": "2026-11-23T16:00 → 22:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                9.93,
+                13.07
+              ],
+              "overlap": true,
+              "max_delta": -0.07,
+              "mid_delta": -1.0
+            },
+            "wave": {
+              "mta": [
+                0.7,
+                1.5
+              ],
+              "portal": [
+                0.8,
+                0.81
+              ],
+              "overlap": true,
+              "max_delta": 0.69,
+              "mid_delta": 0.3
+            }
+          },
+          {
+            "block": "night1",
+            "window": "2026-11-22T22:00 → 04:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                3.24,
+                6.12
+              ],
+              "overlap": false,
+              "max_delta": 6.88,
+              "mid_delta": 5.82
+            },
+            "wave": {
+              "mta": [
+                1.25,
+                2.5
+              ],
+              "portal": [
+                0.76,
+                0.8
+              ],
+              "overlap": false,
+              "max_delta": 1.7,
+              "mid_delta": 1.09
+            }
+          },
+          {
+            "block": "night2",
+            "window": "2026-11-23T04:00 → 10:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                8.0,
+                13.0
+              ],
+              "portal": [
+                2.78,
+                7.82
+              ],
+              "overlap": false,
+              "max_delta": 5.18,
+              "mid_delta": 5.2
+            },
+            "wave": {
+              "mta": [
+                0.7,
+                1.5
+              ],
+              "portal": [
+                0.74,
+                0.78
+              ],
+              "overlap": true,
+              "max_delta": 0.72,
+              "mid_delta": 0.34
+            }
+          }
+        ],
+        "wind_overlap": "2/4",
+        "wave_overlap": "2/4"
+      }
     }
   ],
-  "last_ingest": "2026-11-22 17:07",
+  "last_ingest": "2026-11-22 22:07",
   "storm_windows": [
     {
       "warning": "14/6882",
