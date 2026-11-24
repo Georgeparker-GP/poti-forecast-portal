@@ -33070,9 +33070,28 @@
         "wind_overlap": "0/4",
         "wave_overlap": "3/4"
       }
+    },
+    {
+      "ingested_at": "2026-11-24 16:07",
+      "source_file": "საშტორმო_გაფრთხილება_ფოთი_№_14.9848_შეცვლა_14.9818_24.11.2026წ._15.30სთ..pdf",
+      "type": "storm_warning",
+      "poti": {},
+      "bulletin_no": "14/9848",
+      "forecast": {},
+      "text_eng": "14/9818 CHANGE In the Poti–Kulevi sea area, from the end of the day 24/11/26 - until the morning of 26/11/26, Northwesterly/Westerly winds of 10–15 m/s is expected , with gusts of 17–20 m/s. From the morning of 25/11/26, 13–18 m/s, with occasional gusts of 22–27 m/s. Sea swell from the end of the day on 24/11/26 until the morning of 26/11/26 will be force 3–4 / 4–5 (wave height 100–250 / 200– 350 cm), subsequently increasing from the second half of the day on 25/11/26 and overnight to force 5 / ",
+      "phenomena": [
+        "wind",
+        "sea"
+      ],
+      "date": "24/11/2026",
+      "time": "15:30",
+      "bulletin_no_source": "pdf",
+      "vs_portal": {},
+      "portal_time": "2026-11-24T15:00",
+      "portal_hour_exact": true
     }
   ],
-  "last_ingest": "2026-11-24 10:07",
+  "last_ingest": "2026-11-24 16:07",
   "storm_windows": [
     {
       "warning": "14/6882",
@@ -33333,6 +33352,13 @@
       "warning": "14/9818",
       "cancel": null,
       "issued": "2026-11-23T11:25",
+      "cancelled": null,
+      "open": true
+    },
+    {
+      "warning": "14/9848",
+      "cancel": null,
+      "issued": "2026-11-24T15:30",
       "cancelled": null,
       "open": true
     }
