@@ -580,3 +580,20 @@ def test_mta_precip_note():
     assert _fmt_mta_precip("უნალექოდ\nNo precipitation") is None
     assert _fmt_mta_precip("უმეტესად უნალექოდ\nMainly dry") is None
     assert _fmt_mta_precip(None) is None
+
+
+def test_storm_relative_valid_until():
+    from mta_parser import storm_fields_from_eng
+    eng = ("14/9818 CHANGE In the Poti–Kulevi sea area, from the end of the day 24/11/26 - until the "
+           "morning of 26/11/26, Northwesterly/Westerly winds of 10–15 m/s is expected , with gusts of "
+           "17–20 m/s. From the morning of 25/11/26, 13–18 m/s, with occasional gusts of 22–27 m/s.")
+    ex = storm_fields_from_eng(eng, ("24/11/2026", "15:30"))
+    assert ex["valid_until"] == "2026-11-26 12:00"
+    assert ex["forecast"]["gust_range"] == (22.0, 27.0)
+    assert storm_fields_from_eng("wind 15-20 m/s until the end of the day 15.",
+                                 ("14/10/2026", "22:00"))["valid_until"] == "2026-10-15 23:59"
+    assert storm_fields_from_eng("until end of the night, gusts 15-20 m/s",
+                                 ("20/11/2026", "12:15"))["valid_until"] == "2026-11-21 06:00"
+    assert storm_fields_from_eng("until the first half of the night of 05, gusts 18-23 m/s",
+                                 ("04/11/2026", "23:00"))["valid_until"] == "2026-11-05 06:00"
+    assert storm_fields_from_eng("until the evening", None)["valid_until"] is None

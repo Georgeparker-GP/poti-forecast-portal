@@ -248,7 +248,66 @@ _EN_MONTHS = {m: i for i, m in enumerate(
 _MS = r"m\s*/\s*s(?:ec)?\.?"
 
 
-def _storm_valid_until(eng: str):
+# ⚠ 2026-11-27: ნოემბრიდან MTA ვადას ფარდობითად წერს — "until the morning of
+#   26/11/26", "until the end of the day 15", "until the first half of the
+#   night of 05", "until the evening". არც ერთი არ იკითხებოდა და ბანერი 48-
+#   საათიან fallback-ზე რჩებოდა. პერიოდი მისი ᲑᲝᲚᲝᲡ მიხედვით ითვლება —
+#   ბანერი ადრე არ უნდა გაქრეს.
+_PERIOD_END = [  # (regex, საათი, ღამეა თუ არა — ღამე მომდევნო დილით მთავრდება)
+    (r"(?:first\s+half|middle)\s+of\s+(?:the\s+)?day", "15:00", False),
+    (r"(?:second\s+half|end)\s+of\s+(?:the\s+)?day", "23:59", False),
+    (r"(?:first|second)\s+half\s+of\s+(?:the\s+)?night|end\s+of\s+(?:the\s+)?night", "06:00", True),
+    (r"morning", "12:00", False),
+    (r"afternoon", "18:00", False),
+    (r"evening", "23:59", False),
+    (r"night", "06:00", True),
+    (r"day", "23:59", False),
+]
+_REL_UNTIL = re.compile(
+    r"until\s+(?:the\s+)?(?P<p>" + "|".join(f"(?:{r})" for r, _, _ in _PERIOD_END) + r")"
+    r"(?:\s+(?:of\s+)?(?:the\s+)?(?P<d>\d{1,2})(?:\s*/\s*(?P<m>\d{1,2})\s*/\s*(?P<y>\d{2,4}))?\b)?",
+    re.I)
+
+
+def _relative_until(eng, issued):
+    """ფარდობითი ვადა → "YYYY-MM-DD HH:MM". issued — (DD/MM/YYYY, HH:MM) ან None."""
+    from datetime import datetime, timedelta
+    m = _REL_UNTIL.search(eng or "")
+    if not m:
+        return None
+    phrase = " ".join(m.group("p").lower().split())
+    hhmm, is_night = next((h, n) for r, h, n in _PERIOD_END if re.fullmatch(r, phrase))
+    hh, mm = map(int, hhmm.split(":"))
+    base = None
+    if issued and issued[0]:
+        try:
+            base = datetime.strptime(f"{issued[0]} {issued[1] or '00:00'}", "%d/%m/%Y %H:%M")
+        except ValueError:
+            base = None
+    if m.group("y"):
+        y = int(m.group("y")); y += 2000 if y < 100 else 0
+        try:
+            return datetime(y, int(m.group("m")), int(m.group("d")), hh, mm).strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            return None
+    if base is None:
+        return None
+    if m.group("d"):
+        day = int(m.group("d"))
+        y, mo = base.year, base.month
+        if day < base.day:                       # შემდეგი თვე
+            y, mo = (y + 1, 1) if mo == 12 else (y, mo + 1)
+        try:
+            return datetime(y, mo, day, hh, mm).strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            return None
+    cand = base.replace(hour=hh, minute=mm, second=0)
+    if cand <= base or (is_night and base.hour >= 6):
+        cand += timedelta(days=1)
+    return cand.strftime("%Y-%m-%d %H:%M")
+
+
+def _storm_valid_until(eng: str, issued=None):
     """"until the second half of October 13, 2026" → "2026-10-13 23:59"."""
     m = re.search(r"until\s+(?:the\s+)?(?:(first|second)\s+half\s+of\s+)?([A-Za-z]+)\s+"
                   r"(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{4})", eng or "", re.I)
@@ -259,13 +318,17 @@ def _storm_valid_until(eng: str):
     if m:
         y = m.group(3) if len(m.group(3)) == 4 else "20" + m.group(3)
         return f"{y}-{int(m.group(2)):02d}-{int(m.group(1)):02d} 23:59"
-    return None
+    return _relative_until(eng, issued)
 
 
-def storm_fields_from_eng(eng: str) -> dict:
+def storm_fields_from_eng(eng: str, issued=None) -> dict:
     """საშტორმოს ინგლისური ბლოკიდან: პროგნოზის ქარი/დაქროლვა, ფოთის
-    ფაქტობრივი ქარი და მოქმედების ვადა. ცარიელი ველები — უბრალოდ აკლია."""
-    out = {"forecast": {}, "poti": {}, "valid_until": _storm_valid_until(eng)}
+    ფაქტობრივი ქარი და მოქმედების ვადა. ცარიელი ველები — უბრალოდ აკლია.
+    issued — (DD/MM/YYYY, HH:MM), ფარდობითი ვადისთვის ("until the evening")."""
+    # ⚠ 2026-11-27: 14/9848-ში დიაპაზონი გრძელი ტირით იყო ("17–20") და
+    #   დაქროლვა საერთოდ არ ჩაიწერა. ტირეები ერთ ფორმაზე მოგვყავს.
+    eng = re.sub(r"[–—−]", "-", eng or "")
+    out = {"forecast": {}, "poti": {}, "valid_until": _storm_valid_until(eng, issued)}
     parts = re.split(r"(?i)\ba\.?\s*w\.?\s*(?=\(|poti|wind)", eng or "", maxsplit=1)
     fc_part = parts[0]
     aw_part = parts[1] if len(parts) > 1 else ""
@@ -273,10 +336,14 @@ def storm_fields_from_eng(eng: str) -> dict:
     m = re.search(r"wind\w*\D{0,30}?(\d+)\s*-\s*(\d+)\s*" + _MS, fc_part, re.I)
     if m:
         out["forecast"]["wind_range"] = (float(m.group(1)), float(m.group(2)))
-    m = re.search(r"gusts?\D{0,20}?(\d+)(?:\s*-\s*(\d+))?\s*" + _MS, fc_part, re.I)
-    if m:
-        out["forecast"]["gust_max"] = float(m.group(2) or m.group(1))
-        out["forecast"]["gust_range"] = (float(m.group(1)), float(m.group(2) or m.group(1)))
+    # ცვლილების ბიულეტენში რამდენიმე ეტაპია ("gusts of 17-20 … From the
+    # morning of 25/11/26 … gusts of 22-27") — ვიღებთ ყველაზე ძლიერს.
+    gs = [(float(a), float(b or a)) for a, b in
+          re.findall(r"gusts?\D{0,20}?(\d+)(?:\s*-\s*(\d+))?\s*" + _MS, fc_part, re.I)]
+    if gs:
+        g = max(gs, key=lambda r: r[1])
+        out["forecast"]["gust_max"] = g[1]
+        out["forecast"]["gust_range"] = g
 
     i = aw_part.lower().find("poti")
     seg = aw_part[i:] if i >= 0 else ""
@@ -489,7 +556,7 @@ def parse_storm_warning(pdf_path: str) -> dict:
     eng = _english_block(text)
     out["text_eng"] = eng
     out["phenomena"] = _storm_phenomena(eng or text)
-    extra = storm_fields_from_eng(eng)
+    extra = storm_fields_from_eng(eng, _storm_issued(text))
     for k, v in extra["forecast"].items():
         fc.setdefault(k, v)
     for k, v in extra["poti"].items():
