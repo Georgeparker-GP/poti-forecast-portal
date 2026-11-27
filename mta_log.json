@@ -34283,9 +34283,161 @@
       },
       "portal_time": "2026-11-27T08:00",
       "portal_hour_exact": true
+    },
+    {
+      "ingested_at": "2026-11-27 10:07",
+      "source_file": "ამინდის_პროგნოზი_ფოთი_WF_14.9962_27.11.26_10.00_სთ..pdf",
+      "type": "forecast",
+      "poti": {
+        "day": {
+          "wind_speed": "7-12",
+          "gust": [
+            13.0,
+            16.0
+          ],
+          "wave_cm": "30-75/10-50 3",
+          "sea_state": "2-3/2",
+          "vis_miles": "5-10",
+          "cloud": "ცვალებადი\nVariable",
+          "precip": "უმეტესად\nუნალექო\nMainly Dry"
+        },
+        "night": {
+          "wind_speed": "7-12",
+          "gust": [
+            13.0,
+            16.0
+          ],
+          "wave_cm": "10-50",
+          "sea_state": "2",
+          "vis_miles": "5-10",
+          "cloud": "ცვალებადი\nVariable",
+          "precip": "უმეტესად\nუნალექო\nMainly Dry"
+        }
+      },
+      "bulletin_no": "WF14/9962",
+      "valid": "28/11/2026 წ. 10:00 სთ-დან 29/11/2026 წ. 10:00 სთ-მდე",
+      "bulletin_no_source": "pdf",
+      "vs_portal_forecast": {
+        "issued": "2026-11-28 10:00",
+        "blocks": [
+          {
+            "block": "day1",
+            "window": "2026-11-28T10:00 → 16:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                7.0,
+                12.0
+              ],
+              "portal": [
+                2.62,
+                5.03
+              ],
+              "overlap": false,
+              "max_delta": 6.97,
+              "mid_delta": 5.67
+            },
+            "wave": {
+              "mta": [
+                0.3,
+                0.75
+              ],
+              "portal": [
+                0.13,
+                0.21
+              ],
+              "overlap": false,
+              "max_delta": 0.54,
+              "mid_delta": 0.36
+            }
+          },
+          {
+            "block": "day2",
+            "window": "2026-11-28T16:00 → 22:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                7.0,
+                12.0
+              ],
+              "portal": [
+                1.38,
+                2.48
+              ],
+              "overlap": false,
+              "max_delta": 9.52,
+              "mid_delta": 7.57
+            }
+          },
+          {
+            "block": "night1",
+            "window": "2026-11-28T22:00 → 04:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                7.0,
+                12.0
+              ],
+              "portal": [
+                0.9,
+                2.83
+              ],
+              "overlap": false,
+              "max_delta": 9.17,
+              "mid_delta": 7.63
+            },
+            "wave": {
+              "mta": [
+                0.1,
+                0.5
+              ],
+              "portal": [
+                0.08,
+                0.11
+              ],
+              "overlap": true,
+              "max_delta": 0.39,
+              "mid_delta": 0.2
+            }
+          },
+          {
+            "block": "night2",
+            "window": "2026-11-29T04:00 → 10:00",
+            "portal_hours": 6,
+            "wind": {
+              "mta": [
+                7.0,
+                12.0
+              ],
+              "portal": [
+                2.91,
+                4.14
+              ],
+              "overlap": false,
+              "max_delta": 7.86,
+              "mid_delta": 5.97
+            },
+            "wave": {
+              "mta": [
+                0.1,
+                0.5
+              ],
+              "portal": [
+                0.13,
+                0.22
+              ],
+              "overlap": true,
+              "max_delta": 0.28,
+              "mid_delta": 0.12
+            }
+          }
+        ],
+        "wind_overlap": "0/4",
+        "wave_overlap": "2/3"
+      }
     }
   ],
-  "last_ingest": "2026-11-27 09:07",
+  "last_ingest": "2026-11-27 10:07",
   "storm_windows": [
     {
       "warning": "14/6882",
