@@ -205,7 +205,7 @@ def _repair_storm_entries(dblog: dict) -> int:
         #   პარსერით არ იკითხებოდა. text_eng შენახულია — იქიდან ვავსებთ
         #   მხოლოდ აკლებულ ველებს, არსებულს არ ვეხებით.
         if e.get("type") == "storm_warning" and e.get("text_eng"):
-            ex = storm_fields_from_eng(e["text_eng"])
+            ex = storm_fields_from_eng(e["text_eng"], (e.get("date"), e.get("time")))
             changed = False
             for blk in ("forecast", "poti"):
                 cur = e.get(blk) if isinstance(e.get(blk), dict) else {}
